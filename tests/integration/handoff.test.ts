@@ -240,6 +240,46 @@ test("a different actor label cannot accept the offer", async (t) => {
   assert.equal((await ports.store.loadDossier(snapshot.dossier_id)).active_run.run_id, "run-a");
 });
 
+test("a throwing handoff schema validator fails acceptance as internal without mutation", async (t) => {
+  const { root, ports, snapshot } = await fixture(t);
+  const offered = await offerHandoff(offerRequest(snapshot), ports);
+  assert.equal(offered.ok, true);
+  if (!offered.ok) return;
+  const published = await ports.store.loadDossier(snapshot.dossier_id);
+  const dossierPath = join(root, ".case-agent", "dossiers", snapshot.dossier_id, "dossier.json");
+  const before = await readFile(dossierPath);
+  const throwingPorts: WorkflowPorts = {
+    ...ports,
+    schemas: { validate: () => { throw new Error("validator failed"); } },
+  };
+
+  const accepted = await acceptHandoff(acceptRequest(offered.data, published), throwingPorts);
+
+  assert.equal(accepted.code, "CASE_E_INTERNAL");
+  assert.deepEqual(await readFile(dossierPath), before);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", `${snapshot.dossier_id}.lock`)), { code: "ENOENT" });
+});
+
+test("a throwing handoff ID adapter fails acceptance as internal without mutation", async (t) => {
+  const { root, ports, snapshot } = await fixture(t);
+  const offered = await offerHandoff(offerRequest(snapshot), ports);
+  assert.equal(offered.ok, true);
+  if (!offered.ok) return;
+  const published = await ports.store.loadDossier(snapshot.dossier_id);
+  const dossierPath = join(root, ".case-agent", "dossiers", snapshot.dossier_id, "dossier.json");
+  const before = await readFile(dossierPath);
+  const throwingPorts: WorkflowPorts = {
+    ...ports,
+    ids: { ...ports.ids, envelopeIdFor: () => { throw new Error("ID adapter failed"); } },
+  };
+
+  const accepted = await acceptHandoff(acceptRequest(offered.data, published), throwingPorts);
+
+  assert.equal(accepted.code, "CASE_E_INTERNAL");
+  assert.deepEqual(await readFile(dossierPath), before);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", `${snapshot.dossier_id}.lock`)), { code: "ENOENT" });
+});
+
 test("an inactive from-run cannot offer a handoff", async (t) => {
   const { ports, snapshot } = await fixture(t);
 

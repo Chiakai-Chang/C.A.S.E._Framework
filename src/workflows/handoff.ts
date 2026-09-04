@@ -228,33 +228,67 @@ export async function offerHandoff(
   return publicResult("handoff.offer", "Handoff offered", result);
 }
 
+type OfferReadOutcome =
+  | { readonly kind: "ok"; readonly offer: HandoffEnvelope }
+  | { readonly kind: "invalid" }
+  | { readonly kind: "internal" };
+
+function isMissing(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
 async function readOffer(
   request: CompleteAcceptRequest,
   basis: DossierSnapshot,
   ports: WorkflowPorts,
-): Promise<HandoffEnvelope | null> {
+): Promise<OfferReadOutcome> {
+  const path = join(
+    ".case-agent",
+    "dossiers",
+    request.dossier_id,
+    "handoffs",
+    `${request.handoff_id}.json`,
+  );
+  let bytes: Uint8Array;
   try {
-    const path = join(
-      ".case-agent",
-      "dossiers",
-      request.dossier_id,
-      "handoffs",
-      `${request.handoff_id}.json`,
-    );
-    const parsed = parseGovernedJson(await ports.fs.readFile(path));
-    if (!ports.schemas.validate("handoff", parsed).ok) return null;
-    const envelope = parsed as unknown as HandoffEnvelope;
-    if (envelope.handoff_id !== request.handoff_id
-      || envelope.dossier_id !== basis.dossier_id
-      || !isSafeOpaqueId(envelope.from_run_id)
-      || !nonEmptyText(envelope.to_actor_id)
-      || !nonEmptyText(envelope.created_operation_id)
-      || ports.ids.envelopeIdFor("handoff", envelope.created_operation_id) !== envelope.handoff_id
-      || BigInt(envelope.basis_revision) + 1n !== BigInt(envelope.published_revision)) return null;
-    return envelope;
-  } catch {
-    return null;
+    bytes = await ports.fs.readFile(path);
+  } catch (error) {
+    return isMissing(error) ? { kind: "invalid" } : { kind: "internal" };
   }
+  let parsed: JsonValue;
+  try {
+    parsed = parseGovernedJson(bytes);
+  } catch {
+    return { kind: "invalid" };
+  }
+  try {
+    if (!ports.schemas.validate("handoff", parsed).ok) return { kind: "invalid" };
+  } catch {
+    return { kind: "internal" };
+  }
+  const envelope = parsed as unknown as HandoffEnvelope;
+  if (envelope.handoff_id !== request.handoff_id
+    || envelope.dossier_id !== basis.dossier_id
+    || !isSafeOpaqueId(envelope.from_run_id)
+    || !nonEmptyText(envelope.to_actor_id)
+    || !isRevision(envelope.basis_revision)
+    || !isDigest(envelope.basis_state_digest)
+    || !isRevision(envelope.published_revision)
+    || !isDigest(envelope.offered_content_digest)
+    || !nonEmptyText(envelope.created_operation_id)) return { kind: "invalid" };
+  let derivedId: string;
+  try {
+    derivedId = ports.ids.envelopeIdFor("handoff", envelope.created_operation_id);
+  } catch {
+    return { kind: "internal" };
+  }
+  if (derivedId !== envelope.handoff_id) return { kind: "invalid" };
+  try {
+    if (BigInt(envelope.basis_revision) + 1n !== BigInt(envelope.published_revision)) return { kind: "invalid" };
+  } catch {
+    return { kind: "invalid" };
+  }
+  return { kind: "ok", offer: envelope };
 }
 
 function publicationLinksAreExact(
@@ -296,10 +330,14 @@ export async function acceptHandoff(
   if (guard.basis.current_handoff_id !== request.handoff_id) {
     return failHeld("handoff.accept", guard, "CASE_E_CONFLICT", "The addressed handoff is no longer current");
   }
-  const offer = await readOffer(request, guard.basis, ports);
-  if (offer === null) {
+  const read = await readOffer(request, guard.basis, ports);
+  if (read.kind === "internal") {
+    return failHeld("handoff.accept", guard, "CASE_E_INTERNAL", "The current handoff offer could not be inspected safely");
+  }
+  if (read.kind === "invalid") {
     return failHeld("handoff.accept", guard, "CASE_E_INVARIANT", "The current handoff offer is unavailable or invalid");
   }
+  const offer = read.offer;
   if (offer.to_actor_id !== request.actor_id) {
     return failHeld("handoff.accept", guard, "CASE_E_ACTOR", "Only the intended recipient actor can accept this handoff");
   }
