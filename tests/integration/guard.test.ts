@@ -192,6 +192,31 @@ test("reusing an immediate operation ID with different input conflicts", async (
   assert.equal(result.code, "CASE_E_CONFLICT");
 });
 
+for (const invalidLastOperation of [
+  { state_revision: "1", resulting_revision: "9", label: "resulting revision differs from current revision" },
+  { state_revision: "2", resulting_revision: "2", label: "result is not the one-step successor of its basis" },
+] as const) {
+  test(`immediate retry rejects last_operation when ${invalidLastOperation.label}`, async (t) => {
+    const { root, store, ports, initial } = await fixture(t);
+    const malformed = withStateDigest({
+      ...initial,
+      state_revision: revision(invalidLastOperation.state_revision),
+      last_operation: {
+        operation_id: "op-a",
+        input_digest: INPUT_A,
+        basis_revision: revision("0"),
+        resulting_revision: revision(invalidLastOperation.resulting_revision),
+      },
+    });
+    await writeFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json"), `${JSON.stringify(malformed)}\n`);
+
+    const guard = await acquireWriterGuard(store, precondition(initial, "op-a"), ports);
+    const result = await commitSnapshotMutation(guard, () => { throw new Error("must not run"); });
+
+    assert.equal(result.code, "CASE_E_INVARIANT");
+  });
+}
+
 test("a valid possibly stale lock requires explicit recovery", async (t) => {
   const { root, store, ports, initial } = await fixture(t);
   const lock = {
@@ -274,4 +299,52 @@ test("recovery refuses a non-interactive confirmation source", async (t) => {
 
   assert.equal(result.code, "CASE_E_HUMAN_CONFIRMATION");
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock")), { code: "ENOENT" });
+});
+
+test("recovery retains its guard when state becomes self-digest-invalid after quarantine", async (t) => {
+  const { root, store, ports, initial } = await fixture(t);
+  await acquireWriterGuard(store, precondition(initial, "op-a"), ports);
+  const originalFs = ports.fs;
+  const corruptingPorts: MutationPorts = {
+    ...ports,
+    fs: {
+      ...originalFs,
+      async quarantineOnce(sourcePath, quarantinePath) {
+        await originalFs.quarantineOnce(sourcePath, quarantinePath);
+        await writeFile(
+          join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json"),
+          `${JSON.stringify({ ...initial, title: "corrupt after quarantine" })}\n`,
+        );
+      },
+    },
+  };
+
+  const result = await recoverWriterGuard(store, {
+    dossier_id: "dossier-a",
+    confirmation: CONFIRM_RECOVERY,
+  }, corruptingPorts);
+
+  assert.equal(result.ok, false);
+  assert.ok(["CASE_E_INVARIANT", "CASE_E_RECOVERY_REQUIRED"].includes(result.code));
+  assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock"), "utf8")).includes("recovery"), true);
+  assert.equal((await store.loadDossier("dossier-a")).state_revision, "0");
+});
+
+test("recovery retains its guard when temporary publication cannot start after quarantine", async (t) => {
+  const { root, store, ports, initial } = await fixture(t);
+  await acquireWriterGuard(store, precondition(initial, "op-a"), ports);
+  const failingPorts: MutationPorts = {
+    ...ports,
+    ids: { ...ports.ids, tempIdFor: () => "../unsafe" },
+  };
+
+  const result = await recoverWriterGuard(store, {
+    dossier_id: "dossier-a",
+    confirmation: CONFIRM_RECOVERY,
+  }, failingPorts);
+
+  assert.equal(result.ok, false);
+  assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock"), "utf8")).includes("recovery"), true);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
+  assert.equal((await store.loadDossier("dossier-a")).state_revision, "0");
 });

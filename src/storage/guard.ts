@@ -215,6 +215,17 @@ function guardBytes(recordValue: GuardRecord): Uint8Array {
   return Buffer.from(`${JSON.stringify(recordValue)}\n`, "utf8");
 }
 
+function snapshotMetadataIsValid(snapshot: DossierSnapshot): boolean {
+  try {
+    if (snapshot.state_digest !== digestProjection(projectState(snapshot))) return false;
+    if (snapshot.last_operation === null) return snapshot.state_revision === "0";
+    return snapshot.last_operation.resulting_revision === snapshot.state_revision
+      && BigInt(snapshot.last_operation.basis_revision) + 1n === BigInt(snapshot.last_operation.resulting_revision);
+  } catch {
+    return false;
+  }
+}
+
 async function readOptional(fs: AtomicFsPort, path: string): Promise<Uint8Array | null> {
   try {
     return await fs.readFile(path);
@@ -330,13 +341,11 @@ async function createGuard(
         : "Writer/recovery guard overlap requires recovery");
     }
     const basis = await store.loadDossier(precondition.dossier_id);
-    let stateDigestIsValid = false;
-    try { stateDigestIsValid = basis.state_digest === digestProjection(projectState(basis)); } catch { /* invalid */ }
-    if (!stateDigestIsValid) {
+    if (!snapshotMetadataIsValid(basis)) {
       const provisional = held(basis, "ready");
       const released = await releaseGuard(provisional);
       return fail(released ? "CASE_E_INVARIANT" : "CASE_E_RECOVERY_REQUIRED",
-        released ? "The stored dossier state digest does not match its governed projection" : "The writer guard could not be released safely");
+        released ? "The stored dossier mutation metadata or state digest is invalid" : "The writer guard could not be released safely");
     }
     const last = basis.last_operation;
     if (last !== null
@@ -534,6 +543,10 @@ export async function recoverWriterGuard(
     basis = await store.loadDossier(request.dossier_id);
   } catch {
     return failure("guard recover", "CASE_E_RECOVERY_REQUIRED", "The stale writer guard could not be quarantined safely");
+  }
+  if (!snapshotMetadataIsValid(basis)) {
+    return failure("guard recover", "CASE_E_RECOVERY_REQUIRED",
+      "The post-quarantine dossier state is invalid; recovery remains exclusively guarded");
   }
 
   const recoveryPrecondition: GovernedMutationPrecondition = {

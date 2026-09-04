@@ -117,12 +117,18 @@ export interface ImmutableEnvelopePlan<E extends JsonValue, T> {
   readonly input_projection: JsonValue;
   create(basis: DossierSnapshot): E;
   projectInput(envelope: E): JsonValue;
+  /** Validate every kind-specific deterministic and digest-bound persisted field. */
+  validatePersisted(envelope: E, current: DossierSnapshot): boolean;
   buildSnapshot(basis: DossierSnapshot, envelope: E): MutationProduct<T> | FailureResultEnvelope;
   recover?(committed: DossierSnapshot, envelope: E): T;
 }
 
 function mutationFailure(code: FailureResultEnvelope["code"], message: string): FailureResultEnvelope {
   return failure("mutation", code, message);
+}
+
+function isMissing(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
 function serialize(value: JsonValue): Uint8Array {
@@ -175,6 +181,9 @@ async function finishFailure(
   message: string,
   release: boolean,
 ): Promise<FailureResultEnvelope> {
+  if (guard.recovery) {
+    return mutationFailure("CASE_E_RECOVERY_REQUIRED", `${message}; recovery remains exclusively guarded`);
+  }
   if (!release) return mutationFailure(code, message);
   return await releaseGuard(guard)
     ? mutationFailure(code, message)
@@ -230,7 +239,8 @@ async function publishBuiltSnapshot<T>(guard: WriterGuard, product: MutationProd
     const published = await guard.store.loadDossier(guard.precondition.dossier_id);
     if (published.state_revision !== product.snapshot.state_revision
       || published.state_digest !== product.snapshot.state_digest
-      || published.last_operation?.operation_id !== guard.precondition.operation_id) {
+      || published.last_operation?.operation_id !== guard.precondition.operation_id
+      || !isValidNextSnapshot(guard, published)) {
       return mutationFailure("CASE_E_RECOVERY_REQUIRED", "The published snapshot could not be verified exactly");
     }
   } catch {
@@ -289,6 +299,31 @@ function validEnvelopeId(value: string): boolean {
   return /^[A-Za-z0-9._-]+$/u.test(value) && value !== "." && value !== "..";
 }
 
+async function releaseAfterSafePrePointerFailure(
+  guard: WriterGuard,
+  envelopePath: string,
+  expectedBytes: Uint8Array,
+): Promise<FailureResultEnvelope> {
+  let envelopeIsInert = false;
+  try {
+    const observedEnvelope = await guard.ports.fs.readFile(envelopePath);
+    envelopeIsInert = Buffer.from(observedEnvelope).equals(Buffer.from(expectedBytes));
+  } catch (error) {
+    envelopeIsInert = isMissing(error);
+  }
+  let pointerIsUnchanged = false;
+  try {
+    const observed = await guard.store.loadDossier(guard.precondition.dossier_id);
+    pointerIsUnchanged = observed.state_revision === guard.basis?.state_revision
+      && observed.state_digest === guard.basis.state_digest
+      && observed.state_digest === digestProjection(projectState(observed));
+  } catch { /* unsafe */ }
+  if (!envelopeIsInert || !pointerIsUnchanged) {
+    return mutationFailure("CASE_E_RECOVERY_REQUIRED", "Pre-pointer envelope failure could not be proven inert");
+  }
+  return finishFailure(guard, "CASE_E_INTERNAL", "Immutable envelope publication stopped before pointer update", true);
+}
+
 function envelopeIsBound(
   guard: WriterGuard,
   kind: EnvelopeKind,
@@ -343,6 +378,7 @@ export async function commitEnvelopeMutation<E extends JsonValue, T>(
         const parsed = parseGovernedJson(existingBytes) as E;
         if (!guard.ports.schemas.validate(envelopeSchema(plan.kind), parsed).ok
           || !envelopeIsBound(guard, plan.kind, plan.envelope_id, parsed)
+          || !plan.validatePersisted(parsed, guard.basis)
           || digestProjection(plan.projectInput(parsed)) !== guard.precondition.input_digest) {
           return finishFailure(guard, "CASE_E_CONFLICT", "The existing immutable envelope conflicts with this operation", true);
         }
@@ -351,14 +387,16 @@ export async function commitEnvelopeMutation<E extends JsonValue, T>(
         return finishFailure(guard, "CASE_E_CONFLICT", "The existing immutable envelope is invalid or conflicting", true);
       }
     } else {
+      let bytes: Uint8Array | null = null;
       try {
         envelope = plan.create(guard.basis);
         if (!guard.ports.schemas.validate(envelopeSchema(plan.kind), envelope).ok
           || !envelopeIsBound(guard, plan.kind, plan.envelope_id, envelope)
+          || !plan.validatePersisted(envelope, guard.basis)
           || digestProjection(plan.projectInput(envelope)) !== guard.precondition.input_digest) {
           return finishFailure(guard, "CASE_E_INTERNAL", "The generated immutable envelope is invalid", true);
         }
-        const bytes = serialize(envelope);
+        bytes = serialize(envelope);
         await guard.ports.fs.createOnce(path, bytes);
         await guard.ports.fs.flushFile(path);
         const persisted = await guard.ports.fs.readFile(path);
@@ -366,7 +404,9 @@ export async function commitEnvelopeMutation<E extends JsonValue, T>(
           return mutationFailure("CASE_E_RECOVERY_REQUIRED", "The immutable envelope did not persist exactly");
         }
       } catch {
-        return mutationFailure("CASE_E_INTERNAL", "Immutable envelope publication was interrupted");
+        return bytes === null
+          ? finishFailure(guard, "CASE_E_INTERNAL", "Immutable envelope construction failed", true)
+          : releaseAfterSafePrePointerFailure(guard, path, bytes);
       }
     }
     if (guard.mode === "retry") {
