@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "command", "code", "message", "data", "remediation"],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "command": { "type": "string" },
+    "code": {
+      "enum": [
+        "CASE_OK",
+        "CASE_E_USAGE",
+        "CASE_E_NOT_INITIALIZED",
+        "CASE_E_NAMESPACE_COLLISION",
+        "CASE_E_UNSUPPORTED_VERSION",
+        "CASE_E_PARSE",
+        "CASE_E_SCHEMA",
+        "CASE_E_INVARIANT",
+        "CASE_E_EVIDENCE",
+        "CASE_E_CONFLICT",
+        "CASE_E_BUSY",
+        "CASE_E_RECOVERY_REQUIRED",
+        "CASE_E_TRANSITION",
+        "CASE_E_ACTOR",
+        "CASE_E_HUMAN_CONFIRMATION",
+        "CASE_E_INTERNAL"
+      ]
+    },
+    "message": { "type": "string" },
+    "data": {},
+    "remediation": { "type": ["string", "null"] }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "ok": { "const": true },
+        "code": { "const": "CASE_OK" },
+        "data": { "not": { "type": "null" } },
+        "remediation": { "type": "null" }
+      }
+    },
+    {
+      "properties": {
+        "ok": { "const": false },
+        "code": {
+          "enum": [
+            "CASE_E_USAGE",
+            "CASE_E_NOT_INITIALIZED",
+            "CASE_E_NAMESPACE_COLLISION",
+            "CASE_E_UNSUPPORTED_VERSION",
+            "CASE_E_PARSE",
+            "CASE_E_SCHEMA",
+            "CASE_E_INVARIANT",
+            "CASE_E_EVIDENCE",
+            "CASE_E_CONFLICT",
+            "CASE_E_BUSY",
+            "CASE_E_RECOVERY_REQUIRED",
+            "CASE_E_TRANSITION",
+            "CASE_E_ACTOR",
+            "CASE_E_HUMAN_CONFIRMATION",
+            "CASE_E_INTERNAL"
+          ]
+        },
+        "data": { "type": "null" },
+        "remediation": { "type": ["string", "null"] }
+      }
+    }
+  ]
+}

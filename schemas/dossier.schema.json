@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/dossier.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dossier_id",
+    "title",
+    "objective",
+    "scope",
+    "constraints",
+    "acceptance_criteria",
+    "state_revision",
+    "state_digest",
+    "last_operation",
+    "active_run",
+    "evidence",
+    "current_handoff_id",
+    "current_submission_id",
+    "current_decision_id"
+  ],
+  "properties": {
+    "dossier_id": { "type": "string" },
+    "title": { "type": "string" },
+    "objective": { "type": "string" },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in", "out"],
+      "properties": {
+        "in": { "$ref": "definitions.schema.json#/$defs/string_array" },
+        "out": { "$ref": "definitions.schema.json#/$defs/string_array" }
+      }
+    },
+    "constraints": { "$ref": "definitions.schema.json#/$defs/string_array" },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion_id", "statement", "verification"],
+        "properties": {
+          "criterion_id": { "type": "string" },
+          "statement": { "type": "string" },
+          "verification": { "enum": ["mechanical", "recorded_human_review"] }
+        }
+      }
+    },
+    "state_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+    "state_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "last_operation": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operation_id", "input_digest", "basis_revision", "resulting_revision"],
+          "properties": {
+            "operation_id": { "type": "string" },
+            "input_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+            "basis_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+            "resulting_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" }
+          }
+        }
+      ]
+    },
+    "active_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "actor_id", "started_by_handoff_id"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "actor_id": { "type": "string" },
+        "started_by_handoff_id": { "type": ["string", "null"] }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evidence_id", "criterion_ids", "kind", "location", "captured_at", "artifact_digest", "artifact_size", "freshness", "limitations"],
+            "properties": {
+              "evidence_id": { "type": "string" },
+              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/string_array" },
+              "kind": { "enum": ["file", "command_result"] },
+              "location": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["repository_relative_path"],
+                "properties": { "repository_relative_path": { "type": "string" } }
+              },
+              "captured_at": { "$ref": "definitions.schema.json#/$defs/timestamp" },
+              "artifact_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+              "artifact_size": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+              "freshness": { "enum": ["immutable", "recompute_on_check", "human_review"] },
+              "limitations": { "$ref": "definitions.schema.json#/$defs/string_array" }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evidence_id", "criterion_ids", "kind", "location", "captured_at", "freshness", "limitations"],
+            "properties": {
+              "evidence_id": { "type": "string" },
+              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/string_array" },
+              "kind": { "const": "external_reference" },
+              "location": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["uri"],
+                "properties": { "uri": { "type": "string" } }
+              },
+              "captured_at": { "$ref": "definitions.schema.json#/$defs/timestamp" },
+              "freshness": { "enum": ["immutable", "recompute_on_check", "human_review"] },
+              "limitations": { "$ref": "definitions.schema.json#/$defs/string_array" }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evidence_id", "criterion_ids", "kind", "location", "captured_at", "freshness", "limitations"],
+            "properties": {
+              "evidence_id": { "type": "string" },
+              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/string_array" },
+              "kind": { "const": "human_observation" },
+              "location": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["statement"],
+                "properties": { "statement": { "type": "string" } }
+              },
+              "captured_at": { "$ref": "definitions.schema.json#/$defs/timestamp" },
+              "freshness": { "enum": ["immutable", "recompute_on_check", "human_review"] },
+              "limitations": { "$ref": "definitions.schema.json#/$defs/string_array" }
+            }
+          }
+        ]
+      }
+    },
+    "current_handoff_id": { "type": ["string", "null"] },
+    "current_submission_id": { "type": ["string", "null"] },
+    "current_decision_id": { "type": ["string", "null"] }
+  }
+}

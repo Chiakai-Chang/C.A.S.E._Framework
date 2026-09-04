@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/decision.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision_id", "dossier_id", "submission_id", "submission_digest", "decision", "reviewer_id", "criteria_reviewed", "comment", "decided_at", "created_operation_id", "identity_assurance"],
+  "properties": {
+    "decision_id": { "type": "string" },
+    "dossier_id": { "type": "string" },
+    "submission_id": { "type": "string" },
+    "submission_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "decision": { "enum": ["accepted", "rejected"] },
+    "reviewer_id": { "type": "string" },
+    "criteria_reviewed": { "$ref": "definitions.schema.json#/$defs/string_array" },
+    "comment": { "type": "string" },
+    "decided_at": { "$ref": "definitions.schema.json#/$defs/timestamp" },
+    "created_operation_id": { "type": "string" },
+    "identity_assurance": { "const": "recorded-interactive-claim" }
+  }
+}

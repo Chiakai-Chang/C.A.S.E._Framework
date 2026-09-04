@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/definitions.schema.json",
+  "$defs": {
+    "decimal_string": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "string_array": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

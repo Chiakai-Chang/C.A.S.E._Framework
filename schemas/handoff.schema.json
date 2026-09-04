@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/handoff.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["handoff_id", "dossier_id", "from_run_id", "to_actor_id", "basis_revision", "basis_state_digest", "published_revision", "offered_content_digest", "created_operation_id"],
+  "properties": {
+    "handoff_id": { "type": "string" },
+    "dossier_id": { "type": "string" },
+    "from_run_id": { "type": "string" },
+    "to_actor_id": { "type": "string" },
+    "basis_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+    "basis_state_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "published_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+    "offered_content_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "created_operation_id": { "type": "string" }
+  }
+}

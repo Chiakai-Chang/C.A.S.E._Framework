@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/observed-evidence.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dossier_id", "content_digest", "evidence_results"],
+  "properties": {
+    "dossier_id": { "type": "string" },
+    "content_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "evidence_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence_id", "status", "observed_artifact_digest", "observed_artifact_size", "stable_limitation_codes"],
+        "properties": {
+          "evidence_id": { "type": "string" },
+          "status": { "enum": ["current", "missing", "empty", "changed", "unsafe", "human_review_required"] },
+          "observed_artifact_digest": {
+            "oneOf": [
+              { "$ref": "definitions.schema.json#/$defs/digest" },
+              { "type": "null" }
+            ]
+          },
+          "observed_artifact_size": {
+            "oneOf": [
+              { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+              { "type": "null" }
+            ]
+          },
+          "stable_limitation_codes": { "$ref": "definitions.schema.json#/$defs/string_array" }
+        }
+      }
+    }
+  }
+}

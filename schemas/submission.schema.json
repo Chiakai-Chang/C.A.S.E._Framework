@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/submission.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["submission_id", "dossier_id", "submitting_run_id", "basis_revision", "basis_state_digest", "published_revision", "content_digest", "observed_evidence_digest", "checks_digest", "created_at", "created_operation_id", "submission_digest"],
+  "properties": {
+    "submission_id": { "type": "string" },
+    "dossier_id": { "type": "string" },
+    "submitting_run_id": { "type": "string" },
+    "basis_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+    "basis_state_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "published_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
+    "content_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "observed_evidence_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "checks_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
+    "created_at": { "$ref": "definitions.schema.json#/$defs/timestamp" },
+    "created_operation_id": { "type": "string" },
+    "submission_digest": { "$ref": "definitions.schema.json#/$defs/digest" }
+  }
+}

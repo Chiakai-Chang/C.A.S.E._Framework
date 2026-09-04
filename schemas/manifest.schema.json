@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/schema/0.1.0-preview/manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "protocol_version", "schema_dialect", "repository_id", "created_at"],
+  "properties": {
+    "protocol": { "const": "case-agent" },
+    "protocol_version": { "const": "0.1.0-preview" },
+    "schema_dialect": { "const": "https://json-schema.org/draft/2020-12/schema" },
+    "repository_id": { "type": "string" },
+    "created_at": { "$ref": "definitions.schema.json#/$defs/timestamp" }
+  }
+}
