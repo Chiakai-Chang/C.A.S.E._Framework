@@ -1,0 +1,25 @@
+export const EXIT_BY_CODE = {
+  CASE_OK: 0,
+  CASE_E_USAGE: 2,
+  CASE_E_NOT_INITIALIZED: 10,
+  CASE_E_NAMESPACE_COLLISION: 10,
+  CASE_E_UNSUPPORTED_VERSION: 10,
+  CASE_E_PARSE: 20,
+  CASE_E_SCHEMA: 20,
+  CASE_E_INVARIANT: 20,
+  CASE_E_EVIDENCE: 20,
+  CASE_E_CONFLICT: 30,
+  CASE_E_BUSY: 30,
+  CASE_E_RECOVERY_REQUIRED: 30,
+  CASE_E_TRANSITION: 40,
+  CASE_E_ACTOR: 40,
+  CASE_E_HUMAN_CONFIRMATION: 40,
+  CASE_E_INTERNAL: 70,
+} as const;
+
+export type CaseCode = keyof typeof EXIT_BY_CODE;
+export type CaseError = Exclude<CaseCode, "CASE_OK">;
+
+export function exitCodeFor(code: CaseCode): number {
+  return EXIT_BY_CODE[code];
+}
