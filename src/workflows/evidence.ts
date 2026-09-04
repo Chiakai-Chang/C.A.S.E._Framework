@@ -60,6 +60,18 @@ export interface SnapshotCheckResult {
   readonly envelopes: CurrentEnvelopeInspection;
 }
 
+/** Distinguish structural/cross-file failures from ordinary current-evidence failures. */
+export function hasStructuralInvariantFailure(checks: ChecksProjection): boolean {
+  return checks.invariant_results.some(({ stage, code, status }) => status === "failed" && (
+    stage === "parse"
+    || stage === "schema"
+    || stage === "cross_file"
+    || stage === "envelope_integrity"
+    || stage === "derived_status"
+    || code === "CASE_I_EVIDENCE_LINKS"
+  ));
+}
+
 /** Exact public/checks.schema shape; source-only check stages never cross this boundary. */
 export interface PublicChecksProjection {
   readonly dossier_id: string;

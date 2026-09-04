@@ -14,7 +14,7 @@ import {
 import { commitEnvelopeMutation } from "../storage/atomic.js";
 import { acquireWriterGuard, releaseGuard, type WriterGuard } from "../storage/guard.js";
 import { isSafeOpaqueId, type WorkflowPorts } from "./dossier.js";
-import { checkSnapshot } from "./evidence.js";
+import { checkSnapshot, hasStructuralInvariantFailure } from "./evidence.js";
 
 export interface CreateSubmissionRequest {
   readonly submitting_run_id: string;
@@ -130,6 +130,40 @@ function persistedSubmissionIsExact(
     && envelope.submission_digest === digestProjection(projectSubmission(envelope));
 }
 
+function committedRetryIsExact(
+  envelope: SubmissionEnvelope,
+  current: DossierSnapshot,
+  request: CompleteSubmissionRequest,
+  submissionId: string,
+  inputDigest: Digest,
+): boolean {
+  let publishedRevision: string;
+  try {
+    publishedRevision = (BigInt(request.expected_revision) + 1n).toString();
+  } catch {
+    return false;
+  }
+  const operation = current.last_operation;
+  return envelope.submission_id === submissionId
+    && envelope.dossier_id === request.dossier_id
+    && envelope.submitting_run_id === request.submitting_run_id
+    && envelope.submitting_run_id === current.active_run.run_id
+    && envelope.basis_revision === request.expected_revision
+    && envelope.basis_state_digest === request.expected_state_digest
+    && envelope.published_revision === publishedRevision
+    && envelope.published_revision === current.state_revision
+    && envelope.content_digest === digestProjection(projectContent(current))
+    && envelope.created_operation_id === request.operation_id
+    && envelope.submission_digest === digestProjection(projectSubmission(envelope))
+    && current.current_submission_id === envelope.submission_id
+    && current.current_decision_id === null
+    && operation !== null
+    && operation.operation_id === request.operation_id
+    && operation.input_digest === inputDigest
+    && operation.basis_revision === request.expected_revision
+    && operation.resulting_revision === current.state_revision;
+}
+
 /** Rerun current checks under the writer guard before publishing an exact submission. */
 export async function createSubmission(
   request: CreateSubmissionRequest & MutationPrecondition,
@@ -164,10 +198,29 @@ export async function createSubmission(
   if (guard.basis.active_run.run_id !== request.submitting_run_id) {
     return failHeld(guard, "CASE_E_ACTOR", "Only the active run can submit work");
   }
+  if (guard.mode === "retry") {
+    const retried = await commitEnvelopeMutation(guard, {
+      kind: "submission",
+      envelope_id: submissionId,
+      input_projection: inputProjection,
+      create: () => { throw new Error("A committed retry cannot create a submission envelope"); },
+      projectInput: (envelope) => submissionInput(envelope),
+      validatePersisted: (envelope, current) => committedRetryIsExact(
+        envelope,
+        current,
+        request,
+        submissionId,
+        inputDigest,
+      ),
+      buildSnapshot: () => failure("mutation", "CASE_E_INTERNAL", "A committed retry cannot publish another transition"),
+      recover: (_committed, envelope) => envelope,
+    });
+    return publicResult(retried);
+  }
   let checked;
   try {
     checked = await checkSnapshot(guard.basis, ports);
-    if (!checked.envelopes.integrity) {
+    if (!checked.envelopes.integrity || hasStructuralInvariantFailure(checked.checks)) {
       return failHeld(guard, "CASE_E_INVARIANT", "A current immutable envelope is unavailable or inconsistent");
     }
     if (checked.checks.verdict !== "passed") {

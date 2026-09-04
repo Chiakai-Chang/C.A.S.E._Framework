@@ -221,6 +221,27 @@ test("an identical submission retry reuses the immutable envelope", async (t) =>
   assert.equal((await ports.store.loadDossier("dossier-a")).state_revision, "2");
 });
 
+test("an identical committed submission retry ignores later external artifact changes", async (t) => {
+  const { root, ports, snapshot, artifactPath } = await fixture(t);
+  const request = submissionRequest(snapshot);
+  const submitted = await createSubmission(request, ports);
+  assert.equal(submitted.ok, true);
+  if (!submitted.ok) return;
+  const envelopePath = join(root, ".case-agent", "dossiers", "dossier-a", "submissions", `${submitted.data.submission_id}.json`);
+  const committedEnvelope = await readFile(envelopePath);
+  await writeFile(artifactPath, "changed after commit");
+
+  const retried = await createSubmission(request, ports);
+
+  assert.equal(retried.ok, true);
+  if (!retried.ok) return;
+  assert.deepEqual(retried.data, submitted.data);
+  assert.deepEqual(await readFile(envelopePath), committedEnvelope);
+  const persisted = await ports.store.loadDossier("dossier-a");
+  assert.equal(persisted.state_revision, "2");
+  assert.equal(persisted.current_submission_id, submitted.data.submission_id);
+});
+
 test("an orphan submission envelope is reused to complete publication", async (t) => {
   const { root, ports, snapshot } = await fixture(t);
   const request = submissionRequest(snapshot, "op-orphan");
@@ -299,4 +320,27 @@ test("submission distinguishes a cross-file envelope mismatch from failed eviden
     (await readdir(join(root, ".case-agent", "dossiers", "dossier-a", "submissions"))).sort(),
     ["submission-corrupt.json"],
   );
+});
+
+test("submission classifies a re-digested foreign criterion link as an invariant", async (t) => {
+  const { root, ports, snapshot } = await fixture(t);
+  const evidence = snapshot.evidence[0];
+  assert.notEqual(evidence, undefined);
+  if (evidence === undefined) return;
+  const candidate = {
+    ...snapshot,
+    evidence: [{ ...evidence, criterion_ids: ["criterion-foreign"] }],
+  };
+  const injected = { ...candidate, state_digest: digestProjection(projectState(candidate)) };
+  const dossierPath = join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json");
+  const injectedBytes = Buffer.from(`${JSON.stringify(injected)}\n`);
+  await writeFile(dossierPath, injectedBytes);
+
+  const result = await createSubmission(submissionRequest(injected, "op-invalid-link"), ports);
+
+  assert.equal(result.command, "submission.create");
+  assert.equal(result.code, "CASE_E_INVARIANT");
+  assert.deepEqual(await readFile(dossierPath), injectedBytes);
+  assert.deepEqual(await readdir(join(root, ".case-agent", "dossiers", "dossier-a", "submissions")), []);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
 });

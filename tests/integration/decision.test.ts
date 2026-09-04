@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
 import { DECISION_CONFIRMATION_PHRASE, RECORDED_IDENTITY_LIMITATION } from "../../src/cli/confirm.js";
 import { digestProjection } from "../../src/protocol/canonical.js";
+import { projectState } from "../../src/protocol/projections.js";
 import { SchemaRegistry } from "../../src/protocol/schema-registry.js";
 import type { DecisionEnvelope, DossierSnapshot, MutationPrecondition, SubmissionEnvelope } from "../../src/protocol/types.js";
 import { controlledAtomicFs } from "../helpers/fault-port.js";
@@ -395,5 +396,36 @@ test("an invalid decision timestamp produced by an adapter is internal", async (
   assert.equal(result.command, "decision.accept");
   assert.equal(result.code, "CASE_E_INTERNAL");
   assert.deepEqual(await readdir(join(root, ".case-agent", "dossiers", "dossier-a", "decisions")), []);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
+});
+
+test("decision classifies a re-digested foreign criterion link as an invariant before currentness", async (t) => {
+  const { root, ports, snapshot, submission } = await fixture(t);
+  const evidence = snapshot.evidence[0];
+  assert.notEqual(evidence, undefined);
+  if (evidence === undefined) return;
+  const candidate = {
+    ...snapshot,
+    evidence: [
+      { ...evidence, criterion_ids: ["criterion-foreign"] },
+      ...snapshot.evidence.slice(1),
+    ],
+  };
+  const injected = { ...candidate, state_digest: digestProjection(projectState(candidate)) };
+  const dossierPath = join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json");
+  const injectedBytes = Buffer.from(`${JSON.stringify(injected)}\n`);
+  await writeFile(dossierPath, injectedBytes);
+  const confirmation = new ScriptedConfirmationPort(true);
+
+  const result = await recordDecision(decisionRequest(injected, submission, "op-invalid-link"), {
+    ...ports,
+    confirmation,
+  });
+
+  assert.equal(result.command, "decision.accept");
+  assert.equal(result.code, "CASE_E_INVARIANT");
+  assert.equal(confirmation.decisionConfirmations.length, 0);
+  assert.deepEqual(await readFile(dossierPath), injectedBytes);
+  assert.equal((await ports.store.loadDossier("dossier-a")).current_decision_id, null);
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
 });

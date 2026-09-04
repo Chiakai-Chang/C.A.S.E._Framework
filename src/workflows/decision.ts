@@ -22,7 +22,7 @@ import {
 import { commitEnvelopeMutation } from "../storage/atomic.js";
 import { acquireWriterGuard, releaseGuard, type WriterGuard } from "../storage/guard.js";
 import { isSafeOpaqueId, type WorkflowPorts } from "./dossier.js";
-import { checkSnapshot } from "./evidence.js";
+import { checkSnapshot, hasStructuralInvariantFailure } from "./evidence.js";
 
 export interface DecisionRequest {
   readonly submission_id: string;
@@ -252,7 +252,9 @@ export async function recordDecision(
     return failHeld(request, guard, "CASE_E_INTERNAL", "The current submission could not be inspected safely");
   }
   const submission = checked.envelopes.submission;
-  if (!checked.envelopes.integrity || submission === null) {
+  if (!checked.envelopes.integrity
+    || hasStructuralInvariantFailure(checked.checks)
+    || submission === null) {
     return failHeld(request, guard, "CASE_E_INVARIANT", "The current submission envelope is unavailable or inconsistent");
   }
   if (submission.submission_digest !== request.submission_digest
