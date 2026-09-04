@@ -504,3 +504,15 @@ Work that cannot establish a credible link to the objective is stopped, deferred
 - Reversal of an accepted decision records the reason and superseded date rather than silently rewriting history.
 - Normative language belongs in the future protocol specification, not here.
 - Behavioral claims require recorded configuration and outcome evidence.
+
+## 21. Alignment checkpoint — M0 approved on 2026-09-04
+
+The user approved **M0 Local Dossier Integrity** as the next formal specification milestone.
+
+The accepted milestone narrows the next proof to one local dossier journey: create, assign, register criterion-linked evidence, hand off between two recorded actors, submit an exact content/evidence digest, record a human decision, and detect that the decision becomes stale after covered content changes.
+
+The design is recorded in [M0 Local Dossier Integrity Design](../superpowers/specs/2026-09-04-local-dossier-integrity-design.md).
+
+This checkpoint also corrects an earlier assumption: atomic replacement plus expected revision and digest checks is not by itself compare-and-swap. Exactly-one-success among conforming competing writers additionally requires an exclusive dossier writer guard acquired before rereading and checking preconditions. The guarantee is limited to one machine, one supported local filesystem, and cooperating implementations.
+
+Skill packaging, host connection, adapters, MECE deliberation, operation receipts, Pi repair, MCP, hooks, telemetry, multi-machine coordination, and weak-model optimization remain outside M0. They cannot re-enter the core until the deterministic oracle demonstrates outcome-level value over the Markdown baseline.
