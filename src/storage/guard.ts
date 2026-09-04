@@ -461,12 +461,11 @@ export async function recoverWriterGuard(
   }
   const recoveryInput = digestProjection({
     dossier_id: request.dossier_id,
-    guard_id: recoveryId,
     kind: "writer-guard-recovery",
-    operation_id: request.operation_id,
     expected_revision: request.expected_revision,
     expected_state_digest: request.expected_state_digest,
   });
+  const quarantinePath = `${writerPath}.quarantine-${request.operation_id}`;
   const recoveryRecord: GuardRecord = {
     kind: "recovery",
     guard_id: recoveryId,
@@ -500,6 +499,28 @@ export async function recoverWriterGuard(
     const released = await releaseRecovery(ports.fs, recoveryPath, recoveryBytes);
     return failure("guard recover", released ? "CASE_E_INTERNAL" : "CASE_E_RECOVERY_REQUIRED",
       released ? "The recovery basis could not be loaded safely" : "The recovery guard could not be released safely");
+  }
+  if (basis.last_operation?.operation_id === request.operation_id) {
+    const operation = basis.last_operation;
+    const operationIsExact = snapshotMetadataIsValid(basis)
+      && operation.input_digest === recoveryInput
+      && operation.basis_revision === request.expected_revision
+      && operation.resulting_revision === basis.state_revision;
+    let priorRecoveryIsExact = false;
+    if (operationIsExact) {
+      try {
+        const quarantined = parseGuardRecord(await ports.fs.readFile(quarantinePath));
+        if (quarantined?.kind === "writer" && quarantined.dossier_id === request.dossier_id) {
+          try { await ports.fs.readFile(writerPath); } catch (error) { priorRecoveryIsExact = isMissing(error); }
+        }
+      } catch { priorRecoveryIsExact = false; }
+    }
+    const released = await releaseRecovery(ports.fs, recoveryPath, recoveryBytes);
+    if (!released) return failure("guard recover", "CASE_E_RECOVERY_REQUIRED", "The recognized recovery retry could not release its guard safely");
+    if (!operationIsExact || !priorRecoveryIsExact) {
+      return failure("guard recover", "CASE_E_INVARIANT", "The recovery operation ID was reused with different or invalid persisted input");
+    }
+    return success("guard recover", "Writer guard already recovered", { snapshot: basis, quarantined_lock: quarantinePath });
   }
   if (basis.state_revision !== request.expected_revision || basis.state_digest !== request.expected_state_digest) {
     const released = await releaseRecovery(ports.fs, recoveryPath, recoveryBytes);
@@ -551,7 +572,6 @@ export async function recoverWriterGuard(
       "The recorded writer process has not been conclusively proven terminated");
   }
 
-  const quarantinePath = `${writerPath}.quarantine-${recoveryId}`;
   try {
     const currentOld = await ports.fs.readFile(writerPath);
     if (!Buffer.from(currentOld).equals(Buffer.from(oldBytes))) throw new Error("writer lock identity changed");

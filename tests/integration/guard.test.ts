@@ -271,7 +271,55 @@ test("confirmed recovery of a terminated owner publishes a guarded no-op revisio
   assert.equal(result.ok && result.data.snapshot.last_operation?.operation_id, "op-recover");
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock")), { code: "ENOENT" });
-  assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.lock.quarantine-guard-2"), "utf8")).includes("guard-1"), true);
+  assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.lock.quarantine-op-recover"), "utf8")).includes("guard-1"), true);
+});
+
+test("identical immediate recovery retry reconstructs the prior success without confirmation or revision", async (t) => {
+  const { root, store, ports, initial } = await fixture(t);
+  await acquireWriterGuard(store, precondition(initial, "op-held"), ports);
+  let confirmations = 0;
+  const request = recoveryRequest(initial, { interactive: true, confirmRecovery: async () => { confirmations += 1; return true; } });
+
+  const first = await recoverWriterGuard(store, request, ports);
+  const retried = await recoverWriterGuard(store, request, ports);
+
+  assert.equal(first.ok, true);
+  assert.equal(retried.ok, true);
+  if (!first.ok || !retried.ok) return;
+  assert.deepEqual(retried.data, first.data);
+  assert.equal(retried.data.snapshot.state_revision, "1");
+  assert.equal(confirmations, 1);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock")), { code: "ENOENT" });
+});
+
+test("recovery operation reuse with changed input is invariant while a different operation on the old basis conflicts", async (t) => {
+  const { store, ports, initial } = await fixture(t);
+  await acquireWriterGuard(store, precondition(initial, "op-held"), ports);
+  assert.equal((await recoverWriterGuard(store, recoveryRequest(initial), ports)).ok, true);
+
+  const changedInput = await recoverWriterGuard(store, {
+    ...recoveryRequest(initial), expected_state_digest: digest(`sha256:${"c".repeat(64)}`),
+  }, ports);
+  const differentOperation = await recoverWriterGuard(store, {
+    ...recoveryRequest(initial), operation_id: "op-other",
+  }, ports);
+
+  assert.equal(changedInput.code, "CASE_E_INVARIANT");
+  assert.equal(differentOperation.code, "CASE_E_CONFLICT");
+});
+
+test("recovery retry refuses a self-digest-invalid prior result", async (t) => {
+  const { root, store, ports, initial } = await fixture(t);
+  await acquireWriterGuard(store, precondition(initial, "op-held"), ports);
+  const request = recoveryRequest(initial);
+  const first = await recoverWriterGuard(store, request, ports);
+  assert.equal(first.ok, true); if (!first.ok) return;
+  await writeFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json"), `${JSON.stringify({ ...first.data.snapshot, state_digest: ZERO_DIGEST })}\n`);
+
+  const retried = await recoverWriterGuard(store, request, ports);
+
+  assert.equal(retried.code, "CASE_E_INVARIANT");
 });
 
 test("recovery acquires its exclusive guard before reading dossier state", async (t) => {
