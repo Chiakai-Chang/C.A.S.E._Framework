@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rename, rm, symlink, unlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
@@ -8,7 +8,7 @@ import { projectState } from "../../src/protocol/projections.js";
 import { SchemaRegistry } from "../../src/protocol/schema-registry.js";
 import { revision, type DossierSnapshot } from "../../src/protocol/types.js";
 import { controlledAtomicFs } from "../helpers/fault-port.js";
-import { nodePathInspection } from "../../src/storage/paths.js";
+import { nodePathInspection, type PathInfo, type PathInspectionPort } from "../../src/storage/paths.js";
 import { CaseStore } from "../../src/storage/store.js";
 import { createDossier, type DossierDirectoryPublicationPort, type WorkflowPorts } from "../../src/workflows/dossier.js";
 import { addEvidence, checkDossier, type AddEvidenceRequest } from "../../src/workflows/evidence.js";
@@ -325,16 +325,8 @@ test("check classifies an empty artifact distinctly", async (t) => {
   assert.equal(result.data.stable_warning_codes.includes("CASE_L_EVIDENCE_EMPTY"), true);
 });
 
-test("check rejects linked local evidence without following it", async (t) => {
+test("check rejects injected linked local evidence without opening through it", async (t) => {
   const { root, ports, snapshot } = await fixture(t);
-  await mkdir(join(root, "artifacts"));
-  await writeFile(join(root, "outside.txt"), "abc");
-  try {
-    await symlink(join(root, "outside.txt"), join(root, "artifacts", "linked.txt"), "file");
-  } catch {
-    t.skip("symbolic links are unavailable in this environment");
-    return;
-  }
   await writeSnapshot(root, {
     ...snapshot,
     evidence: [{
@@ -349,11 +341,41 @@ test("check rejects linked local evidence without following it", async (t) => {
       artifact_size: "3" as never,
     }],
   });
+  const directory = (device: bigint, inode: bigint): PathInfo => ({
+    device,
+    inode,
+    isDirectory: () => true,
+    isFile: () => false,
+    isSymbolicLink: () => false,
+    isReparsePoint: () => false,
+  });
+  const link: PathInfo = {
+    device: 1n,
+    inode: 3n,
+    isDirectory: () => false,
+    isFile: () => true,
+    isSymbolicLink: () => true,
+    isReparsePoint: () => true,
+  };
+  let opens = 0;
+  const injectedLinkFs: PathInspectionPort = {
+    lstat: async (path) => path === root
+      ? directory(1n, 1n)
+      : path === join(root, "artifacts")
+        ? directory(1n, 2n)
+        : link,
+    realpath: async (path) => path,
+    listDirectory: async (path) => path === root
+      ? [{ name: "artifacts" }]
+      : [{ name: "linked.txt" }],
+    openRead: async () => { opens += 1; throw new Error("link must not be opened"); },
+  };
 
-  const result = await checkDossier({ dossier_id: "dossier-a" }, ports);
+  const result = await checkDossier({ dossier_id: "dossier-a" }, { ...ports, evidenceFs: injectedLinkFs });
 
   assert.equal(result.ok, true);
   if (!result.ok) return;
+  assert.equal(result.data.verdict, "failed");
   assert.equal(result.data.stable_warning_codes.includes("CASE_L_EVIDENCE_UNSAFE"), true);
-  await unlink(join(root, "artifacts", "linked.txt"));
+  assert.equal(opens, 0);
 });
