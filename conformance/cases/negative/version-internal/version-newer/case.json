@@ -8,17 +8,12 @@
   "applicable_platform_profiles": [
     "controlled-test"
   ],
+  "initial_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/locks"
+  ],
   "initial_tree": [
-    {
-      "path": ".case-agent/dossiers/.keep",
-      "content_file": "data/empty.bin",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": ".case-agent/locks/.keep",
-      "content_file": "data/empty.bin",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
     {
       "path": ".case-agent/manifest.json",
       "content_file": "data/generated/manifest-newer.json",
@@ -63,20 +58,15 @@
   ],
   "expected_final_tree": [
     {
-      "path": ".case-agent/dossiers/.keep",
-      "presence": "present",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": ".case-agent/locks/.keep",
-      "presence": "present",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
       "path": ".case-agent/manifest.json",
       "presence": "present",
       "sha256": "sha256:892877c3c0f51b4effbc9e0175af08ae1166ffe5ad55fce51d2184f0625a6a6b"
     }
+  ],
+  "expected_final_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/locks"
   ],
   "expected_derived_view_file": null
 }

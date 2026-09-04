@@ -21,31 +21,20 @@
   "applicable_platform_profiles": [
     "controlled-test"
   ],
+  "initial_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/dossiers/case-dossier-1",
+    ".case-agent/dossiers/case-dossier-1/decisions",
+    ".case-agent/dossiers/case-dossier-1/handoffs",
+    ".case-agent/dossiers/case-dossier-1/submissions",
+    ".case-agent/locks"
+  ],
   "initial_tree": [
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
-      "content_file": "data/empty.bin",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
       "content_file": "data/base-dossier.json",
       "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
-    },
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
-      "content_file": "data/empty.bin",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
-      "content_file": "data/empty.bin",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": ".case-agent/locks/.keep",
-      "content_file": "data/empty.bin",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "path": ".case-agent/manifest.json",
@@ -138,34 +127,14 @@
   ],
   "expected_final_tree": [
     {
-      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
-      "presence": "present",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
       "presence": "present",
       "sha256": "sha256:5c9e30c0178d22518b614127fcb04015150926017674a44a8db7645f53feace3"
     },
     {
-      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
-      "presence": "present",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
-      "presence": "present",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
       "path": ".case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
       "presence": "present",
       "sha256": "sha256:912c3ec250de7448e5cce87cd4a91aabc7fa5ac1a46c91fb5841df682bea7a8c"
-    },
-    {
-      "path": ".case-agent/locks/.keep",
-      "presence": "present",
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "path": ".case-agent/manifest.json",
@@ -177,6 +146,15 @@
       "presence": "present",
       "sha256": "sha256:2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf"
     }
+  ],
+  "expected_final_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/dossiers/case-dossier-1",
+    ".case-agent/dossiers/case-dossier-1/decisions",
+    ".case-agent/dossiers/case-dossier-1/handoffs",
+    ".case-agent/dossiers/case-dossier-1/submissions",
+    ".case-agent/locks"
   ],
   "expected_derived_view_file": null
 }

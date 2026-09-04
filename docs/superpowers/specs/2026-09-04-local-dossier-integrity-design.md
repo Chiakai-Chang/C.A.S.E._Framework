@@ -119,7 +119,9 @@ Rules:
 - `dossier.json` is the sole canonical truth for current governed state.
 - handoff, submission, and decision envelopes are immutable create-once records.
 - only records referenced by the current snapshot affect current state.
-- a valid unreferenced immutable record is a recoverable orphan only when its stored publication facts still target the current state. Validation reports a recoverable orphan but never applies it as current truth. A valid record targeting noncurrent state is superseded immutable history, not an orphan; an unreadable or structurally invalid envelope directory makes the history scan fail closed.
+- before an unreferenced envelope is classified, its filename ID and dossier ID must match its address. Handoff and submission publication revisions must be an exact successor pair and may not claim a future basis. A submission's self-digest must match its complete projection, and a decision must resolve to a validated published submission with the exact stored submission digest.
+- a valid unreferenced immutable record is a recoverable orphan only when its stored publication facts still target the current state. For such a handoff or submission, the basis state digest and content/check projections must match the current dossier and derived checks exactly. Validation reports a recoverable orphan but never applies it as current truth.
+- a valid record whose coherent stored revision facts target an earlier state is superseded immutable history, not a recoverable orphan. M0 does not pretend to re-derive a discarded historical snapshot's basis digest. An unreadable, structurally invalid, future-directed, or internally incoherent envelope makes the history scan fail closed; failure in one envelope directory does not prevent scanning the remaining directories.
 - `locks/` is transient coordination state, not dossier truth or history.
 - M0 has no authoritative `brief.md`. Human-readable views are generated from canonical data so that Markdown cannot become a second editable truth.
 
@@ -598,6 +600,7 @@ fixture_version
 case_id
 normative_rule_ids[]
 applicable_platform_profiles[]
+initial_directories[] in exact repository-relative path order
 initial_tree[] in repository-relative path order:
   path
   content_file
@@ -620,10 +623,13 @@ expected_final_tree[] in repository-relative path order:
   path
   presence: present | absent
   sha256: digest | null
+expected_final_directories[] in exact repository-relative path order
 expected_derived_view_file
 ```
 
-`empty` requires normal stdout and `stderr_file: null`. `exact` requires normal stdout and a corpus-relative `stderr_file` compared byte-for-byte. `startup_failure_only` requires both stdout and stderr file references to be null. `content_file`, scripted input, expected JSON, expected view, stderr, and interactive prompt references resolve inside the frozen corpus, never inside the repository under test. Random IDs, clocks, retry timing, locale, and platform error text are injected or fixed by each invocation and cannot affect expected canonical output. Concurrent invocations share one `concurrency_group`; their allowed result set and exactly-one-success constraint are encoded in the expected JSON. A case is invalid if it leaves an expected field implicit.
+`empty` requires normal stdout and `stderr_file: null`. `exact` requires normal stdout and a corpus-relative `stderr_file` compared byte-for-byte. `startup_failure_only` requires both stdout and stderr file references to be null. `content_file`, `@fixture replace` content, scripted input, expected JSON, expected view, stderr, and interactive prompt references resolve inside the frozen corpus, never inside the repository under test. `initial_directories` and `expected_final_directories` declare exact real directory topology; placeholder files receive no production exception. `actor_label` is inert, non-authoritative trace metadata and is excluded from behavior identity. Random IDs, clocks, retry timing, locale, process identity, and platform error text are injected or fixed independently by each invocation and cannot affect expected canonical output; repository and atomic state remain shared. Concurrent invocations share one `concurrency_group`; their allowed result set and exactly-one-success constraint are encoded in the expected JSON. A case is invalid if it leaves an expected field implicit.
+
+The in-process zero-network audit starts before case schema/dependency setup and follows case-causally-created asynchronous resources through final assertions. Network resource initialization is an immediate failure, and case-created timers, persistent handles, or unfinished one-shot work must be quiescent at return. Resources created outside the case scope are baseline resources and are not attributed to it. This audit does not claim to sandbox network traffic initiated inside arbitrary child processes; the public subprocess vector proves only its declared CLI result.
 
 Blocking families are:
 

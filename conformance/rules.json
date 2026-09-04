@@ -56,6 +56,41 @@
     "requires_negative": true
   },
   {
+    "rule_id": "M0-SOURCE-011",
+    "source_section": "6",
+    "statement": "Each unreferenced envelope's filename ID and dossier ID exactly match the repository address from which it was read.",
+    "requires_positive": true,
+    "requires_negative": true
+  },
+  {
+    "rule_id": "M0-SOURCE-012",
+    "source_section": "6",
+    "statement": "Every unreferenced handoff or submission has an exact basis-to-published successor revision pair and does not claim a future basis.",
+    "requires_positive": true,
+    "requires_negative": true
+  },
+  {
+    "rule_id": "M0-SOURCE-013",
+    "source_section": "6",
+    "statement": "Every unreferenced submission has an exact self-digest over its complete submission projection.",
+    "requires_positive": true,
+    "requires_negative": true
+  },
+  {
+    "rule_id": "M0-SOURCE-014",
+    "source_section": "6",
+    "statement": "Every unreferenced decision resolves to a validated published submission and records that submission's exact digest.",
+    "requires_positive": true,
+    "requires_negative": true
+  },
+  {
+    "rule_id": "M0-SOURCE-015",
+    "source_section": "6",
+    "statement": "A current-target unreferenced handoff or submission exactly matches the current basis state digest and canonical content or check projections.",
+    "requires_positive": true,
+    "requires_negative": true
+  },
+  {
     "rule_id": "M0-SOURCE-004",
     "source_section": "6",
     "statement": "The locks directory is transient coordination state and is never dossier truth or history.",
@@ -1507,7 +1542,7 @@
   {
     "rule_id": "M0-CORPUS-003",
     "source_section": "22.1",
-    "statement": "Every content, stdin, stdout, stderr, prompt, and view reference resolves to a regular file inside the frozen corpus.",
+    "statement": "Every initial content, fixture-replacement content, stdin, stdout, stderr, prompt, and view reference resolves to a regular file inside the frozen corpus.",
     "requires_positive": true,
     "requires_negative": false
   },
@@ -1521,7 +1556,7 @@
   {
     "rule_id": "M0-CORPUS-004",
     "source_section": "22.1",
-    "statement": "Initial and expected tree paths are safe, unique, stable-ordered repository-relative paths.",
+    "statement": "Initial and expected file and exact directory-topology paths are safe, unique, stable-ordered repository-relative paths.",
     "requires_positive": true,
     "requires_negative": true
   },
@@ -1542,7 +1577,7 @@
   {
     "rule_id": "M0-CORPUS-011",
     "source_section": "22.1",
-    "statement": "Every executed case audits zero in-process network initialization and no case-created timer or immediate pending at completion.",
+    "statement": "Every executed case audits zero case-causal in-process network initialization and no case-created timer, persistent handle, or unfinished one-shot asynchronous work pending after final assertions.",
     "requires_positive": true,
     "requires_negative": false
   },

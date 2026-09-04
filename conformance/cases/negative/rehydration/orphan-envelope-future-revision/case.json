@@ -1,0 +1,100 @@
+{
+  "fixture_version": "1",
+  "case_id": "orphan-envelope-future-revision",
+  "normative_rule_ids": [
+    "M0-SOURCE-012"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/dossiers/case-dossier-1",
+    ".case-agent/dossiers/case-dossier-1/decisions",
+    ".case-agent/dossiers/case-dossier-1/handoffs",
+    ".case-agent/dossiers/case-dossier-1/submissions",
+    ".case-agent/locks"
+  ],
+  "initial_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "content_file": "data/base-dossier.json",
+      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/handoff-history.json",
+      "content_file": "data/history/handoff-history.json",
+      "sha256": "sha256:ee4b8d74956d3321ab7f2e523e06821981465737fe083bd6f8222e09eaa4081a"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "content_file": "data/manifest.json",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "invocations": [
+    {
+      "actor_label": "trace-probe",
+      "argv": [
+        "--json",
+        "dossier",
+        "check",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 20,
+      "result_code": "CASE_E_INVARIANT",
+      "stdout_json_file": "data/expected/orphan-semantic-invariant.json",
+      "stderr": "empty",
+      "stderr_file": null
+    }
+  ],
+  "expected_final_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "presence": "present",
+      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/handoff-history.json",
+      "presence": "present",
+      "sha256": "sha256:ee4b8d74956d3321ab7f2e523e06821981465737fe083bd6f8222e09eaa4081a"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "presence": "present",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "expected_final_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/dossiers/case-dossier-1",
+    ".case-agent/dossiers/case-dossier-1/decisions",
+    ".case-agent/dossiers/case-dossier-1/handoffs",
+    ".case-agent/dossiers/case-dossier-1/submissions",
+    ".case-agent/locks"
+  ],
+  "expected_derived_view_file": null
+}

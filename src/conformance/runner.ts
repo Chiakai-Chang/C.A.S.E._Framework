@@ -152,6 +152,7 @@ type CorpusCase = {
   readonly case_id: string;
   readonly normative_rule_ids: string[];
   readonly applicable_platform_profiles: PlatformProfile[];
+  readonly initial_directories: string[];
   readonly initial_tree: Array<{ readonly path: string; readonly content_file: string; readonly sha256: string }>;
   readonly invocations: CorpusInvocation[];
   readonly expected: CorpusExpectation[];
@@ -160,6 +161,7 @@ type CorpusCase = {
     readonly presence: "present" | "absent";
     readonly sha256: string | null;
   }>;
+  readonly expected_final_directories: string[];
   readonly expected_derived_view_file: string | null;
 };
 
@@ -511,6 +513,36 @@ function assertStableStringArray(values: readonly string[], label: string): void
   }
 }
 
+function assertExactDirectoryTopology(
+  directories: readonly string[],
+  files: readonly { readonly path: string; readonly presence?: "present" | "absent" }[],
+  label: string,
+): void {
+  assertStableStringArray(directories, `${label} directories`);
+  const declared = new Set(directories);
+  for (const directory of directories) {
+    assertSafeFixturePath(directory, `${label} directory`);
+    if (directory === ".git" || directory.startsWith(".git/")) {
+      throw new CorpusValidationError(`${label} declares harness-owned Git state`);
+    }
+    const segments = directory.split("/");
+    for (let length = 1; length < segments.length; length += 1) {
+      if (!declared.has(segments.slice(0, length).join("/"))) {
+        throw new CorpusValidationError(`${label} directory topology omits a parent`);
+      }
+    }
+  }
+  for (const file of files) {
+    if (file.presence === "absent") continue;
+    const segments = file.path.split("/");
+    for (let length = 1; length < segments.length; length += 1) {
+      if (!declared.has(segments.slice(0, length).join("/"))) {
+        throw new CorpusValidationError(`${label} directory topology omits a file parent`);
+      }
+    }
+  }
+}
+
 function orderedJson(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(orderedJson);
   if (!isRecord(value)) return value;
@@ -534,6 +566,9 @@ async function behaviorFingerprint(corpusRoot: string, fixture: CorpusCase): Pro
 
   const invocations = behavior.invocations as Array<Record<string, unknown>>;
   for (const invocation of invocations) {
+    // The label is diagnostic trace metadata only; it cannot distinguish
+    // otherwise behavior-identical positive and negative vectors.
+    delete invocation.actor_label;
     const inputPath = invocation.stdin_content_file;
     if (typeof inputPath === "string") {
       if (invocation.stdin_mode === "interactive_script") {
@@ -600,6 +635,34 @@ async function collectFiles(root: string, omitGit: boolean): Promise<Map<string,
   }
   await walk(root, "");
   return files;
+}
+
+async function collectDirectories(root: string, omitGit: boolean): Promise<Set<string>> {
+  const directories = new Set<string>();
+  async function walk(directory: string, prefix: string): Promise<void> {
+    const entries = await readdir(directory, { withFileTypes: true });
+    entries.sort((left, right) => compareCodeUnits(left.name, right.name));
+    for (const entry of entries) {
+      if (omitGit && prefix === "" && entry.name === ".git") continue;
+      const relativePath = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+      const absolutePath = join(directory, entry.name);
+      if (entry.isSymbolicLink()) throw new CorpusValidationError(`tree contains a link: ${relativePath}`);
+      if (entry.isDirectory()) {
+        directories.add(relativePath);
+        await walk(absolutePath, relativePath);
+      } else if (!entry.isFile()) {
+        throw new CorpusValidationError(`tree contains an unsupported entry: ${relativePath}`);
+      }
+    }
+  }
+  await walk(root, "");
+  return directories;
+}
+
+function sameSet(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
+  if (left.size !== right.size) return false;
+  for (const value of left) if (!right.has(value)) return false;
+  return true;
 }
 
 function sameMap(left: ReadonlyMap<string, string>, right: ReadonlyMap<string, string>): boolean {
@@ -779,6 +842,8 @@ async function loadCorpus(corpusRoot: string): Promise<{ rules: Rule[]; cases: L
     }
     assertUniqueOrderedPaths(fixture.initial_tree, `${fixture.case_id} initial_tree`);
     assertUniqueOrderedPaths(fixture.expected_final_tree, `${fixture.case_id} expected_final_tree`);
+    assertExactDirectoryTopology(fixture.initial_directories, fixture.initial_tree, `${fixture.case_id} initial`);
+    assertExactDirectoryTopology(fixture.expected_final_directories, fixture.expected_final_tree, `${fixture.case_id} final`);
     assertInvocationStructure(fixture);
     for (const entry of fixture.initial_tree) {
       const bytes = await readCorpusFile(corpusRoot, entry.content_file);
@@ -872,6 +937,20 @@ async function createDestinationParent(root: string, relativePath: string): Prom
 }
 
 async function populateInitialTree(corpusRoot: string, repositoryRoot: string, fixture: CorpusCase): Promise<void> {
+  for (const directory of fixture.initial_directories) {
+    if (directory === ".git" || directory.startsWith(".git/")) {
+      throw new CorpusValidationError(`${fixture.case_id} attempts to populate harness-owned Git state`);
+    }
+    const target = resolve(repositoryRoot, ...directory.split("/"));
+    if (!isContained(resolve(repositoryRoot), target)) {
+      throw new CorpusValidationError(`${fixture.case_id} directory escaped its repository`);
+    }
+    await mkdir(target, { recursive: true });
+    const info = await lstat(target);
+    if (!info.isDirectory() || info.isSymbolicLink()) {
+      throw new CorpusValidationError(`${fixture.case_id} populated an unsafe directory`);
+    }
+  }
   for (const entry of fixture.initial_tree) {
     if (entry.path === ".git" || entry.path.startsWith(".git/")) {
       throw new CorpusValidationError(`${fixture.case_id} attempts to populate harness-owned Git state`);
@@ -883,6 +962,9 @@ async function populateInitialTree(corpusRoot: string, repositoryRoot: string, f
     if (!isContained(await realpath(repositoryRoot), exact)) {
       throw new CorpusValidationError(`${fixture.case_id} populated a path outside its repository`);
     }
+  }
+  if (!sameSet(await collectDirectories(repositoryRoot, true), new Set(fixture.initial_directories))) {
+    throw new CorpusValidationError(`${fixture.case_id} initial directory topology is not exact`);
   }
 }
 
@@ -1343,6 +1425,7 @@ function validMinimalCase(environment: FixedEnvironment): CorpusCase {
     case_id: "schema-probe",
     normative_rule_ids: ["M0-CORPUS-002"],
     applicable_platform_profiles: ["controlled-test"],
+    initial_directories: [],
     initial_tree: [],
     invocations: [{
       actor_label: "trace-probe",
@@ -1361,6 +1444,7 @@ function validMinimalCase(environment: FixedEnvironment): CorpusCase {
       stderr_file: null,
     }],
     expected_final_tree: [],
+    expected_final_directories: [],
     expected_derived_view_file: null,
   };
 }
@@ -2536,6 +2620,8 @@ async function runProtocolProbe(
       probeAssertion(true, "invocation and expectation counts are explicit and equal");
       assertUniqueOrderedPaths([{ path: "a" }, { path: "b/c" }], "probe ordered paths");
       probeAssertion(true, "safe unique repository paths in stable order validate");
+      assertExactDirectoryTopology(["a", "a/b"], [{ path: "a/b/value.json" }], "probe exact topology");
+      probeAssertion(true, "exact directory topology includes every file parent");
       const referencedFiles = ["data/artifact-v1.txt", "data/expected/probe-ok.json", "data/stdin/confirm-basis.txt", "data/views/base.json"];
       for (const reference of referencedFiles) baseProbeAssertion((await readCorpusFile(corpusRoot, reference)).byteLength > 0, reference);
       probeAssertion(true, "all four corpus reference kinds resolve to regular in-corpus files");
@@ -2544,6 +2630,11 @@ async function runProtocolProbe(
         const fixture = parseStrictJson(await readFile(caseFile)) as unknown as CorpusCase;
         allRuntimeReferences.push(...fixture.initial_tree.map(({ content_file }) => content_file));
         for (const invocation of fixture.invocations) {
+          if (invocation.argv[0] === "@fixture"
+            && invocation.argv[1] === "replace"
+            && invocation.argv[3] !== undefined) {
+            allRuntimeReferences.push(invocation.argv[3]);
+          }
           if (invocation.stdin_content_file === null) continue;
           allRuntimeReferences.push(invocation.stdin_content_file);
           if (invocation.stdin_mode === "interactive_script") {
@@ -2626,6 +2717,11 @@ async function runProtocolProbe(
         "duplicate fixture tree path rejected",
       );
       probeThrowsAssertion(() => assertUniqueOrderedPaths([{ path: "b" }, { path: "a" }], "probe"), /stable order/u, "unstable tree path order rejected");
+      probeThrowsAssertion(
+        () => assertExactDirectoryTopology(["a/b"], [{ path: "a/b/value.json" }], "probe"),
+        /omits a parent/u,
+        "incomplete directory topology rejected",
+      );
       probeThrowsAssertion(() => assertInvocationStructure({ ...valid, expected: [] }), /counts differ/u, "invocation expectation count mismatch rejected");
     }
   } else if (probe === "platform-boundary") {
@@ -2920,7 +3016,8 @@ async function finalTreeMatches(repositoryRoot: string, fixture: CorpusCase): Pr
       expectedPresent.set(entry.path, entry.sha256);
     }
   }
-  return sameMap(actual, expectedPresent);
+  return sameMap(actual, expectedPresent)
+    && sameSet(await collectDirectories(repositoryRoot, true), new Set(fixture.expected_final_directories));
 }
 
 async function derivedViewMatches(
@@ -2984,17 +3081,32 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
   const temporary = await mkdtemp(join(tmpdir(), "case-agent-conformance-"));
   const repositoryRoot = join(temporary, "repository");
   let networkCalls = 0;
-  const networkResources = new Set(["GETADDRINFOREQWRAP", "GETNAMEINFOREQWRAP", "TCPCONNECTWRAP", "TCPWRAP", "TLSWRAP", "UDPWRAP"]);
-  const deferredResources = new Set(["Immediate", "Timeout"]);
-  const pendingDeferred = new Map<number, { readonly type: string; readonly resource: object }>();
+  const caseAsyncIds = new Set<number>();
+  const pendingCaseResources = new Map<number, { readonly type: string; readonly resource: object }>();
   const auditScope = new AsyncLocalStorage<boolean>();
+  const isNetworkResource = (type: string): boolean =>
+    /^(?:DNSCHANNEL|GETADDRINFOREQWRAP|GETNAMEINFOREQWRAP|QUERYWRAP|TCP.*|TLS.*|UDP.*|HTTP.*|HTTP2.*|QUIC.*)$/u.test(type);
+  // Request/work resources become quiescent after their callback; persistent
+  // handles remain pending until destroy. PROMISE objects carry causal scope
+  // but are not themselves unfinished I/O, avoiding runner-owned chain noise.
+  const isOneShotCallbackResource = (type: string): boolean =>
+    /(?:REQ|REQUEST)/u.test(type) || type === "TickObject" || type === "Microtask";
   const networkAudit = createHook({
-    init: (asyncId, type, _triggerAsyncId, resource) => {
-      if (auditScope.getStore() !== true) return;
-      if (networkResources.has(type)) networkCalls += 1;
-      if (deferredResources.has(type)) pendingDeferred.set(asyncId, { type, resource });
+    init: (asyncId, type, triggerAsyncId, resource) => {
+      if (auditScope.getStore() !== true && !caseAsyncIds.has(triggerAsyncId)) return;
+      caseAsyncIds.add(asyncId);
+      if (isNetworkResource(type)) networkCalls += 1;
+      if (type !== "PROMISE") pendingCaseResources.set(asyncId, { type, resource });
     },
-    destroy: (asyncId) => { pendingDeferred.delete(asyncId); },
+    after: (asyncId) => {
+      const pending = pendingCaseResources.get(asyncId);
+      if (pending !== undefined && isOneShotCallbackResource(pending.type)) {
+        pendingCaseResources.delete(asyncId);
+        caseAsyncIds.delete(asyncId);
+      }
+    },
+    destroy: (asyncId) => { pendingCaseResources.delete(asyncId); caseAsyncIds.delete(asyncId); },
+    promiseResolve: (asyncId) => { pendingCaseResources.delete(asyncId); caseAsyncIds.delete(asyncId); },
   });
   // This in-process audit deliberately begins before schemas or workflow dependencies load.
   networkAudit.enable();
@@ -3041,7 +3153,6 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     const derivedViewMatched = await derivedViewMatches(corpusRoot, located.fixture, context);
     const finalTreeMatched = await finalTreeMatches(repositoryRoot, located.fixture);
     const gitTreeMatched = sameMap(gitBaseline, await collectFiles(join(repositoryRoot, ".git"), false));
-    const asyncResourcesQuiescent = pendingDeferred.size === 0;
     const executedAssertions = new Set(outcomes.flatMap((outcome) => outcome.assertionIds));
     executedAssertions.add("population.safe-confined");
     for (const fact of context.operationFacts) executedAssertions.add(fact);
@@ -3083,6 +3194,9 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     }
     if (finalTreeMatched) {
       executedAssertions.add("tree:exact-set");
+      for (const directory of located.fixture.expected_final_directories) {
+        executedAssertions.add(`directory:/${directory}=present`);
+      }
       for (const entry of located.fixture.expected_final_tree) {
         executedAssertions.add(`tree:/${entry.path}=${entry.presence === "present" ? entry.sha256 : "absent"}`);
         if (entry.presence === "present") {
@@ -3100,12 +3214,13 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
       }
     }
     if (gitTreeMatched) executedAssertions.add("git-tree:exact");
-    if (networkCalls === 0) executedAssertions.add("network.zero");
-    if (asyncResourcesQuiescent) executedAssertions.add("async.quiescent");
     for (const profile of located.fixture.applicable_platform_profiles) {
       executedAssertions.add(`profile:${profile}`);
     }
     await ports.onCaseAssertions?.(located.fixture.case_id, [...executedAssertions].sort(compareCodeUnits));
+    const asyncResourcesQuiescent = pendingCaseResources.size === 0;
+    if (networkCalls === 0) executedAssertions.add("network.zero");
+    if (asyncResourcesQuiescent) executedAssertions.add("async.quiescent");
     const bindingsMatched = located.ruleBindings.every(({ assertion_ids }) =>
       assertion_ids.every((assertionId) => executedAssertions.has(assertionId)));
     return networkCalls === 0 && asyncResourcesQuiescent
@@ -3116,7 +3231,7 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     });
   } finally {
     networkAudit.disable();
-    for (const { type, resource } of pendingDeferred.values()) {
+    for (const { type, resource } of pendingCaseResources.values()) {
       if (type === "Timeout") clearTimeout(resource as NodeJS.Timeout);
       else if (type === "Immediate") clearImmediate(resource as NodeJS.Immediate);
     }

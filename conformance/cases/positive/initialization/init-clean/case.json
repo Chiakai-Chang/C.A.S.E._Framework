@@ -12,6 +12,7 @@
   "applicable_platform_profiles": [
     "controlled-test"
   ],
+  "initial_directories": [],
   "initial_tree": [],
   "invocations": [
     {
@@ -55,6 +56,11 @@
       "presence": "present",
       "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
     }
+  ],
+  "expected_final_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/locks"
   ],
   "expected_derived_view_file": null
 }

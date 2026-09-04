@@ -8,6 +8,9 @@
   "applicable_platform_profiles": [
     "controlled-test"
   ],
+  "initial_directories": [
+    ".case-agent"
+  ],
   "initial_tree": [
     {
       "path": ".case-agent/foreign.txt",
@@ -57,6 +60,9 @@
       "presence": "present",
       "sha256": "sha256:c35e32ef07bc9fe1d688b84d3fe5d449ebfac7dd256e0a21bd245ab94512b13a"
     }
+  ],
+  "expected_final_directories": [
+    ".case-agent"
   ],
   "expected_derived_view_file": null
 }

@@ -30,6 +30,7 @@
   "applicable_platform_profiles": [
     "controlled-test"
   ],
+  "initial_directories": [],
   "initial_tree": [],
   "invocations": [
     {
@@ -66,5 +67,6 @@
     }
   ],
   "expected_final_tree": [],
+  "expected_final_directories": [],
   "expected_derived_view_file": null
 }

@@ -442,48 +442,105 @@ export async function inspectCurrentEnvelopes(snapshot: DossierSnapshot, ports: 
   return { integrity, handoff, submission, decision };
 }
 
-function isRecoverableOrphan(
+type EnvelopeHistoryPosition = "current" | "recoverable" | "superseded";
+
+interface ValidatedSubmissionHistory {
+  readonly envelope: SubmissionEnvelope;
+  readonly position: EnvelopeHistoryPosition;
+}
+
+function assertOrphanEnvelopeSemantics(
   snapshot: DossierSnapshot,
-  currentEnvelopes: CurrentEnvelopeInspection,
   kind: "handoff" | "submission" | "decision",
   id: string,
   parsed: JsonValue,
-): boolean {
-  if (kind === "decision") {
-    const decision = parsed as unknown as DecisionEnvelope;
-    const expectedCriteria = snapshot.acceptance_criteria.map(({ criterion_id }) => criterion_id);
-    return snapshot.current_decision_id === null
-      && snapshot.current_submission_id !== null
-      && currentEnvelopes.submission !== null
-      && decision.decision_id === id
-      && decision.dossier_id === snapshot.dossier_id
-      && decision.submission_id === snapshot.current_submission_id
-      && decision.submission_digest === currentEnvelopes.submission.submission_digest
-      && decision.criteria_reviewed.length === expectedCriteria.length
-      && decision.criteria_reviewed.every((criterionId, index) => criterionId === expectedCriteria[index]);
-  }
+  checks: ChecksProjection,
+): Exclude<EnvelopeHistoryPosition, "current"> {
+  if (kind === "decision") throw new Error("decision semantics require its referenced submission");
   const envelope = parsed as unknown as HandoffEnvelope | SubmissionEnvelope;
-  try {
-    if (envelope.dossier_id !== snapshot.dossier_id
-      || BigInt(envelope.basis_revision) !== BigInt(snapshot.state_revision)
-      || envelope.basis_state_digest !== snapshot.state_digest
-      || BigInt(envelope.published_revision) !== BigInt(snapshot.state_revision) + 1n) return false;
-    if (kind === "handoff") {
-      const handoff = envelope as HandoffEnvelope;
-      return handoff.handoff_id === id && handoff.from_run_id === snapshot.active_run.run_id;
-    }
-    const submission = envelope as SubmissionEnvelope;
-    return submission.submission_id === id
-      && submission.submitting_run_id === snapshot.active_run.run_id
-      && submission.submission_digest === digestProjection(projectSubmission(submission));
-  } catch {
-    return false;
+  const basis = BigInt(envelope.basis_revision);
+  const published = BigInt(envelope.published_revision);
+  const current = BigInt(snapshot.state_revision);
+  const addressedId = kind === "handoff"
+    ? (envelope as HandoffEnvelope).handoff_id
+    : (envelope as SubmissionEnvelope).submission_id;
+  if (addressedId !== id
+    || envelope.dossier_id !== snapshot.dossier_id
+    || published !== basis + 1n
+    || basis > current) {
+    throw new Error(`orphan ${kind} envelope is semantically incoherent`);
   }
+  if (kind === "handoff") {
+    const handoff = envelope as HandoffEnvelope;
+    if (basis === current && (
+      handoff.from_run_id !== snapshot.active_run.run_id
+      || handoff.basis_state_digest !== snapshot.state_digest
+      || handoff.offered_content_digest !== digestProjection(projectContent(snapshot))
+    )) throw new Error("orphan handoff envelope is not exact for its current basis");
+    return basis === current ? "recoverable" : "superseded";
+  }
+  const submission = envelope as SubmissionEnvelope;
+  if (submission.submission_digest !== digestProjection(projectSubmission(submission))
+    || (basis === current && (
+      submission.submitting_run_id !== snapshot.active_run.run_id
+      || submission.basis_state_digest !== snapshot.state_digest
+      || submission.content_digest !== digestProjection(projectContent(snapshot))
+      || submission.observed_evidence_digest !== checks.observed_evidence_digest
+      || submission.checks_digest !== digestProjection(projectChecks(checks))
+    ))) {
+    throw new Error("orphan submission envelope is not self-consistent for its basis");
+  }
+  return basis === current ? "recoverable" : "superseded";
+}
+
+function assertCurrentSubmissionSemantics(
+  snapshot: DossierSnapshot,
+  submission: SubmissionEnvelope,
+  checks: ChecksProjection,
+): "current" | "superseded" {
+  const basis = BigInt(submission.basis_revision);
+  const published = BigInt(submission.published_revision);
+  const current = BigInt(snapshot.state_revision);
+  if (submission.submission_id !== snapshot.current_submission_id
+    || submission.dossier_id !== snapshot.dossier_id
+    || published !== basis + 1n
+    || published > current
+    || submission.submission_digest !== digestProjection(projectSubmission(submission))
+    || (published === current && (
+      submission.content_digest !== digestProjection(projectContent(snapshot))
+      || submission.observed_evidence_digest !== checks.observed_evidence_digest
+      || submission.checks_digest !== digestProjection(projectChecks(checks))
+    ))) {
+    throw new Error("current submission envelope is not self-consistent with the current dossier");
+  }
+  return published === current ? "current" : "superseded";
+}
+
+function decisionHistoryPosition(
+  snapshot: DossierSnapshot,
+  id: string,
+  parsed: JsonValue,
+  submissions: ReadonlyMap<string, ValidatedSubmissionHistory>,
+): Exclude<EnvelopeHistoryPosition, "current"> {
+  const decision = parsed as unknown as DecisionEnvelope;
+  const expectedCriteria = snapshot.acceptance_criteria.map(({ criterion_id }) => criterion_id);
+  const submission = submissions.get(decision.submission_id);
+  if (decision.decision_id !== id
+    || decision.dossier_id !== snapshot.dossier_id
+    || submission === undefined
+    || submission.position === "recoverable"
+    || decision.submission_digest !== submission.envelope.submission_digest
+    || decision.criteria_reviewed.length !== expectedCriteria.length
+    || !decision.criteria_reviewed.every((criterionId, index) => criterionId === expectedCriteria[index])) {
+    throw new Error("orphan decision envelope is not coherent with an addressable published submission");
+  }
+  return submission.position === "current" ? "recoverable" : "superseded";
 }
 
 async function hasUnreferencedEnvelope(
   snapshot: DossierSnapshot,
   currentEnvelopes: CurrentEnvelopeInspection,
+  checks: ChecksProjection,
   ports: ReadPorts,
 ): Promise<boolean> {
   const fs = ports.evidenceFs ?? nodePathInspection;
@@ -493,8 +550,24 @@ async function hasUnreferencedEnvelope(
     ["submission", snapshot.current_submission_id],
     ["decision", snapshot.current_decision_id],
   ]);
+  const submissions = new Map<string, ValidatedSubmissionHistory>();
   let orphan = false;
   let scanTrusted = true;
+  if (snapshot.current_submission_id !== null) {
+    try {
+      if (currentEnvelopes.submission === null) throw new Error("current submission is unavailable");
+      const position = assertCurrentSubmissionSemantics(snapshot, currentEnvelopes.submission, checks);
+      submissions.set(snapshot.current_submission_id, {
+        envelope: currentEnvelopes.submission,
+        position,
+      });
+    } catch {
+      // Current referenced envelope damage is already represented by the
+      // closed envelope-integrity check. It is not unreferenced history, so it
+      // does not make the directory scan itself untrustworthy. Keeping it out
+      // of this map still makes any orphan decision that cites it fail closed.
+    }
+  }
   for (const [kind, currentId] of current) {
     let entries: readonly { readonly name: string }[];
     try {
@@ -504,7 +577,7 @@ async function hasUnreferencedEnvelope(
       continue;
     }
     for (const { name } of [...entries].sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0)) {
-      if (name === ".keep" || (currentId !== null && name === `${currentId}.json`)) continue;
+      if (currentId !== null && name === `${currentId}.json`) continue;
       if (!/^[A-Za-z0-9._-]+\.json$/u.test(name)) {
         scanTrusted = false;
         continue;
@@ -512,7 +585,16 @@ async function hasUnreferencedEnvelope(
       const id = name.slice(0, -5);
       try {
         const parsed = await readEnvelopeStrict(snapshot, kind, id, ports);
-        orphan ||= isRecoverableOrphan(snapshot, currentEnvelopes, kind, id, parsed);
+        if (kind === "decision") {
+          const position = decisionHistoryPosition(snapshot, id, parsed, submissions);
+          if (position === "recoverable") orphan = true;
+        } else {
+          const position = assertOrphanEnvelopeSemantics(snapshot, kind, id, parsed, checks);
+          if (kind === "submission") {
+            submissions.set(id, { envelope: parsed as unknown as SubmissionEnvelope, position });
+          }
+          if (position === "recoverable") orphan = true;
+        }
       } catch {
         scanTrusted = false;
       }
@@ -526,7 +608,6 @@ async function hasUnreferencedEnvelope(
 export async function checkSnapshot(snapshot: DossierSnapshot, ports: ReadPorts): Promise<SnapshotCheckResult> {
   const observed = await observeEvidence(snapshot, ports);
   const envelopes = await inspectCurrentEnvelopes(snapshot, ports);
-  const orphanEnvelope = await hasUnreferencedEnvelope(snapshot, envelopes, ports);
   const checks = buildChecksProjection(snapshot, observed, envelopes.integrity);
   checks.stable_warning_codes = [...new Set([
     ...checks.stable_warning_codes,
@@ -536,6 +617,7 @@ export async function checkSnapshot(snapshot: DossierSnapshot, ports: ReadPorts)
     || !ports.schemas.validate("checks", projectChecks(checks)).ok) {
     throw new Error("generated check projection validation failed");
   }
+  const orphanEnvelope = await hasUnreferencedEnvelope(snapshot, envelopes, checks, ports);
   return { checks, observed, envelopes, orphanEnvelope };
 }
 

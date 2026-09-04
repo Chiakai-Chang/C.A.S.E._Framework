@@ -16,7 +16,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 512,
-            "pattern": "^(?:probe\\.|process:[0-9]+:|stdout:[0-9]+:|human-stdout:[0-9]+:|transcript:[0-9]+:|tree-json:/|tree:/|view:|storage:|identity-current:|identity-verification:|concurrency:|async\\.quiescent$|population\\.safe-confined$|git-tree:exact$|network\\.zero$|tree:exact-set$|tree:no-authoritative-brief$|execution\\.(?:public-cli-process|controlled-cli-dispatcher|controlled-workflow\\.[a-z.]+)$|profile\\.production-windows-unsupported\\.actual$)"
+            "pattern": "^(?:probe\\.|process:[0-9]+:|stdout:[0-9]+:|human-stdout:[0-9]+:|transcript:[0-9]+:|tree-json:/|tree:/|directory:/|view:|storage:|identity-current:|identity-verification:|concurrency:|async\\.quiescent$|population\\.safe-confined$|git-tree:exact$|network\\.zero$|tree:exact-set$|tree:no-authoritative-brief$|execution\\.(?:public-cli-process|controlled-cli-dispatcher|controlled-workflow\\.[a-z.]+)$|profile\\.production-windows-unsupported\\.actual$)"
           }
         }
       }

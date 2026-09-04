@@ -7,6 +7,9 @@
   "applicable_platform_profiles": [
     "controlled-test"
   ],
+  "initial_directories": [
+    "artifacts"
+  ],
   "initial_tree": [
     {
       "path": "artifacts/Evidence.txt",
@@ -54,6 +57,9 @@
       "presence": "present",
       "sha256": "sha256:f6ed42a9d765eeb230a069bbc3d5dc346b2669594bb0b83cc6d14d5d967b8961"
     }
+  ],
+  "expected_final_directories": [
+    "artifacts"
   ],
   "expected_derived_view_file": null
 }

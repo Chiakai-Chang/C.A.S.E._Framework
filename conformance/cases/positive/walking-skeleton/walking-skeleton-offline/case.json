@@ -10,6 +10,7 @@
   "applicable_platform_profiles": [
     "controlled-test"
   ],
+  "initial_directories": [],
   "initial_tree": [
     {
       "path": "artifact.txt",
@@ -386,6 +387,15 @@
       "presence": "present",
       "sha256": "sha256:81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56"
     }
+  ],
+  "expected_final_directories": [
+    ".case-agent",
+    ".case-agent/dossiers",
+    ".case-agent/dossiers/case-dossier-1",
+    ".case-agent/dossiers/case-dossier-1/decisions",
+    ".case-agent/dossiers/case-dossier-1/handoffs",
+    ".case-agent/dossiers/case-dossier-1/submissions",
+    ".case-agent/locks"
   ],
   "expected_derived_view_file": "data/views/generated/walking-skeleton-offline.json"
 }

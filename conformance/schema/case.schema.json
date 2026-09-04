@@ -185,10 +185,12 @@
     "case_id",
     "normative_rule_ids",
     "applicable_platform_profiles",
+    "initial_directories",
     "initial_tree",
     "invocations",
     "expected",
     "expected_final_tree",
+    "expected_final_directories",
     "expected_derived_view_file"
   ],
   "properties": {
@@ -207,6 +209,11 @@
       "uniqueItems": true,
       "items": { "enum": ["controlled-test", "production-windows-unsupported", "production-posix-unclaimed"] }
     },
+    "initial_directories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/safe_path" }
+    },
     "initial_tree": {
       "type": "array",
       "items": { "$ref": "#/$defs/tree_input" }
@@ -224,6 +231,11 @@
     "expected_final_tree": {
       "type": "array",
       "items": { "$ref": "#/$defs/tree_expectation" }
+    },
+    "expected_final_directories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/safe_path" }
     },
     "expected_derived_view_file": {
       "oneOf": [

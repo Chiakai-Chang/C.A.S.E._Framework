@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { lookup } from "node:dns";
+import { createHash, pbkdf2 } from "node:crypto";
+import { lookup, Resolver } from "node:dns";
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { createServer, type Server } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -53,6 +54,7 @@ test("§22.1 stderr prose and the closed case schema define the same exact relat
   const design = await readFile(join(process.cwd(), "docs", "superpowers", "specs", "2026-09-04-local-dossier-integrity-design.md"), "utf8");
   const section = design.slice(design.indexOf("### 22.1 Frozen fixture contract"), design.indexOf("## 23. Baseline evaluation"));
   const schema = await readJson<{
+    required: string[];
     $defs: {
       expectation: {
         required: string[];
@@ -71,6 +73,12 @@ test("§22.1 stderr prose and the closed case schema define the same exact relat
   assert.match(section, /`exact` requires normal stdout and a corpus-relative `stderr_file` compared byte-for-byte/u);
   assert.match(section, /`startup_failure_only` requires both stdout and stderr file references to be null/u);
   assert.match(section, /interactive prompt references resolve inside the frozen corpus/u);
+  assert.match(section, /^initial_directories\[\] in exact repository-relative path order$/mu);
+  assert.match(section, /^expected_final_directories\[\] in exact repository-relative path order$/mu);
+  assert.ok(schema.required.includes("initial_directories"));
+  assert.ok(schema.required.includes("expected_final_directories"));
+  assert.match(section, /`@fixture replace` content/u);
+  assert.match(section, /placeholder files receive no production exception/u);
 
   const bindings = await readJson<{
     rules: Array<{ rule_id: string; positive: Array<{ case_id: string; assertion_ids: string[] }> }>;
@@ -167,6 +175,7 @@ test("unsafe and ambiguous fixture structure fails before execution", async () =
     const original = await readJson<{
       fixture_version: string;
       applicable_platform_profiles: string[];
+      initial_directories: string[];
       initial_tree: Array<{ path: string; content_file: string; sha256: string }>;
       invocations: Array<{ fault_point: string | null }>;
       expected: unknown[];
@@ -182,6 +191,7 @@ test("unsafe and ambiguous fixture structure fails before execution", async () =
       await rejects((fixture) => { fixture.initial_tree[0]!.content_file = path; }, /closed schema|safe relative path/u);
     }
     await rejects((fixture) => { fixture.initial_tree[1] = structuredClone(fixture.initial_tree[0]!); }, /duplicate paths|stable order/u);
+    await rejects((fixture) => { fixture.initial_directories.shift(); }, /directory topology omits/u);
     await rejects((fixture) => { fixture.initial_tree[0]!.sha256 = `sha256:${"0".repeat(64)}`; }, /digest mismatch/u);
     await rejects((fixture) => { fixture.expected.pop(); }, /invocation\/expectation counts differ|closed schema/u);
     await rejects((fixture) => { fixture.fixture_version = "2"; }, /closed schema/u);
@@ -202,6 +212,38 @@ test("a linked corpus content reference fails closed before execution", async ()
     await writeJson(caseFile, fixture);
 
     await assert.rejects(runCorpus(root), /link/u);
+  });
+});
+
+test("the complete runtime-reference scan includes @fixture replace content", async () => {
+  await withCorpusCopy(async (root) => {
+    const caseFile = join(root, "cases", "negative", "evidence", "changed", "case.json");
+    const fixture = await readJson<{ invocations: Array<{ argv: string[] }> }>(caseFile);
+    const replacement = fixture.invocations.find(({ argv }) => argv[0] === "@fixture" && argv[1] === "replace");
+    assert.ok(replacement);
+    const reference = "data/runtime-replace-only.txt";
+    const referencePath = join(root, ...reference.split("/"));
+    const bytes = await readFile(join(root, "data", "artifact-v2.txt"));
+    await writeFile(referencePath, bytes);
+    replacement.argv[3] = reference;
+    await writeJson(caseFile, fixture);
+
+    let targetPassed: boolean | undefined;
+    const summary = await runCorpus(root, {
+      async onCaseStart(caseId) {
+        if (caseId !== "corpus-contract-positive") return;
+        await rm(referencePath);
+        await mkdir(referencePath);
+      },
+      async onCaseResult(caseId, passed) {
+        if (caseId !== "corpus-contract-positive") return;
+        targetPassed = passed;
+        await rm(referencePath, { recursive: true });
+        await writeFile(referencePath, bytes);
+      },
+    });
+    assert.equal(targetPassed, false);
+    assert.ok(summary.failed > 0);
   });
 });
 
@@ -353,6 +395,37 @@ test("positive and negative fingerprints normalize alternate corpus references w
       expectation.stderr_file = await duplicate(expectation.stderr_file);
     }
     fixture.expected_derived_view_file = await duplicate(fixture.expected_derived_view_file);
+    await writeJson(caseFile, fixture);
+
+    const bindingsFile = join(root, "bindings.json");
+    const bindings = await readJson<{
+      rules: Array<{ rule_id: string; negative: Array<{ case_id: string; assertion_ids: string[] }> }>;
+    }>(bindingsFile);
+    for (const ruleId of fixture.normative_rule_ids) {
+      const rule = bindings.rules.find(({ rule_id }) => rule_id === ruleId);
+      assert.ok(rule);
+      rule.negative.push({ case_id: fixture.case_id, assertion_ids: ['stdout:0:/command="dossier.create"'] });
+      rule.negative.sort((left, right) => left.case_id.localeCompare(right.case_id));
+    }
+    await writeJson(bindingsFile, bindings);
+
+    await assert.rejects(runCorpus(root), /behavior-identical|polarity/u);
+  });
+});
+
+test("a trace-label-only change cannot distinguish cross-polarity behavior", async () => {
+  await withCorpusCopy(async (root) => {
+    const source = join(root, "cases", "positive", "dossier", "dossier-create");
+    const target = join(root, "cases", "negative", "dossier", "dossier-create-actor-label-only");
+    await cp(source, target, { recursive: true, errorOnExist: true });
+    const caseFile = join(target, "case.json");
+    const fixture = await readJson<{
+      case_id: string;
+      normative_rule_ids: string[];
+      invocations: Array<{ actor_label: string }>;
+    }>(caseFile);
+    fixture.case_id = "dossier-create-actor-label-only";
+    fixture.invocations[0]!.actor_label = "trace-peer";
     await writeJson(caseFile, fixture);
 
     const bindingsFile = join(root, "bindings.json");
@@ -703,6 +776,110 @@ test("harness-owned Git state is immutable and derived-view network attempts tur
       assert.ok(summary.failed > 0);
     });
   });
+  await t.test("delayed DNS scheduled by the final assertion hook remains visible without sleeping", async () => {
+    await withCorpusCopy(async (root) => {
+      let passed: boolean | undefined;
+      let delayed: NodeJS.Timeout | undefined;
+      const summary = await runCorpus(root, {
+        onCaseAssertions: (caseId) => {
+          if (caseId === "dossier-create") delayed = setTimeout(() => lookup("localhost", () => undefined), 60_000);
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "dossier-create") passed = ok; },
+      });
+      if (delayed !== undefined) clearTimeout(delayed);
+      assert.equal(passed, false);
+      assert.ok(summary.failed > 0);
+    });
+  });
+  await t.test("a real case-created TCP server is a network violation", async () => {
+    await withCorpusCopy(async (root) => {
+      let passed: boolean | undefined;
+      let server: Server | undefined;
+      try {
+        const summary = await runCorpus(root, {
+          onCaseAssertions: async (caseId) => {
+            if (caseId !== "walking-skeleton-offline") return;
+            server = createServer();
+            await new Promise<void>((resolveListening, rejectListening) => {
+              server!.once("error", rejectListening);
+              server!.listen(0, "127.0.0.1", resolveListening);
+            });
+          },
+          onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
+        });
+        assert.equal(passed, false);
+        assert.ok(summary.failed > 0);
+      } finally {
+        if (server?.listening) await new Promise<void>((resolveClosed) => server!.close(() => resolveClosed()));
+      }
+    });
+  });
+  await t.test("a real case-created DNS channel is a network violation", async () => {
+    await withCorpusCopy(async (root) => {
+      let passed: boolean | undefined;
+      let resolver: Resolver | undefined;
+      const summary = await runCorpus(root, {
+        onCaseAssertions: (caseId) => {
+          if (caseId !== "walking-skeleton-offline") return;
+          resolver = new Resolver();
+          resolver.setServers(["127.0.0.1"]);
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
+      });
+      resolver?.cancel();
+      assert.equal(passed, false);
+      assert.ok(summary.failed > 0);
+    });
+  });
+  await t.test("case-created PBKDF2 work that later starts DNS is rejected without sleeping", async () => {
+    await withCorpusCopy(async (root) => {
+      let passed: boolean | undefined;
+      let started = false;
+      let resolveDns!: () => void;
+      let rejectDns!: (error: Error) => void;
+      const dnsCompleted = new Promise<void>((resolvePromise, rejectPromise) => {
+        resolveDns = resolvePromise;
+        rejectDns = rejectPromise;
+      });
+      const summary = await runCorpus(root, {
+        onCaseAssertions: (caseId) => {
+          if (caseId !== "walking-skeleton-offline") return;
+          started = true;
+          pbkdf2("password", "salt", 1, 16, "sha256", (error) => {
+            if (error !== null) {
+              rejectDns(error);
+              return;
+            }
+            lookup("localhost", () => resolveDns());
+          });
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
+      });
+      assert.equal(started, true);
+      await dnsCompleted;
+      assert.equal(passed, false);
+      assert.ok(summary.failed > 0);
+    });
+  });
+});
+
+test("network handles created outside every case scope are not attributed to corpus execution", async () => {
+  const resolver = new Resolver();
+  resolver.setServers(["127.0.0.1"]);
+  const server = createServer();
+  await new Promise<void>((resolveListening, rejectListening) => {
+    server.once("error", rejectListening);
+    server.listen(0, "127.0.0.1", resolveListening);
+  });
+  try {
+    const summary = await runCorpus(corpusRoot);
+    assert.equal(summary.failed, 0);
+    assert.deepEqual(summary.uncovered_positive, []);
+    assert.deepEqual(summary.uncovered_negative, []);
+  } finally {
+    resolver.cancel();
+    await new Promise<void>((resolveClosed) => server.close(() => resolveClosed()));
+  }
 });
 
 test("state-critical input corruption turns a passing vector red even with a refreshed fixture digest", async () => {
