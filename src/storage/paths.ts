@@ -199,7 +199,7 @@ export function validateLexicalEvidencePath(lexicalPath: string): readonly strin
   if (segments.some((segment) => /[ .]$/u.test(segment))) {
     throw evidenceError("trailing dot or space aliases are forbidden");
   }
-  if (segments.some((segment) => /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu.test(segment))) {
+  if (segments.some((segment) => /^(?:con|prn|aux|nul|clock\$|conin\$|conout\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\..*)?$/iu.test(segment))) {
     throw evidenceError("device aliases are forbidden");
   }
   return segments;

@@ -2,6 +2,7 @@
   "fixture_version": "1",
   "case_id": "writer-same-basis",
   "normative_rule_ids": [
+    "M0-CORPUS-005",
     "M0-CORPUS-013",
     "M0-RELEASE-004"
   ],
@@ -107,8 +108,8 @@
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
         "CASE_PROCESS_PROFILE": "controlled-test",
-        "CASE_PROCESS_PID": "1001",
-        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_PID": "2002",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:01Z",
         "CASE_PROCESS_STATUS": "terminated",
         "CASE_NETWORK": "deny",
         "LANG": "C",

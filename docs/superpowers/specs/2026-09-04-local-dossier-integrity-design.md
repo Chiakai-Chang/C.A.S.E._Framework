@@ -119,7 +119,7 @@ Rules:
 - `dossier.json` is the sole canonical truth for current governed state.
 - handoff, submission, and decision envelopes are immutable create-once records.
 - only records referenced by the current snapshot affect current state.
-- an unreferenced immutable record is an orphan, not current truth. Validation reports it but does not apply it.
+- a valid unreferenced immutable record is a recoverable orphan only when its stored publication facts still target the current state. Validation reports a recoverable orphan but never applies it as current truth. A valid record targeting noncurrent state is superseded immutable history, not an orphan; an unreadable or structurally invalid envelope directory makes the history scan fail closed.
 - `locks/` is transient coordination state, not dossier truth or history.
 - M0 has no authoritative `brief.md`. Human-readable views are generated from canonical data so that Markdown cannot become a second editable truth.
 
@@ -531,7 +531,7 @@ No error may recommend destructive deletion as its default remediation.
 - exactly one recommended next valid action;
 - unresolved warning when identity, freshness, or environment cannot be mechanically proven.
 
-`--json` exposes the complete structured view. Human output has a bounded default size and points to deeper data rather than embedding large evidence.
+`--json` exposes the complete structured view. Human output deterministically caps each rendered field at 256 UTF-8 bytes and the complete output at 16,384 UTF-8 bytes. For every bounded collection it states the total, shown, and omitted counts; whenever content is abbreviated or omitted it says `rerun with --json` as the explicit route to complete data. Required dossier/run identifiers, revision, abbreviated state digest, and next action are retained within the bound.
 
 ## 19. Initialization and repository trust
 
@@ -548,7 +548,7 @@ Nested repositories, submodules, linked worktrees, case-insensitive aliases, UNC
 ## 20. Offline and data policy
 
 - Core commands perform no network access.
-- Schemas, conformance data required at runtime, and human help are bundled.
+- Schemas and conformance data required at runtime are bundled. Bundled human help remains a Task 12 blocking external gate (`M0-OFFLINE-008`) until that command surface exists and its packaging is verified.
 - Update checks are absent in M0.
 - Telemetry is absent in M0.
 - Dossier content may contain sensitive repository information. The tool does not claim to detect or protect all secrets.
@@ -583,6 +583,8 @@ The protocol is host-neutral, but filesystem publication behavior is platform-pr
 
 The public support matrix lists only profiles that pass the frozen corpus.
 
+The current public Windows profile is explicitly unsupported: on Windows the frozen public CLI vector returns `CASE_E_UNSUPPORTED_PROFILE` with exit 10 and does not receive controlled-test coverage credit.
+
 ## 22. Conformance strategy
 
 Every normative MUST in the future L0 specification receives at least one positive and one negative vector. M0 includes journey tests as well as isolated schema tests.
@@ -612,7 +614,8 @@ expected[] corresponding to invocations:
   process_exit
   result_code
   stdout_json_file: path | null
-  stderr: empty | startup_failure_only
+  stderr: empty | exact | startup_failure_only
+  stderr_file: path | null
 expected_final_tree[] in repository-relative path order:
   path
   presence: present | absent
@@ -620,7 +623,7 @@ expected_final_tree[] in repository-relative path order:
 expected_derived_view_file
 ```
 
-`content_file`, scripted input, expected JSON, and expected view paths resolve inside the frozen corpus, never inside the repository under test. Random IDs, clocks, retry timing, locale, and platform error text are injected or fixed by the case and cannot affect expected canonical output. Concurrent invocations share one `concurrency_group`; their allowed result set and exactly-one-success constraint are encoded in the expected JSON. A case is invalid if it leaves an expected field implicit.
+`empty` requires normal stdout and `stderr_file: null`. `exact` requires normal stdout and a corpus-relative `stderr_file` compared byte-for-byte. `startup_failure_only` requires both stdout and stderr file references to be null. `content_file`, scripted input, expected JSON, expected view, stderr, and interactive prompt references resolve inside the frozen corpus, never inside the repository under test. Random IDs, clocks, retry timing, locale, and platform error text are injected or fixed by each invocation and cannot affect expected canonical output. Concurrent invocations share one `concurrency_group`; their allowed result set and exactly-one-success constraint are encoded in the expected JSON. A case is invalid if it leaves an expected field implicit.
 
 Blocking families are:
 

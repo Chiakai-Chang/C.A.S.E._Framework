@@ -30,7 +30,28 @@
   {
     "rule_id": "M0-SOURCE-007",
     "source_section": "6",
-    "statement": "An unreferenced immutable envelope is reported as an orphan and never applied as current truth.",
+    "statement": "A valid unreferenced envelope whose stored publication facts still target current state is reported as a recoverable orphan and never applied as current truth.",
+    "requires_positive": true,
+    "requires_negative": true
+  },
+  {
+    "rule_id": "M0-SOURCE-008",
+    "source_section": "6",
+    "statement": "A valid unreferenced envelope whose stored publication facts target noncurrent state remains superseded immutable history and is not reported as a recoverable orphan.",
+    "requires_positive": true,
+    "requires_negative": false
+  },
+  {
+    "rule_id": "M0-SOURCE-009",
+    "source_section": "6",
+    "statement": "An unreadable or structurally invalid immutable-envelope directory makes current-state validation fail with a structural invariant result.",
+    "requires_positive": false,
+    "requires_negative": true
+  },
+  {
+    "rule_id": "M0-SOURCE-010",
+    "source_section": "6",
+    "statement": "Failure while scanning one immutable-envelope directory does not prevent every remaining envelope directory from being scanned.",
     "requires_positive": false,
     "requires_negative": true
   },
@@ -1243,12 +1264,19 @@
     "source_section": "18",
     "statement": "JSON mode exposes the complete structured current view.",
     "requires_positive": true,
-    "requires_negative": true
+    "requires_negative": false
   },
   {
     "rule_id": "M0-SHOW-004",
     "source_section": "18",
-    "statement": "Default human current view remains bounded and points to deeper data instead of embedding large evidence.",
+    "statement": "A bounded human collection reports exact total, shown, and omitted counts and directs omitted content to --json.",
+    "requires_positive": true,
+    "requires_negative": true
+  },
+  {
+    "rule_id": "M0-SHOW-005",
+    "source_section": "18",
+    "statement": "Human rendering caps each field at 256 UTF-8 bytes and complete output at 16384 UTF-8 bytes while retaining dossier/run IDs, revision, abbreviated state digest, and next action.",
     "requires_positive": true,
     "requires_negative": true
   },
@@ -1507,14 +1535,14 @@
   {
     "rule_id": "M0-CORPUS-005",
     "source_section": "22.1",
-    "statement": "Random IDs, clocks, retry timing, locale, process identity, environment, and platform behavior are fixed by deterministic adapters.",
+    "statement": "Clocks, IDs, locale, process identity, environment, and platform behavior are specified per invocation by deterministic adapters while repository and atomic state remain shared.",
     "requires_positive": true,
     "requires_negative": false
   },
   {
     "rule_id": "M0-CORPUS-011",
     "source_section": "22.1",
-    "statement": "Every executed case denies and audits network access deterministically.",
+    "statement": "Every executed case audits zero in-process network initialization and no case-created timer or immediate pending at completion.",
     "requires_positive": true,
     "requires_negative": false
   },

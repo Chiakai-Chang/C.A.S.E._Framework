@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { lookup } from "node:dns";
-import { cp, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -47,6 +47,48 @@ test("normal results cannot leave exact stdout implicit", async () => {
 
     await assert.rejects(runCorpus(root), /CASE_E_CONFORMANCE/u);
   });
+});
+
+test("§22.1 stderr prose and the closed case schema define the same exact relations", async () => {
+  const design = await readFile(join(process.cwd(), "docs", "superpowers", "specs", "2026-09-04-local-dossier-integrity-design.md"), "utf8");
+  const section = design.slice(design.indexOf("### 22.1 Frozen fixture contract"), design.indexOf("## 23. Baseline evaluation"));
+  const schema = await readJson<{
+    $defs: {
+      expectation: {
+        required: string[];
+        properties: { stderr: { enum: string[] } };
+        allOf: unknown[];
+      };
+    };
+  }>(join(corpusRoot, "schema", "case.schema.json"));
+  const modeLine = /^  stderr: (.+)$/mu.exec(section);
+  assert.ok(modeLine);
+  assert.deepEqual(modeLine[1]!.split(" | "), schema.$defs.expectation.properties.stderr.enum);
+  assert.match(section, /^  stderr_file: path \| null$/mu);
+  assert.ok(schema.$defs.expectation.required.includes("stderr_file"));
+  assert.equal(schema.$defs.expectation.allOf.length, 3);
+  assert.match(section, /`empty` requires normal stdout and `stderr_file: null`/u);
+  assert.match(section, /`exact` requires normal stdout and a corpus-relative `stderr_file` compared byte-for-byte/u);
+  assert.match(section, /`startup_failure_only` requires both stdout and stderr file references to be null/u);
+  assert.match(section, /interactive prompt references resolve inside the frozen corpus/u);
+
+  const bindings = await readJson<{
+    rules: Array<{ rule_id: string; positive: Array<{ case_id: string; assertion_ids: string[] }> }>;
+  }>(join(corpusRoot, "bindings.json"));
+  const corpusRule = bindings.rules.find(({ rule_id }) => rule_id === "M0-CORPUS-003");
+  assert.ok(corpusRule);
+  assert.deepEqual(corpusRule.positive, [{
+    case_id: "corpus-contract-positive",
+    assertion_ids: ["probe.all-runtime-corpus-data-references-are-bundled-relative-files"],
+  }]);
+});
+
+test("the platform specification explicitly declares the current public Windows profile unsupported", async () => {
+  const design = await readFile(join(process.cwd(), "docs", "superpowers", "specs", "2026-09-04-local-dossier-integrity-design.md"), "utf8");
+  assert.match(
+    design,
+    /The current public Windows profile is explicitly unsupported: on Windows the frozen public CLI vector returns `CASE_E_UNSUPPORTED_PROFILE` with exit 10 and does not receive controlled-test coverage credit\./u,
+  );
 });
 
 test("a concurrency group must declare exactly one successful result", async () => {
@@ -136,7 +178,7 @@ test("unsafe and ambiguous fixture structure fails before execution", async () =
       await assert.rejects(runCorpus(root), pattern);
     };
 
-    for (const path of ["../escape", "/absolute", "C:/drive", "//server/share", "a\\b"]) {
+    for (const path of ["../escape", "/absolute", "C:/drive", "//server/share", "a\\b", "CONIN$", "conout$", "CLOCK$", "COM¹", "com².txt", "LPT³"]) {
       await rejects((fixture) => { fixture.initial_tree[0]!.content_file = path; }, /closed schema|safe relative path/u);
     }
     await rejects((fixture) => { fixture.initial_tree[1] = structuredClone(fixture.initial_tree[0]!); }, /duplicate paths|stable order/u);
@@ -280,6 +322,55 @@ test("positive and negative cases cannot be behavior-identical vectors", async (
   });
 });
 
+test("positive and negative fingerprints normalize alternate corpus references with identical bytes", async () => {
+  await withCorpusCopy(async (root) => {
+    const source = join(root, "cases", "positive", "dossier", "dossier-create");
+    const target = join(root, "cases", "negative", "dossier", "dossier-create-identical-bytes");
+    await cp(source, target, { recursive: true, errorOnExist: true });
+    const caseFile = join(target, "case.json");
+    const fixture = await readJson<{
+      case_id: string;
+      normative_rule_ids: string[];
+      initial_tree: Array<{ content_file: string }>;
+      invocations: Array<{ stdin_content_file: string | null }>;
+      expected: Array<{ stdout_json_file: string | null; stderr_file: string | null }>;
+      expected_derived_view_file: string | null;
+    }>(caseFile);
+    fixture.case_id = "dossier-create-identical-bytes";
+    const duplicateRoot = join(root, "data", "fingerprint-duplicates");
+    await mkdir(duplicateRoot);
+    let duplicateIndex = 0;
+    const duplicate = async (reference: string | null): Promise<string | null> => {
+      if (reference === null) return null;
+      const replacement = `data/fingerprint-duplicates/reference-${duplicateIndex++}`;
+      await writeFile(join(root, ...replacement.split("/")), await readFile(join(root, ...reference.split("/"))));
+      return replacement;
+    };
+    for (const entry of fixture.initial_tree) entry.content_file = (await duplicate(entry.content_file))!;
+    for (const invocation of fixture.invocations) invocation.stdin_content_file = await duplicate(invocation.stdin_content_file);
+    for (const expectation of fixture.expected) {
+      expectation.stdout_json_file = await duplicate(expectation.stdout_json_file);
+      expectation.stderr_file = await duplicate(expectation.stderr_file);
+    }
+    fixture.expected_derived_view_file = await duplicate(fixture.expected_derived_view_file);
+    await writeJson(caseFile, fixture);
+
+    const bindingsFile = join(root, "bindings.json");
+    const bindings = await readJson<{
+      rules: Array<{ rule_id: string; negative: Array<{ case_id: string; assertion_ids: string[] }> }>;
+    }>(bindingsFile);
+    for (const ruleId of fixture.normative_rule_ids) {
+      const rule = bindings.rules.find(({ rule_id }) => rule_id === ruleId);
+      assert.ok(rule);
+      rule.negative.push({ case_id: fixture.case_id, assertion_ids: ['stdout:0:/command="dossier.create"'] });
+      rule.negative.sort((left, right) => left.case_id.localeCompare(right.case_id));
+    }
+    await writeJson(bindingsFile, bindings);
+
+    await assert.rejects(runCorpus(root), /behavior-identical|polarity/u);
+  });
+});
+
 test("decoded prototype-spelling keys remain own unknown fields and fail closure", async () => {
   await withCorpusCopy(async (root) => {
     const caseFile = join(root, "cases", "positive", "dossier", "dossier-create", "case.json");
@@ -359,15 +450,17 @@ test("human show output is exact, bounded, and keeps every required recovery cue
   const output = new Map<string, string>();
   const summary = await runCorpus(corpusRoot, {
     onInvocationResult: (caseId, _index, result) => {
-      if (caseId === "human-show-20" || caseId === "human-show-21") output.set(caseId, result.stdout);
+      if (["human-show-20", "human-show-21", "human-show-huge"].includes(caseId)) output.set(caseId, result.stdout);
     },
   });
   assert.equal(summary.failed, 0);
 
   const twenty = output.get("human-show-20");
   const twentyOne = output.get("human-show-21");
+  const huge = output.get("human-show-huge");
   assert.ok(twenty);
   assert.ok(twentyOne);
+  assert.ok(huge);
   for (const rendered of [twenty, twentyOne]) {
     assert.match(rendered, /^OK CASE_OK: Current dossier$/mu);
     assert.match(rendered, /^dossier ID: case-dossier-1$/mu);
@@ -381,14 +474,69 @@ test("human show output is exact, bounded, and keeps every required recovery cue
     assert.match(rendered, /^acceptance: pending$/mu);
     assert.match(rendered, /^handoff: none$/mu);
     assert.match(rendered, /^next: CASE_NEXT_ADD_EVIDENCE$/mu);
-    assert.match(rendered, /^warnings: none$/mu);
+    assert.match(rendered, /^warnings: total=0 shown=0 omitted=0$/mu);
     assert.equal(rendered.split("\n").filter((line) => line.startsWith("criterion: ")).length, 20);
+    assert.ok(Buffer.byteLength(rendered, "utf8") <= 16_384);
   }
   assert.match(twenty, /^title: Bounded human view 20$/mu);
   assert.match(twenty, /^criterion: criterion-20 = failed$/mu);
+  assert.match(twenty, /^criteria: total=20 shown=20 omitted=0$/mu);
+  assert.doesNotMatch(twenty, /rerun with --json/u);
   assert.match(twentyOne, /^title: Bounded human view 21$/mu);
+  assert.match(twentyOne, /^criteria: total=21 shown=20 omitted=1$/mu);
+  assert.match(twentyOne, /^deeper: output abbreviated; rerun with --json for complete data$/mu);
   assert.doesNotMatch(twentyOne, /criterion: criterion-21/u);
   assert.doesNotMatch(twentyOne, /evidence gaps: .*criterion-21/u);
+  assert.equal(huge, await readFile(join(corpusRoot, "data", "expected", "generated", "human-show-huge.txt"), "utf8"));
+  assert.equal(Buffer.byteLength(huge, "utf8"), 11_741);
+  assert.match(huge, /^dossier ID: case-dossier-1$/mu);
+  assert.match(huge, /^active run: case-run-1$/mu);
+  assert.match(huge, /^revision: 0$/mu);
+  assert.match(huge, /^state digest: sha256:3e6622952fd5…$/mu);
+  assert.match(huge, /^next: CASE_NEXT_ADD_EVIDENCE$/mu);
+  assert.match(huge, /^deeper: output abbreviated; rerun with --json for complete data$/mu);
+  for (const line of huge.trimEnd().split("\n")) {
+    const separator = line.indexOf(": ");
+    if (separator >= 0) assert.ok(Buffer.byteLength(line.slice(separator + 2), "utf8") <= 256);
+  }
+});
+
+test("per-invocation environments may vary sequential clocks and concurrent process identities", async (t) => {
+  await t.test("sequential clock reversal and process variation", async () => {
+    await withCorpusCopy(async (root) => {
+      const caseFile = join(root, "cases", "positive", "idempotency", "retry-immediate", "case.json");
+      const fixture = await readJson<{ invocations: Array<{ fixed_environment: Record<string, string> }> }>(caseFile);
+      Object.assign(fixture.invocations[1]!.fixed_environment, {
+        CASE_CLOCK: "2000-01-01T00:00:00Z",
+        CASE_ID_SEED: "later-invocation",
+        CASE_PROCESS_PID: "2002",
+        CASE_PROCESS_STARTED_AT: "1999-12-31T23:59:59Z",
+      });
+      await writeJson(caseFile, fixture);
+
+      const summary = await runCorpus(root);
+      assert.equal(summary.failed, 0);
+    });
+  });
+  await t.test("concurrent process identities reach their own workflow dependencies", async () => {
+    await withCorpusCopy(async (root) => {
+      const caseFile = join(root, "cases", "positive", "concurrency", "writer-same-basis", "case.json");
+      const fixture = await readJson<{ invocations: Array<{ fixed_environment: Record<string, string> }> }>(caseFile);
+      Object.assign(fixture.invocations[1]!.fixed_environment, {
+        CASE_PROCESS_PID: "2002",
+        CASE_PROCESS_STARTED_AT: "2026-09-04T03:00:01Z",
+      });
+      await writeJson(caseFile, fixture);
+      let assertions: readonly string[] | undefined;
+      const summary = await runCorpus(root, {
+        onCaseAssertions: (caseId, observed) => { if (caseId === "writer-same-basis") assertions = observed; },
+      });
+
+      assert.equal(summary.failed, 0);
+      assert.ok(assertions?.includes("identity-current:op-writer-a:pid=1001:started=2026-09-04T03:00:00Z"));
+      assert.ok(assertions?.includes("identity-current:op-writer-b:pid=2002:started=2026-09-04T03:00:01Z"));
+    });
+  });
 });
 
 test("the Windows profile case executes the frozen public CLI and stays unsupported", async () => {
@@ -521,6 +669,36 @@ test("harness-owned Git state is immutable and derived-view network attempts tur
         },
         onCaseResult: (caseId, ok) => { if (caseId === "dossier-create") passed = ok; },
       });
+      assert.equal(passed, false);
+      assert.ok(summary.failed > 0);
+    });
+  });
+  await t.test("100ms-plus delayed DNS timer in a derived-view hook remains visible without sleeping", async () => {
+    await withCorpusCopy(async (root) => {
+      let passed: boolean | undefined;
+      let delayed: NodeJS.Timeout | undefined;
+      const summary = await runCorpus(root, {
+        onBeforeDerivedView: (caseId) => {
+          if (caseId === "show-context-loss") delayed = setTimeout(() => lookup("localhost", () => undefined), 60_000);
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "show-context-loss") passed = ok; },
+      });
+      if (delayed !== undefined) clearTimeout(delayed);
+      assert.equal(passed, false);
+      assert.ok(summary.failed > 0);
+    });
+  });
+  await t.test("100ms-plus delayed DNS timer in a final-tree hook remains visible without sleeping", async () => {
+    await withCorpusCopy(async (root) => {
+      let passed: boolean | undefined;
+      let delayed: NodeJS.Timeout | undefined;
+      const summary = await runCorpus(root, {
+        onFinalTree: (caseId) => {
+          if (caseId === "walking-skeleton-offline") delayed = setTimeout(() => lookup("localhost", () => undefined), 60_000);
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
+      });
+      if (delayed !== undefined) clearTimeout(delayed);
       assert.equal(passed, false);
       assert.ok(summary.failed > 0);
     });

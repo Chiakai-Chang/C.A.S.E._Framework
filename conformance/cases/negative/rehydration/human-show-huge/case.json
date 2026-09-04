@@ -1,18 +1,13 @@
 {
   "fixture_version": "1",
-  "case_id": "no-brief-authority",
+  "case_id": "human-show-huge",
   "normative_rule_ids": [
-    "M0-SOURCE-005"
+    "M0-SHOW-005"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
   ],
   "initial_tree": [
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
-      "content_file": "data/generated/misleading-brief.md",
-      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
-    },
     {
       "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
       "content_file": "data/empty.bin",
@@ -20,8 +15,8 @@
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
-      "content_file": "data/base-dossier.json",
-      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+      "content_file": "data/human-show-huge-dossier.json",
+      "sha256": "sha256:f72b384c6b0fda4a15317acae0ad08286b05eb0817af3828af457d202be3a0d7"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
@@ -48,7 +43,6 @@
     {
       "actor_label": "trace-main",
       "argv": [
-        "--json",
         "dossier",
         "show",
         "--dossier",
@@ -76,17 +70,12 @@
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
-      "stdout_json_file": "data/expected/generated/no-brief-authority-0.json",
+      "stdout_json_file": "data/expected/generated/human-show-huge.txt",
       "stderr": "empty",
       "stderr_file": null
     }
   ],
   "expected_final_tree": [
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
-      "presence": "present",
-      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
-    },
     {
       "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
       "presence": "present",
@@ -95,7 +84,7 @@
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
       "presence": "present",
-      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+      "sha256": "sha256:f72b384c6b0fda4a15317acae0ad08286b05eb0817af3828af457d202be3a0d7"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
@@ -118,5 +107,5 @@
       "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
     }
   ],
-  "expected_derived_view_file": "data/views/generated/no-brief-authority.json"
+  "expected_derived_view_file": null
 }

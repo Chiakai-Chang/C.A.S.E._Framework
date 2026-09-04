@@ -101,13 +101,69 @@
     },
     {
       "rule_id": "M0-SOURCE-007",
-      "positive": [],
+      "positive": [
+        {
+          "case_id": "orphan-decision-reconfirm",
+          "assertion_ids": [
+            "stdout:3:/data/stable_warning_codes/0=\"CASE_L_ORPHAN_ENVELOPE\"",
+            "stdout:4:/data/acceptance=\"pending\"",
+            "stdout:4:/data/unresolved_warnings/0=\"CASE_L_ORPHAN_ENVELOPE\""
+          ]
+        }
+      ],
       "negative": [
         {
           "case_id": "fault-after-envelope-create",
           "assertion_ids": [
             "stdout:1:/data/stable_warning_codes/0=\"CASE_L_ORPHAN_ENVELOPE\"",
             "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=null"
+          ]
+        },
+        {
+          "case_id": "fault-after-submission-envelope-create",
+          "assertion_ids": [
+            "stdout:2:/data/stable_warning_codes/0=\"CASE_L_ORPHAN_ENVELOPE\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=null",
+            "tree:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json=sha256:912c3ec250de7448e5cce87cd4a91aabc7fa5ac1a46c91fb5841df682bea7a8c"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-008",
+      "positive": [
+        {
+          "case_id": "superseded-envelope-history",
+          "assertion_ids": [
+            "stdout:0:/data/stable_warning_codes:length=0",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=null",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=null",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=null"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SOURCE-009",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "orphan-scan-fail-closed",
+          "assertion_ids": [
+            "probe.untrusted-envelope-directory-produces-structural-invariant-failure"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-010",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "orphan-scan-fail-closed",
+          "assertion_ids": [
+            "probe.scan-continues-through-submission-and-decision-directories-after-earlier-listing-failure"
           ]
         }
       ]
@@ -3309,8 +3365,8 @@
           "case_id": "human-show-20",
           "assertion_ids": [
             "human-stdout:0:1=dossier ID: case-dossier-1",
-            "human-stdout:0:29=current checks: failed",
-            "human-stdout:0:3=objective: Resume with bounded criteria"
+            "human-stdout:0:3=objective: Resume with bounded criteria",
+            "human-stdout:0:8=current checks: failed"
           ]
         }
       ],
@@ -3322,8 +3378,8 @@
         {
           "case_id": "human-show-20",
           "assertion_ids": [
-            "human-stdout:0:33=next: CASE_NEXT_ADD_EVIDENCE",
-            "human-stdout:0:34=warnings: none"
+            "human-stdout:0:12=next: CASE_NEXT_ADD_EVIDENCE",
+            "human-stdout:0:55=warnings: total=0 shown=0 omitted=0"
           ]
         }
       ],
@@ -3348,15 +3404,7 @@
           ]
         }
       ],
-      "negative": [
-        {
-          "case_id": "no-brief-authority",
-          "assertion_ids": [
-            "tree:/.case-agent/dossiers/case-dossier-1/brief.md=sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d",
-            "view:/title=\"Release integrity\""
-          ]
-        }
-      ]
+      "negative": []
     },
     {
       "rule_id": "M0-SHOW-004",
@@ -3364,8 +3412,8 @@
         {
           "case_id": "human-show-20",
           "assertion_ids": [
-            "human-stdout:0:7=state digest: sha256:735426045650…",
-            "human-stdout:0:line-count=35"
+            "human-stdout:0:13=criteria: total=20 shown=20 omitted=0",
+            "human-stdout:0:line-count=56"
           ]
         }
       ],
@@ -3373,8 +3421,41 @@
         {
           "case_id": "human-show-21",
           "assertion_ids": [
-            "human-stdout:0:27=criterion: criterion-20 = failed",
-            "human-stdout:0:line-count=35"
+            "human-stdout:0:13=criteria: total=21 shown=20 omitted=1",
+            "human-stdout:0:56=deeper: output abbreviated; rerun with --json for complete data",
+            "human-stdout:0:line-count=57"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SHOW-005",
+      "positive": [
+        {
+          "case_id": "human-show-20",
+          "assertion_ids": [
+            "human-stdout:0:12=next: CASE_NEXT_ADD_EVIDENCE",
+            "human-stdout:0:1=dossier ID: case-dossier-1",
+            "human-stdout:0:5=active run: case-run-1",
+            "human-stdout:0:6=revision: 0",
+            "human-stdout:0:7=state digest: sha256:735426045650…",
+            "human-stdout:0:utf8-bytes=1638"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "human-show-huge",
+          "assertion_ids": [
+            "human-stdout:0:12=next: CASE_NEXT_ADD_EVIDENCE",
+            "human-stdout:0:13=criteria: total=21 shown=20 omitted=1",
+            "human-stdout:0:1=dossier ID: case-dossier-1",
+            "human-stdout:0:56=deeper: output abbreviated; rerun with --json for complete data",
+            "human-stdout:0:5=active run: case-run-1",
+            "human-stdout:0:6=revision: 0",
+            "human-stdout:0:7=state digest: sha256:3e6622952fd5…",
+            "human-stdout:0:max-field-utf8-bytes=256",
+            "human-stdout:0:utf8-bytes=11741"
           ]
         }
       ]
@@ -3625,12 +3706,7 @@
         {
           "case_id": "corpus-contract-positive",
           "assertion_ids": [
-            "probe.all-runtime-corpus-data-references-are-bundled-relative-files"
-          ]
-        },
-        {
-          "case_id": "offline-boundaries-positive",
-          "assertion_ids": [
+            "probe.all-runtime-corpus-data-references-are-bundled-relative-files",
             "probe.bundled-schema-registry-validates-offline"
           ]
         }
@@ -3787,7 +3863,7 @@
         {
           "case_id": "corpus-contract-positive",
           "assertion_ids": [
-            "probe.all-four-corpus-reference-kinds-resolve-to-regular-in-corpus-files"
+            "probe.all-runtime-corpus-data-references-are-bundled-relative-files"
           ]
         }
       ],
@@ -3856,6 +3932,21 @@
           "assertion_ids": [
             "probe.clock-ids-locale-process-profile-and-network-policy-are-fixed"
           ]
+        },
+        {
+          "case_id": "retry-immediate",
+          "assertion_ids": [
+            "identity-current:op-retry:pid=1001:started=2026-09-04T03:00:00Z",
+            "identity-current:op-retry:pid=2002:started=1999-12-31T23:59:59Z",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/evidence/0/captured_at=\"2026-09-04T03:02:01Z\""
+          ]
+        },
+        {
+          "case_id": "writer-same-basis",
+          "assertion_ids": [
+            "identity-current:op-writer-a:pid=1001:started=2026-09-04T03:00:00Z",
+            "identity-current:op-writer-b:pid=2002:started=2026-09-04T03:00:01Z"
+          ]
         }
       ],
       "negative": []
@@ -3866,6 +3957,7 @@
         {
           "case_id": "walking-skeleton-offline",
           "assertion_ids": [
+            "async.quiescent",
             "network.zero"
           ]
         }

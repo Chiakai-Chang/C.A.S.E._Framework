@@ -6,6 +6,12 @@ active writer: actor-a
 active run: case-run-1
 revision: 0
 state digest: sha256:735426045650…
+current checks: failed
+review: working
+acceptance: pending
+handoff: none
+next: CASE_NEXT_ADD_EVIDENCE
+criteria: total=20 shown=20 omitted=0
 criterion: criterion-01 = failed
 criterion: criterion-02 = failed
 criterion: criterion-03 = failed
@@ -26,10 +32,25 @@ criterion: criterion-17 = failed
 criterion: criterion-18 = failed
 criterion: criterion-19 = failed
 criterion: criterion-20 = failed
-evidence gaps: criterion-01, criterion-02, criterion-03, criterion-04, criterion-05, criterion-06, criterion-07, criterion-08, criterion-09, criterion-10, criterion-11, criterion-12, criterion-13, criterion-14, criterion-15, criterion-16, criterion-17, criterion-18, criterion-19, criterion-20
-current checks: failed
-review: working
-acceptance: pending
-handoff: none
-next: CASE_NEXT_ADD_EVIDENCE
-warnings: none
+evidence gaps: total=20 shown=20 omitted=0
+evidence gap: criterion-01
+evidence gap: criterion-02
+evidence gap: criterion-03
+evidence gap: criterion-04
+evidence gap: criterion-05
+evidence gap: criterion-06
+evidence gap: criterion-07
+evidence gap: criterion-08
+evidence gap: criterion-09
+evidence gap: criterion-10
+evidence gap: criterion-11
+evidence gap: criterion-12
+evidence gap: criterion-13
+evidence gap: criterion-14
+evidence gap: criterion-15
+evidence gap: criterion-16
+evidence gap: criterion-17
+evidence gap: criterion-18
+evidence gap: criterion-19
+evidence gap: criterion-20
+warnings: total=0 shown=0 omitted=0

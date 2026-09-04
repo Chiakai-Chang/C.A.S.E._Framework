@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createHook } from "node:async_hooks";
+import { AsyncLocalStorage, createHook } from "node:async_hooks";
 import { spawn } from "node:child_process";
 import {
   lstat,
@@ -460,7 +460,7 @@ function assertSafeFixturePath(path: string, label: string): void {
     || segments.some((part) => part.length === 0 || part === "." || part === "..")
     || segments.some((part) => part.includes(":"))
     || segments.some((part) => /[ .]$/u.test(part))
-    || segments.some((part) => /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu.test(part))
+    || segments.some((part) => /^(?:con|prn|aux|nul|clock\$|conin\$|conout\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\..*)?$/iu.test(part))
   ) {
     throw new CorpusValidationError(`${label} is not a safe relative path: ${JSON.stringify(path)}`);
   }
@@ -523,8 +523,48 @@ function orderedJson(value: unknown): unknown {
   return ordered;
 }
 
-function behaviorFingerprint(fixture: CorpusCase): string {
-  const { case_id: _caseId, normative_rule_ids: _ruleIds, ...behavior } = fixture;
+async function behaviorFingerprint(corpusRoot: string, fixture: CorpusCase): Promise<string> {
+  const behavior = structuredClone(fixture) as unknown as Record<string, unknown>;
+  delete behavior.case_id;
+  delete behavior.normative_rule_ids;
+
+  const referenceDigest = async (path: string): Promise<string> => sha256(await readCorpusFile(corpusRoot, path));
+  const initialTree = behavior.initial_tree as Array<Record<string, unknown>>;
+  for (const entry of initialTree) entry.content_file = await referenceDigest(String(entry.content_file));
+
+  const invocations = behavior.invocations as Array<Record<string, unknown>>;
+  for (const invocation of invocations) {
+    const inputPath = invocation.stdin_content_file;
+    if (typeof inputPath === "string") {
+      if (invocation.stdin_mode === "interactive_script") {
+        const script = parseStrictJson(await readCorpusFile(corpusRoot, inputPath)) as InteractiveScript;
+        const normalizedScript = structuredClone(script) as unknown as Record<string, unknown>;
+        const steps = normalizedScript.steps as Array<Record<string, unknown>>;
+        for (const step of steps) {
+          step.expected_prompt_file = await referenceDigest(String(step.expected_prompt_file));
+        }
+        invocation.stdin_content_file = orderedJson(normalizedScript);
+      } else {
+        invocation.stdin_content_file = await referenceDigest(inputPath);
+      }
+    }
+    const argv = invocation.argv as string[];
+    if (argv[0] === "@fixture" && argv[1] === "replace" && argv[3] !== undefined) {
+      argv[3] = await referenceDigest(argv[3]);
+    }
+  }
+
+  const expected = behavior.expected as Array<Record<string, unknown>>;
+  for (const expectation of expected) {
+    for (const field of ["stdout_json_file", "stderr_file"] as const) {
+      if (typeof expectation[field] === "string") {
+        expectation[field] = await referenceDigest(expectation[field]);
+      }
+    }
+  }
+  if (typeof behavior.expected_derived_view_file === "string") {
+    behavior.expected_derived_view_file = await referenceDigest(behavior.expected_derived_view_file);
+  }
   return JSON.stringify(orderedJson(behavior));
 }
 
@@ -626,12 +666,9 @@ function assertInvocationStructure(fixture: CorpusCase): void {
   if (fixture.invocations.length !== fixture.expected.length) {
     throw new CorpusValidationError(`${fixture.case_id} invocation/expectation counts differ`);
   }
-  const environment = JSON.stringify(fixture.invocations[0]!.fixed_environment);
-  if (fixture.invocations.some((invocation) => JSON.stringify(invocation.fixed_environment) !== environment)) {
-    throw new CorpusValidationError(`${fixture.case_id} changes fixed environment between invocations`);
-  }
   if (fixture.applicable_platform_profiles.length !== 1
-    || fixture.invocations[0]!.fixed_environment.CASE_PROCESS_PROFILE !== fixture.applicable_platform_profiles[0]) {
+    || fixture.invocations.some((invocation) =>
+      invocation.fixed_environment.CASE_PROCESS_PROFILE !== fixture.applicable_platform_profiles[0])) {
     throw new CorpusValidationError(`${fixture.case_id} fixed process profile does not match its applicable profile`);
   }
   for (const invocation of fixture.invocations) {
@@ -807,7 +844,7 @@ async function loadCorpus(corpusRoot: string): Promise<{ rules: Rule[]; cases: L
   });
   const fingerprints = new Map<string, "positive" | "negative">();
   for (const located of rebound) {
-    const fingerprint = behaviorFingerprint(located.fixture);
+    const fingerprint = await behaviorFingerprint(corpusRoot, located.fixture);
     const opposite = fingerprints.get(fingerprint);
     if (opposite !== undefined && opposite !== located.polarity) {
       throw new CorpusValidationError(`${located.fixture.case_id} is a behavior-identical cross-polarity vector`);
@@ -1038,7 +1075,6 @@ async function publishDossierDirectory(
 type CaseContext = {
   readonly repositoryRoot: string;
   readonly schemas: SchemaRegistry;
-  readonly environment: FixedEnvironment;
   readonly profile: PlatformProfile;
   dossierCounter: number;
   runCounter: number;
@@ -1094,6 +1130,7 @@ async function invocationDependencies(
   concurrency: { readonly rank: number; readonly gate: ConcurrencyGate } | null,
   terminalOverride: CliTerminal | null = null,
 ): Promise<CliDependencies> {
+  const environment = invocation.fixed_environment;
   const operationIndex = invocation.argv.indexOf("--operation");
   const operationId = operationIndex >= 0 ? invocation.argv[operationIndex + 1] ?? "missing-operation" : invocation.argv.slice(0, 3).join(".");
   const trace = context.operationTraces.get(operationId) ?? [];
@@ -1118,26 +1155,31 @@ async function invocationDependencies(
     fs,
     dossiers,
     processIdentity: {
-      current: async () => ({
-        profile: context.environment.CASE_PROCESS_PROFILE,
-        pid: context.environment.CASE_PROCESS_PID,
-        process_started_at: context.environment.CASE_PROCESS_STARTED_AT,
-      }),
+      current: async () => {
+        context.operationFacts.add(
+          `identity-current:${operationId}:pid=${environment.CASE_PROCESS_PID}:started=${environment.CASE_PROCESS_STARTED_AT}`,
+        );
+        return {
+          profile: environment.CASE_PROCESS_PROFILE,
+          pid: environment.CASE_PROCESS_PID,
+          process_started_at: environment.CASE_PROCESS_STARTED_AT,
+        };
+      },
       verifyTerminated: async () => {
-        context.operationFacts.add(`identity-verification:${operationId}=${context.environment.CASE_PROCESS_STATUS}`);
-        return context.environment.CASE_PROCESS_STATUS;
+        context.operationFacts.add(`identity-verification:${operationId}=${environment.CASE_PROCESS_STATUS}`);
+        return environment.CASE_PROCESS_STATUS;
       },
     },
     clock: {
-      now: () => context.environment.CASE_CLOCK,
+      now: () => environment.CASE_CLOCK,
       isPossiblyStale: () => true,
     },
     ids: {
-      createGuardId: () => `${context.environment.CASE_ID_SEED}-guard-${++context.guardCounter}`,
+      createGuardId: () => `${environment.CASE_ID_SEED}-guard-${++context.guardCounter}`,
       tempIdFor: (guardId) => `temp-${guardId}`,
       envelopeIdFor: (kind, operationId) => `${kind}-${operationId}`,
-      createDossierId: () => `${context.environment.CASE_ID_SEED}-dossier-${++context.dossierCounter}`,
-      createRunId: () => `${context.environment.CASE_ID_SEED}-run-${++context.runCounter}`,
+      createDossierId: () => `${environment.CASE_ID_SEED}-dossier-${++context.dossierCounter}`,
+      createRunId: () => `${environment.CASE_ID_SEED}-run-${++context.runCounter}`,
       evidenceIdFor: (operationId) => `evidence-${operationId}`,
     },
   };
@@ -1162,8 +1204,8 @@ async function invocationDependencies(
         fs: initFs,
         git: { confirmWorktreeRoot: async () => context.repositoryRoot },
         schemas: context.schemas,
-        createRepositoryId: () => `${context.environment.CASE_ID_SEED}-repository`,
-        now: () => context.environment.CASE_CLOCK,
+        createRepositoryId: () => `${environment.CASE_ID_SEED}-repository`,
+        now: () => environment.CASE_CLOCK,
         displayRepositoryRoot: async () => {
           let namespaceAbsent = false;
           try { await lstat(join(context.repositoryRoot, ".case-agent")); } catch (error) {
@@ -1327,6 +1369,7 @@ async function runProtocolProbe(
   probe: string,
   corpusRoot: string,
   context: CaseContext,
+  environment: FixedEnvironment,
 ): Promise<{ readonly result: ResultEnvelope<null>; readonly assertionIds: readonly string[] }> {
   const executed = new Set<string>();
   const probeAssertion: (condition: unknown, message: string) => asserts condition = (condition, message) => {
@@ -1370,7 +1413,7 @@ async function runProtocolProbe(
       protocol_version: "0.1.0-preview",
       schema_dialect: "https://json-schema.org/draft/2020-12/schema",
       repository_id: "repository-a",
-      created_at: context.environment.CASE_CLOCK,
+      created_at: environment.CASE_CLOCK,
     };
     probeAssertion(context.schemas.validate("manifest", manifest).ok, "valid bundled manifest root");
     probeAssertion(!context.schemas.validate("manifest", { ...manifest, unknown: true }).ok, "critical roots are closed");
@@ -1472,7 +1515,7 @@ async function runProtocolProbe(
         protocol_version: "0.1.0-preview",
         schema_dialect: "https://json-schema.org/draft/2020-12/schema",
         repository_id: "",
-        created_at: context.environment.CASE_CLOCK,
+        created_at: environment.CASE_CLOCK,
       }).ok && !context.schemas.validate("dossier", { ...baseProbeSnapshot(), active_run: { ...baseProbeSnapshot().active_run, actor_id: "" } }).ok,
       "shared opaque identifier rejects empty across root schemas",
     );
@@ -1548,7 +1591,7 @@ async function runProtocolProbe(
         argv: ["@probe", probe],
         stdin_mode: "none",
         stdin_content_file: null,
-        fixed_environment: context.environment,
+        fixed_environment: environment,
         concurrency_group: null,
         fault_point: null,
       };
@@ -1569,7 +1612,7 @@ async function runProtocolProbe(
       probeAssertion(result.ok && committed.state_revision === "2", "reverse wall clock mutation advances by revision");
       probeAssertion(
         committed.evidence[0]?.captured_at === "2099-01-01T00:00:00Z"
-          && committed.evidence[1]?.captured_at === context.environment.CASE_CLOCK
+          && committed.evidence[1]?.captured_at === environment.CASE_CLOCK
           && committed.evidence[1]!.captured_at < committed.evidence[0]!.captured_at,
         "evidence append order ignores wall clock chronology",
       );
@@ -1652,7 +1695,7 @@ async function runProtocolProbe(
         argv: ["@probe", probe],
         stdin_mode: "none",
         stdin_content_file: null,
-        fixed_environment: context.environment,
+        fixed_environment: environment,
         concurrency_group: null,
         fault_point: null,
       };
@@ -1710,7 +1753,7 @@ async function runProtocolProbe(
         argv: ["@probe", probe],
         stdin_mode: "none",
         stdin_content_file: null,
-        fixed_environment: context.environment,
+        fixed_environment: environment,
         concurrency_group: null,
         fault_point: null,
       };
@@ -2215,7 +2258,7 @@ async function runProtocolProbe(
       protocol_version: "0.1.0-preview",
       schema_dialect: "https://json-schema.org/draft/2020-12/schema",
       repository_id: "repository-a",
-      created_at: context.environment.CASE_CLOCK,
+      created_at: environment.CASE_CLOCK,
     };
     const { protocol_version: _version, ...withoutVersion } = manifest;
     const { schema_dialect: _dialect, ...withoutDialect } = manifest;
@@ -2266,7 +2309,7 @@ async function runProtocolProbe(
       reviewer_id: "reviewer-a",
       criteria_reviewed: ["criterion-a"],
       comment: "Reviewed exact submission",
-      decided_at: context.environment.CASE_CLOCK,
+      decided_at: environment.CASE_CLOCK,
       created_operation_id: "op-decision",
       identity_assurance: "recorded-interactive-claim",
     };
@@ -2459,7 +2502,7 @@ async function runProtocolProbe(
       probeAssertion(JSON.stringify(missing(incomplete)) === '["walking-skeleton-offline"]', "missing required family is detected");
     }
   } else if (probe === "corpus-red-capability-positive" || probe === "corpus-red-capability-negative") {
-    const fixture = validMinimalCase(context.environment);
+    const fixture = validMinimalCase(environment);
     let stdout = "";
     renderJson(success("conformance.probe", "Conformance probe passed", null), { write: (value) => { stdout += value; } });
     const exact: InvocationOutcome[] = [{
@@ -2482,10 +2525,14 @@ async function runProtocolProbe(
   } else if (probe === "corpus-contract-positive" || probe === "corpus-contract-negative") {
     const schema = parseStrictJson(await readCorpusFile(corpusRoot, "schema/case.schema.json"));
     const validator = compileSchema(schema, "probe case");
-    const valid = validMinimalCase(context.environment);
+    const valid = validMinimalCase(environment);
     if (probe === "corpus-contract-positive") {
       probeAssertion(validator(valid), "closed fixture version one validates");
       assertInvocationStructure(valid);
+      probeAssertion(
+        context.schemas.validate("dossier", baseProbeSnapshot()).ok,
+        "bundled schema registry validates offline",
+      );
       probeAssertion(true, "invocation and expectation counts are explicit and equal");
       assertUniqueOrderedPaths([{ path: "a" }, { path: "b/c" }], "probe ordered paths");
       probeAssertion(true, "safe unique repository paths in stable order validate");
@@ -2527,12 +2574,12 @@ async function runProtocolProbe(
         "declared fixture input digest matches bytes",
       );
       probeAssertion(
-        context.environment.CASE_CLOCK === "2026-09-04T03:02:01Z"
-          && context.environment.CASE_ID_SEED.length > 0
-          && context.environment.CASE_NETWORK === "deny"
-          && context.environment.LANG === "C"
-          && context.environment.LC_ALL === "C"
-          && context.environment.TZ === "UTC"
+        environment.CASE_CLOCK === "2026-09-04T03:02:01Z"
+          && environment.CASE_ID_SEED.length > 0
+          && environment.CASE_NETWORK === "deny"
+          && environment.LANG === "C"
+          && environment.LC_ALL === "C"
+          && environment.TZ === "UTC"
           && CONTROLLED_PROFILE.profile === "controlled-test",
         "clock ids locale process profile and network policy are fixed",
       );
@@ -2552,6 +2599,12 @@ async function runProtocolProbe(
         "a\\b",
         "file:ads",
         "CON",
+        "CONIN$",
+        "CONOUT$",
+        "CLOCK$",
+        "COM¹",
+        "com².txt",
+        "LPT³",
         "file.",
         "file ",
       ];
@@ -2579,6 +2632,36 @@ async function runProtocolProbe(
     const production = nodeAtomicFsPort(context.repositoryRoot);
     probeAssertion(!production.profile.supported, "unproven production adapter stays unsupported");
     probeAssertion(CONTROLLED_PROFILE.supported && CONTROLLED_PROFILE.profile === "controlled-test", "controlled adapter is explicitly test-only");
+  } else if (probe === "orphan-scan-fail-closed") {
+    const listed = new Set<string>();
+    const openedHistory = new Set<string>();
+    const evidenceFs: PathInspectionPort = {
+      ...nodePathInspection,
+      async listDirectory(path) {
+        const kind = path.split(/[\\/]/u).at(-1) ?? "";
+        if (["handoffs", "submissions", "decisions"].includes(kind)) listed.add(kind);
+        if (kind === "handoffs") throw new Error("controlled history listing failure");
+        return nodePathInspection.listDirectory(path);
+      },
+      async openRead(path) {
+        const name = path.split(/[\\/]/u).at(-1) ?? "";
+        if (name.endsWith("-history.json")) openedHistory.add(name);
+        return nodePathInspection.openRead(path);
+      },
+    };
+    const result = await checkDossier({ dossier_id: "case-dossier-1" }, {
+      repository_root: context.repositoryRoot,
+      store: new CaseStore(context.repositoryRoot, context.schemas),
+      schemas: context.schemas,
+      fs: nodeAtomicFsPort(context.repositoryRoot),
+      evidenceFs,
+    });
+    probeAssertion(!result.ok && result.code === "CASE_E_INVARIANT", "untrusted envelope directory produces structural invariant failure");
+    probeAssertion(
+      listed.has("handoffs") && listed.has("submissions") && listed.has("decisions")
+        && openedHistory.has("submission-history.json") && openedHistory.has("decision-history.json"),
+      "scan continues through submission and decision directories after earlier listing failure",
+    );
   } else if (probe === "init-root-discovery") {
     const nested = join(context.repositoryRoot, "nested", "child");
     await mkdir(nested, { recursive: true });
@@ -2597,7 +2680,7 @@ async function runProtocolProbe(
       },
       schemas: context.schemas,
       createRepositoryId: () => "repository-discovered",
-      now: () => context.environment.CASE_CLOCK,
+      now: () => environment.CASE_CLOCK,
       displayRepositoryRoot: (root) => { displayedRoot = root; },
     });
     try {
@@ -2630,7 +2713,7 @@ async function runProtocolProbe(
       git: { confirmWorktreeRoot: async () => context.repositoryRoot },
       schemas: context.schemas,
       createRepositoryId: () => "repository-must-not-be-created",
-      now: () => context.environment.CASE_CLOCK,
+      now: () => environment.CASE_CLOCK,
       displayRepositoryRoot: () => undefined,
     });
     probeAssertion(!result.ok && result.code === "CASE_E_UNSUPPORTED_PROFILE", `${reason} init target explicitly classified and rejected`);
@@ -2724,7 +2807,7 @@ async function executeInvocation(
     if (invocation.argv.length !== 2 || invocation.argv[1] === undefined) {
       throw new CorpusValidationError("protocol probe argv is malformed");
     }
-    const probed = await runProtocolProbe(invocation.argv[1], corpusRoot, context);
+    const probed = await runProtocolProbe(invocation.argv[1], corpusRoot, context, invocation.fixed_environment);
     let stdout = "";
     renderJson(probed.result, { write: (value) => { stdout += value; } });
     return {
@@ -2853,7 +2936,7 @@ async function derivedViewMatches(
     argv: ["--json", "dossier", "show", "--dossier", expected.dossier_id],
     stdin_mode: "none",
     stdin_content_file: null,
-    fixed_environment: context.environment,
+    fixed_environment: fixture.invocations.at(-1)!.fixed_environment,
     concurrency_group: null,
     fault_point: null,
   };
@@ -2868,12 +2951,6 @@ async function safeRemoveTemporary(path: string): Promise<void> {
     throw new CorpusValidationError("refused unsafe temporary cleanup");
   }
   await rm(target, { recursive: true, force: true });
-}
-
-async function drainAuditedAsyncWork(): Promise<void> {
-  for (let turn = 0; turn < 3; turn += 1) {
-    await new Promise<void>((resolvePromise) => setImmediate(resolvePromise));
-  }
 }
 
 function profileIsApplicable(profile: PlatformProfile): boolean {
@@ -2908,13 +2985,23 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
   const repositoryRoot = join(temporary, "repository");
   let networkCalls = 0;
   const networkResources = new Set(["GETADDRINFOREQWRAP", "GETNAMEINFOREQWRAP", "TCPCONNECTWRAP", "TCPWRAP", "TLSWRAP", "UDPWRAP"]);
+  const deferredResources = new Set(["Immediate", "Timeout"]);
+  const pendingDeferred = new Map<number, { readonly type: string; readonly resource: object }>();
+  const auditScope = new AsyncLocalStorage<boolean>();
   const networkAudit = createHook({
-    init: (_asyncId, type) => { if (networkResources.has(type)) networkCalls += 1; },
+    init: (asyncId, type, _triggerAsyncId, resource) => {
+      if (auditScope.getStore() !== true) return;
+      if (networkResources.has(type)) networkCalls += 1;
+      if (deferredResources.has(type)) pendingDeferred.set(asyncId, { type, resource });
+    },
+    destroy: (asyncId) => { pendingDeferred.delete(asyncId); },
   });
   // This in-process audit deliberately begins before schemas or workflow dependencies load.
   networkAudit.enable();
   try {
-    await mkdir(repositoryRoot);
+    return await auditScope.run(true, async () => {
+      try {
+        await mkdir(repositoryRoot);
     const profile = located.fixture.applicable_platform_profiles[0]!;
     await initializeHarnessGitRepository(repositoryRoot, profile === "production-windows-unsupported");
     const gitBaseline = await collectFiles(join(repositoryRoot, ".git"), false);
@@ -2925,7 +3012,6 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     const context: CaseContext = {
       repositoryRoot,
       schemas: await SchemaRegistry.load(resolve(dirname(fileURLToPath(import.meta.url)), "../../../schemas")),
-      environment: located.fixture.invocations[0]!.fixed_environment,
       profile,
       dossierCounter: hasExistingDossier ? 1 : 0,
       runCounter: hasExistingDossier ? 1 : 0,
@@ -2953,9 +3039,9 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     await ports.onBeforeDerivedView?.(located.fixture.case_id, repositoryRoot);
     const outcomesMatched = await outcomesMatch(corpusRoot, repositoryRoot, located.fixture, outcomes);
     const derivedViewMatched = await derivedViewMatches(corpusRoot, located.fixture, context);
-    await drainAuditedAsyncWork();
     const finalTreeMatched = await finalTreeMatches(repositoryRoot, located.fixture);
     const gitTreeMatched = sameMap(gitBaseline, await collectFiles(join(repositoryRoot, ".git"), false));
+    const asyncResourcesQuiescent = pendingDeferred.size === 0;
     const executedAssertions = new Set(outcomes.flatMap((outcome) => outcome.assertionIds));
     executedAssertions.add("population.safe-confined");
     for (const fact of context.operationFacts) executedAssertions.add(fact);
@@ -2979,6 +3065,12 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
         } else if (outcome.stdout !== "") {
           const lines = outcome.stdout.endsWith("\n") ? outcome.stdout.slice(0, -1).split("\n") : outcome.stdout.split("\n");
           executedAssertions.add(`human-stdout:${index}:line-count=${lines.length}`);
+          const fieldByteLengths = lines.flatMap((line) => {
+            const separator = line.indexOf(": ");
+            return separator < 0 ? [] : [Buffer.byteLength(line.slice(separator + 2), "utf8")];
+          });
+          executedAssertions.add(`human-stdout:${index}:max-field-utf8-bytes=${Math.max(0, ...fieldByteLengths)}`);
+          executedAssertions.add(`human-stdout:${index}:utf8-bytes=${Buffer.byteLength(outcome.stdout, "utf8")}`);
           lines.forEach((line, lineIndex) => executedAssertions.add(`human-stdout:${index}:${lineIndex}=${line}`));
         }
       }
@@ -3009,17 +3101,25 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     }
     if (gitTreeMatched) executedAssertions.add("git-tree:exact");
     if (networkCalls === 0) executedAssertions.add("network.zero");
+    if (asyncResourcesQuiescent) executedAssertions.add("async.quiescent");
     for (const profile of located.fixture.applicable_platform_profiles) {
       executedAssertions.add(`profile:${profile}`);
     }
     await ports.onCaseAssertions?.(located.fixture.case_id, [...executedAssertions].sort(compareCodeUnits));
     const bindingsMatched = located.ruleBindings.every(({ assertion_ids }) =>
       assertion_ids.every((assertionId) => executedAssertions.has(assertionId)));
-    return networkCalls === 0 && outcomesMatched && derivedViewMatched && finalTreeMatched && gitTreeMatched && bindingsMatched;
-  } catch {
-    return false;
+    return networkCalls === 0 && asyncResourcesQuiescent
+      && outcomesMatched && derivedViewMatched && finalTreeMatched && gitTreeMatched && bindingsMatched;
+      } catch {
+        return false;
+      }
+    });
   } finally {
     networkAudit.disable();
+    for (const { type, resource } of pendingDeferred.values()) {
+      if (type === "Timeout") clearTimeout(resource as NodeJS.Timeout);
+      else if (type === "Immediate") clearImmediate(resource as NodeJS.Immediate);
+    }
     await safeRemoveTemporary(temporary);
   }
 }

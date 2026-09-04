@@ -4,14 +4,21 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
 import { digestProjection } from "../../src/protocol/canonical.js";
-import { projectState } from "../../src/protocol/projections.js";
+import { projectChecks, projectState, projectSubmission } from "../../src/protocol/projections.js";
 import { SchemaRegistry } from "../../src/protocol/schema-registry.js";
-import { revision, type DossierSnapshot } from "../../src/protocol/types.js";
+import {
+  digest,
+  revision,
+  type DecisionEnvelope,
+  type DossierSnapshot,
+  type HandoffEnvelope,
+  type SubmissionEnvelope,
+} from "../../src/protocol/types.js";
 import { controlledAtomicFs } from "../helpers/fault-port.js";
 import { nodePathInspection, type PathInfo, type PathInspectionPort } from "../../src/storage/paths.js";
 import { CaseStore } from "../../src/storage/store.js";
 import { createDossier, type DossierDirectoryPublicationPort, type WorkflowPorts } from "../../src/workflows/dossier.js";
-import { addEvidence, checkDossier, type AddEvidenceRequest } from "../../src/workflows/evidence.js";
+import { addEvidence, checkDossier, checkSnapshot, type AddEvidenceRequest } from "../../src/workflows/evidence.js";
 
 const timestamp = "2026-09-04T03:02:01Z";
 
@@ -91,6 +98,37 @@ async function writeSnapshot(root: string, snapshot: DossierSnapshot): Promise<D
   const fixed = { ...snapshot, state_digest: digestProjection(projectState(snapshot)) };
   await writeFile(join(root, ".case-agent", "dossiers", snapshot.dossier_id, "dossier.json"), `${JSON.stringify(fixed)}\n`);
   return fixed;
+}
+
+function submissionEnvelope(
+  snapshot: DossierSnapshot,
+  submissionId: string,
+  basisRevision = snapshot.state_revision,
+  publishedRevision = revision(String(BigInt(basisRevision) + 1n)),
+): SubmissionEnvelope {
+  const candidate: SubmissionEnvelope = {
+    submission_id: submissionId,
+    dossier_id: snapshot.dossier_id,
+    submitting_run_id: snapshot.active_run.run_id,
+    basis_revision: basisRevision,
+    basis_state_digest: snapshot.state_digest,
+    published_revision: publishedRevision,
+    content_digest: digest(`sha256:${"1".repeat(64)}`),
+    observed_evidence_digest: digest(`sha256:${"2".repeat(64)}`),
+    checks_digest: digest(`sha256:${"3".repeat(64)}`),
+    created_at: timestamp,
+    created_operation_id: `op-${submissionId}`,
+    submission_digest: digest(`sha256:${"0".repeat(64)}`),
+  };
+  return { ...candidate, submission_digest: digestProjection(projectSubmission(candidate)) };
+}
+
+async function writeEnvelope(root: string, snapshot: DossierSnapshot, kind: "handoffs" | "submissions" | "decisions", id: string, envelope: unknown): Promise<void> {
+  await writeFile(
+    join(root, ".case-agent", "dossiers", snapshot.dossier_id, kind, `${id}.json`),
+    `${JSON.stringify(envelope)}\n`,
+    { flag: "wx" },
+  );
 }
 
 test("add evidence hashes and counts the one safely opened local artifact", async (t) => {
@@ -247,11 +285,31 @@ test("check is read-only and reports a changed artifact with stable data", async
   assert.deepEqual(await readFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json")), before);
 });
 
-test("check reports an unreferenced immutable envelope without applying it", async (t) => {
+test("check reports a recoverable handoff orphan without applying it", async (t) => {
   const { root, ports } = await fixture(t);
-  const orphan = join(root, ".case-agent", "dossiers", "dossier-a", "handoffs", "handoff-orphan.json");
-  await writeFile(orphan, "{}\n", { flag: "wx" });
+  const snapshot = await ports.store.loadDossier("dossier-a");
+  const cleanCheck = await checkSnapshot(snapshot, ports);
+  const orphan: HandoffEnvelope = {
+    handoff_id: "handoff-orphan",
+    dossier_id: snapshot.dossier_id,
+    from_run_id: snapshot.active_run.run_id,
+    to_actor_id: "actor-b",
+    basis_revision: snapshot.state_revision,
+    basis_state_digest: snapshot.state_digest,
+    published_revision: revision(String(BigInt(snapshot.state_revision) + 1n)),
+    offered_content_digest: digest(`sha256:${"4".repeat(64)}`),
+    created_operation_id: "op-orphan",
+  };
+  await writeEnvelope(root, snapshot, "handoffs", orphan.handoff_id, orphan);
   const before = await readFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json"));
+  const orphanCheck = await checkSnapshot(snapshot, ports);
+
+  assert.equal(orphanCheck.orphanEnvelope, true);
+  assert.deepEqual(orphanCheck.checks, cleanCheck.checks);
+  assert.equal(
+    digestProjection(projectChecks(orphanCheck.checks)),
+    digestProjection(projectChecks(cleanCheck.checks)),
+  );
 
   const result = await checkDossier({ dossier_id: "dossier-a" }, ports);
 
@@ -260,6 +318,163 @@ test("check reports an unreferenced immutable envelope without applying it", asy
   assert.equal(result.data.stable_warning_codes.includes("CASE_L_ORPHAN_ENVELOPE"), true);
   assert.equal((await ports.store.loadDossier("dossier-a")).current_handoff_id, null);
   assert.deepEqual(await readFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json")), before);
+});
+
+test("recoverable submission and decision orphans are found after stale history", async (t) => {
+  const { root, ports, snapshot } = await fixture(t);
+  const staleHandoff: HandoffEnvelope = {
+    handoff_id: "handoff-history",
+    dossier_id: snapshot.dossier_id,
+    from_run_id: snapshot.active_run.run_id,
+    to_actor_id: "actor-old",
+    basis_revision: revision("8"),
+    basis_state_digest: digest(`sha256:${"5".repeat(64)}`),
+    published_revision: revision("9"),
+    offered_content_digest: digest(`sha256:${"6".repeat(64)}`),
+    created_operation_id: "op-history",
+  };
+  await writeEnvelope(root, snapshot, "handoffs", staleHandoff.handoff_id, staleHandoff);
+  const orphanSubmission = submissionEnvelope(snapshot, "submission-orphan");
+  await writeEnvelope(root, snapshot, "submissions", orphanSubmission.submission_id, orphanSubmission);
+
+  const submissionResult = await checkDossier({ dossier_id: snapshot.dossier_id }, ports);
+  assert.equal(submissionResult.ok, true);
+  assert.equal(submissionResult.ok && submissionResult.data.stable_warning_codes.includes("CASE_L_ORPHAN_ENVELOPE"), true);
+
+  await rm(join(root, ".case-agent", "dossiers", snapshot.dossier_id, "submissions", `${orphanSubmission.submission_id}.json`));
+  const currentSubmission = submissionEnvelope(snapshot, "submission-current", revision("0"), revision("1"));
+  await writeEnvelope(root, snapshot, "submissions", currentSubmission.submission_id, currentSubmission);
+  const withSubmission = await writeSnapshot(root, {
+    ...snapshot,
+    state_revision: revision("1"),
+    current_submission_id: currentSubmission.submission_id,
+  });
+  const orphanDecision: DecisionEnvelope = {
+    decision_id: "decision-orphan",
+    dossier_id: withSubmission.dossier_id,
+    submission_id: currentSubmission.submission_id,
+    submission_digest: currentSubmission.submission_digest,
+    decision: "accepted",
+    reviewer_id: "reviewer-a",
+    criteria_reviewed: ["criterion-a"],
+    comment: "Recoverable decision",
+    decided_at: timestamp,
+    created_operation_id: "op-decision-orphan",
+    identity_assurance: "recorded-interactive-claim",
+  };
+  await writeEnvelope(root, withSubmission, "decisions", orphanDecision.decision_id, orphanDecision);
+
+  const decisionResult = await checkDossier({ dossier_id: withSubmission.dossier_id }, ports);
+  assert.equal(decisionResult.ok, true);
+  assert.equal(decisionResult.ok && decisionResult.data.stable_warning_codes.includes("CASE_L_ORPHAN_ENVELOPE"), true);
+});
+
+test("superseded envelope history is not reported as a recoverable orphan", async (t) => {
+  const { root, ports, snapshot } = await fixture(t);
+  const staleHandoff: HandoffEnvelope = {
+    handoff_id: "handoff-history",
+    dossier_id: snapshot.dossier_id,
+    from_run_id: snapshot.active_run.run_id,
+    to_actor_id: "actor-old",
+    basis_revision: revision("8"),
+    basis_state_digest: digest(`sha256:${"5".repeat(64)}`),
+    published_revision: revision("9"),
+    offered_content_digest: digest(`sha256:${"6".repeat(64)}`),
+    created_operation_id: "op-history",
+  };
+  const staleSubmission = submissionEnvelope(snapshot, "submission-history", revision("8"), revision("9"));
+  await writeEnvelope(root, snapshot, "handoffs", staleHandoff.handoff_id, staleHandoff);
+  await writeEnvelope(root, snapshot, "submissions", staleSubmission.submission_id, staleSubmission);
+  const staleDecision: DecisionEnvelope = {
+    decision_id: "decision-history",
+    dossier_id: snapshot.dossier_id,
+    submission_id: staleSubmission.submission_id,
+    submission_digest: staleSubmission.submission_digest,
+    decision: "rejected",
+    reviewer_id: "reviewer-old",
+    criteria_reviewed: ["criterion-a"],
+    comment: "Superseded review history",
+    decided_at: timestamp,
+    created_operation_id: "op-decision-history",
+    identity_assurance: "recorded-interactive-claim",
+  };
+  await writeEnvelope(root, snapshot, "decisions", staleDecision.decision_id, staleDecision);
+
+  const result = await checkDossier({ dossier_id: snapshot.dossier_id }, ports);
+  assert.equal(result.ok, true);
+  assert.equal(result.ok && result.data.stable_warning_codes.includes("CASE_L_ORPHAN_ENVELOPE"), false);
+});
+
+test("an untrusted handoff listing cannot hide later orphan directories", async (t) => {
+  const { root, ports, snapshot } = await fixture(t);
+  const orphanSubmission = submissionEnvelope(snapshot, "submission-behind-untrusted-handoff");
+  await writeEnvelope(root, snapshot, "submissions", orphanSubmission.submission_id, orphanSubmission);
+  const listed: string[] = [];
+  const untrustedPorts: WorkflowPorts = {
+    ...ports,
+    evidenceFs: {
+      ...nodePathInspection,
+      async listDirectory(path) {
+        const kind = path.split(/[\\/]/u).at(-1) ?? "";
+        if (["handoffs", "submissions", "decisions"].includes(kind)) listed.push(kind);
+        if (kind === "handoffs") throw new Error("listing unavailable");
+        return nodePathInspection.listDirectory(path);
+      },
+    },
+  };
+
+  const result = await checkDossier({ dossier_id: snapshot.dossier_id }, untrustedPorts);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "CASE_E_INVARIANT");
+  assert.deepEqual([...new Set(listed)], ["handoffs", "submissions", "decisions"]);
+});
+
+test("an untrusted handoff listing cannot hide a later recoverable decision", async (t) => {
+  const { root, ports, snapshot } = await fixture(t);
+  const currentSubmission = submissionEnvelope(snapshot, "submission-current", revision("0"), revision("1"));
+  await writeEnvelope(root, snapshot, "submissions", currentSubmission.submission_id, currentSubmission);
+  const withSubmission = await writeSnapshot(root, {
+    ...snapshot,
+    state_revision: revision("1"),
+    current_submission_id: currentSubmission.submission_id,
+  });
+  const orphanDecision: DecisionEnvelope = {
+    decision_id: "decision-behind-untrusted-handoff",
+    dossier_id: withSubmission.dossier_id,
+    submission_id: currentSubmission.submission_id,
+    submission_digest: currentSubmission.submission_digest,
+    decision: "accepted",
+    reviewer_id: "reviewer-a",
+    criteria_reviewed: ["criterion-a"],
+    comment: "Recoverable decision",
+    decided_at: timestamp,
+    created_operation_id: "op-decision-behind-untrusted-handoff",
+    identity_assurance: "recorded-interactive-claim",
+  };
+  await writeEnvelope(root, withSubmission, "decisions", orphanDecision.decision_id, orphanDecision);
+  let handoffListings = 0;
+  let decisionListings = 0;
+  const untrustedPorts: WorkflowPorts = {
+    ...ports,
+    evidenceFs: {
+      ...nodePathInspection,
+      async listDirectory(path) {
+        const kind = path.split(/[\\/]/u).at(-1) ?? "";
+        if (kind === "handoffs") {
+          handoffListings += 1;
+          throw new Error("listing unavailable");
+        }
+        if (kind === "decisions") decisionListings += 1;
+        return nodePathInspection.listDirectory(path);
+      },
+    },
+  };
+
+  const result = await checkDossier({ dossier_id: withSubmission.dossier_id }, untrustedPorts);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "CASE_E_INVARIANT");
+  assert.equal(handoffListings, 1);
+  assert.ok(decisionListings >= 1);
 });
 
 test("check fails the observation closed when the opened handle cannot be closed", async (t) => {
@@ -378,17 +593,29 @@ test("check rejects injected linked local evidence without opening through it", 
     isReparsePoint: () => true,
   };
   let opens = 0;
+  const artifactsDirectory = join(root, "artifacts");
+  const linkedArtifact = join(artifactsDirectory, "linked.txt");
   const injectedLinkFs: PathInspectionPort = {
-    lstat: async (path) => path === root
-      ? directory(1n, 1n)
-      : path === join(root, "artifacts")
-        ? directory(1n, 2n)
-        : link,
-    realpath: async (path) => path,
+    lstat: async (path) => path === artifactsDirectory
+      ? directory(1n, 2n)
+      : path === linkedArtifact
+        ? link
+        : nodePathInspection.lstat(path),
+    realpath: async (path) => path === artifactsDirectory || path === linkedArtifact
+      ? path
+      : nodePathInspection.realpath(path),
     listDirectory: async (path) => path === root
-      ? [{ name: "artifacts" }]
-      : [{ name: "linked.txt" }],
-    openRead: async () => { opens += 1; throw new Error("link must not be opened"); },
+      ? [...await nodePathInspection.listDirectory(path), { name: "artifacts" }]
+      : path === artifactsDirectory
+        ? [{ name: "linked.txt" }]
+        : nodePathInspection.listDirectory(path),
+    openRead: async (path) => {
+      if (path === linkedArtifact) {
+        opens += 1;
+        throw new Error("link must not be opened");
+      }
+      return nodePathInspection.openRead(path);
+    },
   };
 
   const result = await checkDossier({ dossier_id: "dossier-a" }, { ...ports, evidenceFs: injectedLinkFs });

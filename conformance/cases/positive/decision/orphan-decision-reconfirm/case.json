@@ -2,7 +2,8 @@
   "fixture_version": "1",
   "case_id": "orphan-decision-reconfirm",
   "normative_rule_ids": [
-    "M0-DECISION-007"
+    "M0-DECISION-007",
+    "M0-SOURCE-007"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -145,6 +146,58 @@
     {
       "actor_label": "trace-main",
       "argv": [
+        "--json",
+        "dossier",
+        "check",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "--json",
+        "dossier",
+        "show",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
         "decision",
         "accept",
         "--dossier",
@@ -201,6 +254,20 @@
       "stdout_json_file": "data/expected/generated/orphan-decision-reconfirm-2.txt",
       "stderr": "exact",
       "stderr_file": "data/prompts/orphan-decision-reconfirm-2-stderr.txt"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/orphan-decision-reconfirm-check.json",
+      "stderr": "empty",
+      "stderr_file": null
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/orphan-decision-reconfirm-show.json",
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 0,

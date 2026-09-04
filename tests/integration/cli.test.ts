@@ -214,6 +214,32 @@ test("human rendering exposes bounded next-command material from views and snaps
   assert.doesNotMatch(writes.join(""), /"evidence":\[/);
 });
 
+test("human rendering caps huge fields and total UTF-8 bytes while preserving recovery coordinates", () => {
+  const huge = "🧪".repeat(20_000);
+  const writes: string[] = [];
+  renderHuman(success("dossier.show", "Current dossier", {
+    ...basis,
+    title: huge,
+    objective: huge,
+    criterion_results: Array.from({ length: 21 }, (_, index) => ({
+      criterion_id: `criterion-${String(index + 1).padStart(2, "0")}-${huge}`,
+      status: "failed",
+      supporting_evidence_ids: [],
+    })),
+    evidence_gaps: Array.from({ length: 21 }, (_, index) => `gap-${index}-${huge}`),
+    unresolved_warnings: Array.from({ length: 21 }, (_, index) => `warning-${index}-${huge}`),
+  }), { write: (value) => { writes.push(value); } });
+
+  const rendered = writes.join("");
+  assert.ok(Buffer.byteLength(rendered, "utf8") <= 16_384);
+  assert.match(rendered, /^dossier ID: dossier-a$/mu);
+  assert.match(rendered, /^active run: run-a$/mu);
+  assert.match(rendered, /^state digest: sha256:aaaaaaaaaaaa…$/mu);
+  assert.match(rendered, /^criteria: total=21 shown=20 omitted=1$/mu);
+  assert.match(rendered, /^deeper: output abbreviated; rerun with --json for complete data$/mu);
+  assert.doesNotMatch(rendered, new RegExp(huge.slice(0, 1_000), "u"));
+});
+
 test("TTY adapter refuses decisions when the terminal is unavailable or the phrase is wrong", async () => {
   const terminal = new TtyTerminal();
   assert.equal(terminal.interactive, false);

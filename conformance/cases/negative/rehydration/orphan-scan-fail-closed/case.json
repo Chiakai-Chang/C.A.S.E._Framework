@@ -1,22 +1,23 @@
 {
   "fixture_version": "1",
-  "case_id": "no-brief-authority",
+  "case_id": "orphan-scan-fail-closed",
   "normative_rule_ids": [
-    "M0-SOURCE-005"
+    "M0-SOURCE-009",
+    "M0-SOURCE-010"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
   ],
   "initial_tree": [
     {
-      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
-      "content_file": "data/generated/misleading-brief.md",
-      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
-    },
-    {
       "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
       "content_file": "data/empty.bin",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/decision-history.json",
+      "content_file": "data/history/decision-history.json",
+      "sha256": "sha256:0c73cdee98ab920f35cd65534716238ae28404ffc15fb1a67b600531e62e850f"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
@@ -29,9 +30,19 @@
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/handoff-history.json",
+      "content_file": "data/history/handoff-history.json",
+      "sha256": "sha256:ee4b8d74956d3321ab7f2e523e06821981465737fe083bd6f8222e09eaa4081a"
+    },
+    {
       "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
       "content_file": "data/empty.bin",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/submission-history.json",
+      "content_file": "data/history/submission-history.json",
+      "sha256": "sha256:7d2e985a98d19bfed35d89225f5d9e15706e8e11002d1988f2afc26776f6eff9"
     },
     {
       "path": ".case-agent/locks/.keep",
@@ -46,13 +57,10 @@
   ],
   "invocations": [
     {
-      "actor_label": "trace-main",
+      "actor_label": "trace-probe",
       "argv": [
-        "--json",
-        "dossier",
-        "show",
-        "--dossier",
-        "case-dossier-1"
+        "@probe",
+        "orphan-scan-fail-closed"
       ],
       "stdin_mode": "none",
       "stdin_content_file": null,
@@ -76,21 +84,21 @@
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
-      "stdout_json_file": "data/expected/generated/no-brief-authority-0.json",
+      "stdout_json_file": "data/expected/probe-ok.json",
       "stderr": "empty",
       "stderr_file": null
     }
   ],
   "expected_final_tree": [
     {
-      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
-      "presence": "present",
-      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
-    },
-    {
       "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
       "presence": "present",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/decision-history.json",
+      "presence": "present",
+      "sha256": "sha256:0c73cdee98ab920f35cd65534716238ae28404ffc15fb1a67b600531e62e850f"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
@@ -103,9 +111,19 @@
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/handoff-history.json",
+      "presence": "present",
+      "sha256": "sha256:ee4b8d74956d3321ab7f2e523e06821981465737fe083bd6f8222e09eaa4081a"
+    },
+    {
       "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
       "presence": "present",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/submission-history.json",
+      "presence": "present",
+      "sha256": "sha256:7d2e985a98d19bfed35d89225f5d9e15706e8e11002d1988f2afc26776f6eff9"
     },
     {
       "path": ".case-agent/locks/.keep",
@@ -118,5 +136,5 @@
       "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
     }
   ],
-  "expected_derived_view_file": "data/views/generated/no-brief-authority.json"
+  "expected_derived_view_file": null
 }

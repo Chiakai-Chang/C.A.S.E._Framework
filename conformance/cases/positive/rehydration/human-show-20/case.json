@@ -4,7 +4,8 @@
   "normative_rule_ids": [
     "M0-SHOW-001",
     "M0-SHOW-003",
-    "M0-SHOW-004"
+    "M0-SHOW-004",
+    "M0-SHOW-005"
   ],
   "applicable_platform_profiles": [
     "controlled-test"

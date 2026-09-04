@@ -3,6 +3,7 @@
   "case_id": "retry-immediate",
   "normative_rule_ids": [
     "M0-CLI-007",
+    "M0-CORPUS-005",
     "M0-MUTATION-005",
     "M0-SCALAR-009"
   ],
@@ -105,11 +106,11 @@
       "stdin_mode": "none",
       "stdin_content_file": null,
       "fixed_environment": {
-        "CASE_CLOCK": "2026-09-04T03:02:01Z",
-        "CASE_ID_SEED": "case",
+        "CASE_CLOCK": "2000-01-01T00:00:00Z",
+        "CASE_ID_SEED": "later-invocation",
         "CASE_PROCESS_PROFILE": "controlled-test",
-        "CASE_PROCESS_PID": "1001",
-        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_PID": "2002",
+        "CASE_PROCESS_STARTED_AT": "1999-12-31T23:59:59Z",
         "CASE_PROCESS_STATUS": "terminated",
         "CASE_NETWORK": "deny",
         "LANG": "C",

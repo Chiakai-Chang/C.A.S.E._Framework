@@ -1,18 +1,13 @@
 {
   "fixture_version": "1",
-  "case_id": "no-brief-authority",
+  "case_id": "fault-after-submission-envelope-create",
   "normative_rule_ids": [
-    "M0-SOURCE-005"
+    "M0-SOURCE-007"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
   ],
   "initial_tree": [
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
-      "content_file": "data/generated/misleading-brief.md",
-      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
-    },
     {
       "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
       "content_file": "data/empty.bin",
@@ -42,15 +37,80 @@
       "path": ".case-agent/manifest.json",
       "content_file": "data/manifest.json",
       "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    },
+    {
+      "path": "artifact.txt",
+      "content_file": "data/artifact-v1.txt",
+      "sha256": "sha256:2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf"
     }
   ],
   "invocations": [
     {
       "actor_label": "trace-main",
       "argv": [
+        "evidence",
+        "add",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-evidence",
+        "--run",
+        "case-run-1",
+        "--evidence",
+        "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/interactive/submission-success-0.json",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "submission",
+        "create",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-submit",
+        "--run",
+        "case-run-1"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/interactive/submission-success-1.json",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": "after_envelope_create"
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
         "--json",
         "dossier",
-        "show",
+        "check",
         "--dossier",
         "case-dossier-1"
       ],
@@ -76,17 +136,26 @@
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
-      "stdout_json_file": "data/expected/generated/no-brief-authority-0.json",
+      "stdout_json_file": "data/expected/generated/submission-success-0.json",
+      "stderr": "exact",
+      "stderr_file": "data/prompts/submission-success-0-stderr.txt"
+    },
+    {
+      "process_exit": 70,
+      "result_code": "CASE_E_INTERNAL",
+      "stdout_json_file": "data/expected/generated/fault-after-submission-envelope-create-1.txt",
+      "stderr": "exact",
+      "stderr_file": "data/prompts/submission-success-1-stderr.txt"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/fault-after-submission-envelope-create-2.json",
       "stderr": "empty",
       "stderr_file": null
     }
   ],
   "expected_final_tree": [
-    {
-      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
-      "presence": "present",
-      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
-    },
     {
       "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
       "presence": "present",
@@ -95,7 +164,7 @@
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
       "presence": "present",
-      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+      "sha256": "sha256:675b32455dc6f5f47acab11b250521c6216458edd636a27e792434cd42154bbf"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
@@ -108,6 +177,11 @@
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+      "presence": "present",
+      "sha256": "sha256:912c3ec250de7448e5cce87cd4a91aabc7fa5ac1a46c91fb5841df682bea7a8c"
+    },
+    {
       "path": ".case-agent/locks/.keep",
       "presence": "present",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -116,7 +190,12 @@
       "path": ".case-agent/manifest.json",
       "presence": "present",
       "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    },
+    {
+      "path": "artifact.txt",
+      "presence": "present",
+      "sha256": "sha256:2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf"
     }
   ],
-  "expected_derived_view_file": "data/views/generated/no-brief-authority.json"
+  "expected_derived_view_file": null
 }
