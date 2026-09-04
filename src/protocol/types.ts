@@ -1,18 +1,51 @@
+declare const digestBrand: unique symbol;
+declare const decimalStringBrand: unique symbol;
+declare const revisionBrand: unique symbol;
+
 /** A lowercase SHA-256 digest in the protocol wire format. */
-export type Digest = `sha256:${string}`;
+export type Digest = string & { readonly [digestBrand]: "Digest" };
 
-type NonZeroDecimalDigit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
-
-/**
- * A non-negative base-10 integer encoded as a string.
- *
- * The type rules out negative values and leading zeroes; runtime schemas
- * enforce that the remaining characters are decimal digits.
- */
-export type DecimalString = "0" | `${NonZeroDecimalDigit}${string}`;
+/** A non-negative base-10 integer encoded as a string. */
+export type DecimalString = string & { readonly [decimalStringBrand]: "DecimalString" };
 
 /** A monotonically increasing protocol revision encoded as a decimal string. */
-export type Revision = DecimalString;
+export type Revision = string & { readonly [revisionBrand]: "Revision" };
+
+export const DECIMAL_STRING_PATTERN = /^(0|[1-9][0-9]*)$/;
+export const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
+
+export function isDecimalString(value: unknown): value is DecimalString {
+  return typeof value === "string" && DECIMAL_STRING_PATTERN.test(value);
+}
+
+export function decimalString(value: string): DecimalString {
+  if (!isDecimalString(value)) {
+    throw new TypeError(`Invalid decimal string: ${value}`);
+  }
+  return value;
+}
+
+export function isRevision(value: unknown): value is Revision {
+  return isDecimalString(value);
+}
+
+export function revision(value: string): Revision {
+  if (!isRevision(value)) {
+    throw new TypeError(`Invalid revision: ${value}`);
+  }
+  return value;
+}
+
+export function isDigest(value: unknown): value is Digest {
+  return typeof value === "string" && DIGEST_PATTERN.test(value);
+}
+
+export function digest(value: string): Digest {
+  if (!isDigest(value)) {
+    throw new TypeError(`Invalid digest: ${value}`);
+  }
+  return value;
+}
 
 export type CriterionVerification = "mechanical" | "recorded_human_review";
 export type EvidenceKind = "file" | "command_result" | "external_reference" | "human_observation";
