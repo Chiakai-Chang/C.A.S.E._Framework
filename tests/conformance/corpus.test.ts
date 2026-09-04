@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { createHash, pbkdf2 } from "node:crypto";
+import { createSocket } from "node:dgram";
 import { lookup, Resolver } from "node:dns";
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
-import { createServer, type Server } from "node:net";
+import { createServer, type AddressInfo, type Server } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -79,6 +80,17 @@ test("§22.1 stderr prose and the closed case schema define the same exact relat
   assert.ok(schema.required.includes("expected_final_directories"));
   assert.match(section, /`@fixture replace` content/u);
   assert.match(section, /placeholder files receive no production exception/u);
+  assert.match(section, /unresolved Promise continuations registered by the case must be quiescent at return/u);
+  assert.match(section, /synchronously cancelled through its public cancellation API is no longer runnable/u);
+  assert.match(section, /audit hook is disabled before the library call returns/u);
+  assert.match(section, /detection, not a claim that the runner can cancel a Promise or sandbox a later side effect/u);
+  assert.match(section, /formal conformance command writes its final result synchronously and terminates its process explicitly/u);
+
+  const ledger = await readJson<Array<{ rule_id: string; statement: string }>>(join(corpusRoot, "rules.json"));
+  assert.equal(
+    ledger.find(({ rule_id }) => rule_id === "M0-CORPUS-011")?.statement,
+    "Every executed case audits zero case-causal in-process network initialization and no runnable timer, persistent handle, unfinished one-shot work, or unresolved case-registered Promise continuation pending after final assertions; synchronously cancelled timers and immediates are not pending work.",
+  );
 
   const bindings = await readJson<{
     rules: Array<{ rule_id: string; positive: Array<{ case_id: string; assertion_ids: string[] }> }>;
@@ -791,45 +803,103 @@ test("harness-owned Git state is immutable and derived-view network attempts tur
       assert.ok(summary.failed > 0);
     });
   });
+  await t.test("a continuation registered on a pre-existing unresolved promise is pending work", async () => {
+    await withCorpusCopy(async (root) => {
+      let releaseGate!: () => void;
+      const gate = new Promise<void>((resolveGate) => { releaseGate = resolveGate; });
+      let continuationFinished!: () => void;
+      const finished = new Promise<void>((resolveFinished) => { continuationFinished = resolveFinished; });
+      let passed: boolean | undefined;
+      let summary;
+      try {
+        summary = await runCorpus(root, {
+          onCaseAssertions: (caseId) => {
+            if (caseId !== "dossier-create") return;
+            void gate.then(() => lookup("localhost", () => continuationFinished()));
+          },
+          onCaseResult: (caseId, ok) => { if (caseId === "dossier-create") passed = ok; },
+        });
+        assert.equal(passed, false);
+        assert.ok(summary.failed > 0);
+
+        const cleanSummary = await runCorpus(root);
+        assert.equal(cleanSummary.total, 139);
+        assert.equal(cleanSummary.failed, 0);
+        assert.deepEqual(cleanSummary.uncovered_positive, []);
+        assert.deepEqual(cleanSummary.uncovered_negative, []);
+      } finally {
+        releaseGate();
+        await finished;
+      }
+    });
+  });
+  await t.test("an immediately cancelled final-hook timer is already quiescent", async () => {
+    await withCorpusCopy(async (root) => {
+      let passed: boolean | undefined;
+      const summary = await runCorpus(root, {
+        onCaseAssertions: (caseId) => {
+          if (caseId !== "dossier-create") return;
+          const cancelled = setTimeout(() => lookup("localhost", () => undefined), 60_000);
+          clearTimeout(cancelled);
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "dossier-create") passed = ok; },
+      });
+      assert.equal(passed, true);
+      assert.equal(summary.failed, 0);
+      assert.deepEqual(summary.uncovered_positive, []);
+      assert.deepEqual(summary.uncovered_negative, []);
+    });
+  });
   await t.test("a real case-created TCP server is a network violation", async () => {
     await withCorpusCopy(async (root) => {
       let passed: boolean | undefined;
       let server: Server | undefined;
-      try {
+      const summary = await runCorpus(root, {
+        onCaseAssertions: async (caseId) => {
+          if (caseId !== "walking-skeleton-offline") return;
+          server = createServer();
+          await new Promise<void>((resolveListening, rejectListening) => {
+            server!.once("error", rejectListening);
+            server!.listen(0, "127.0.0.1", resolveListening);
+          });
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
+      });
+      assert.equal(passed, false);
+      assert.ok(summary.failed > 0);
+      assert.equal(server?.listening, false);
+    });
+  });
+  await t.test("a real case-created DNS channel is a network violation", async () => {
+    const sink = createSocket("udp4");
+    await new Promise<void>((resolveListening, rejectListening) => {
+      sink.once("error", rejectListening);
+      sink.bind(0, "127.0.0.1", resolveListening);
+    });
+    try {
+      await withCorpusCopy(async (root) => {
+        let passed: boolean | undefined;
+        let queryResult = "pending";
+        const port = (sink.address() as AddressInfo).port;
         const summary = await runCorpus(root, {
-          onCaseAssertions: async (caseId) => {
+          onCaseAssertions: (caseId) => {
             if (caseId !== "walking-skeleton-offline") return;
-            server = createServer();
-            await new Promise<void>((resolveListening, rejectListening) => {
-              server!.once("error", rejectListening);
-              server!.listen(0, "127.0.0.1", resolveListening);
+            const resolver = new Resolver();
+            resolver.setServers([`127.0.0.1:${port}`]);
+            resolver.resolve4("case-agent.invalid", (error) => {
+              queryResult = error?.code ?? "unexpected-success";
             });
           },
           onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
         });
+        await new Promise<void>((resolveTurn) => setImmediate(resolveTurn));
+        assert.equal(queryResult, "ECANCELLED");
         assert.equal(passed, false);
         assert.ok(summary.failed > 0);
-      } finally {
-        if (server?.listening) await new Promise<void>((resolveClosed) => server!.close(() => resolveClosed()));
-      }
-    });
-  });
-  await t.test("a real case-created DNS channel is a network violation", async () => {
-    await withCorpusCopy(async (root) => {
-      let passed: boolean | undefined;
-      let resolver: Resolver | undefined;
-      const summary = await runCorpus(root, {
-        onCaseAssertions: (caseId) => {
-          if (caseId !== "walking-skeleton-offline") return;
-          resolver = new Resolver();
-          resolver.setServers(["127.0.0.1"]);
-        },
-        onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
       });
-      resolver?.cancel();
-      assert.equal(passed, false);
-      assert.ok(summary.failed > 0);
-    });
+    } finally {
+      await new Promise<void>((resolveClosed) => sink.close(() => resolveClosed()));
+    }
   });
   await t.test("case-created PBKDF2 work that later starts DNS is rejected without sleeping", async () => {
     await withCorpusCopy(async (root) => {

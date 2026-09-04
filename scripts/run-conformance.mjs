@@ -1,3 +1,4 @@
+import { writeSync } from "node:fs";
 import { join } from "node:path";
 import { runCorpus } from "../dist/src/conformance/runner.js";
 
@@ -12,10 +13,14 @@ try {
     uncovered_positive: [],
     uncovered_negative: [],
   };
-  process.stderr.write(`${error instanceof Error ? error.message : "CASE_E_CONFORMANCE: corpus startup failed"}\n`);
+  writeSync(2, `${error instanceof Error ? error.message : "CASE_E_CONFORMANCE: corpus startup failed"}\n`);
 }
 
-process.stdout.write(`${JSON.stringify(summary)}\n`);
-if (summary.failed !== 0 || summary.uncovered_positive.length !== 0 || summary.uncovered_negative.length !== 0) {
-  process.exitCode = 1;
-}
+writeSync(1, `${JSON.stringify(summary)}\n`);
+const failed = summary.failed !== 0
+  || summary.uncovered_positive.length !== 0
+  || summary.uncovered_negative.length !== 0;
+// The formal command is a bounded process boundary. The in-process audit can
+// report unknown case-created handles but does not pretend it can safely close
+// every possible Node resource; synchronous output is complete before exit.
+process.exit(failed ? 1 : 0);

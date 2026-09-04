@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { AsyncLocalStorage, createHook } from "node:async_hooks";
+import { AsyncLocalStorage, createHook, executionAsyncId } from "node:async_hooks";
 import { spawn } from "node:child_process";
 import {
   lstat,
@@ -3082,21 +3082,76 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
   const repositoryRoot = join(temporary, "repository");
   let networkCalls = 0;
   const caseAsyncIds = new Set<number>();
-  const pendingCaseResources = new Map<number, { readonly type: string; readonly resource: object }>();
+  const pendingCaseResources = new Map<number, {
+    readonly type: string;
+    readonly resource: object;
+    readonly scopedAtInit: boolean;
+  }>();
   const auditScope = new AsyncLocalStorage<boolean>();
+  let bodyPromiseAsyncId: number | undefined;
   const isNetworkResource = (type: string): boolean =>
     /^(?:DNSCHANNEL|GETADDRINFOREQWRAP|GETNAMEINFOREQWRAP|QUERYWRAP|TCP.*|TLS.*|UDP.*|HTTP.*|HTTP2.*|QUIC.*)$/u.test(type);
   // Request/work resources become quiescent after their callback; persistent
-  // handles remain pending until destroy. PROMISE objects carry causal scope
-  // but are not themselves unfinished I/O, avoiding runner-owned chain noise.
+  // handles remain pending until destroy. Unresolved PROMISE objects created
+  // inside the case carry causal scope; the body/current runner continuations
+  // are excluded explicitly rather than ignoring every Promise.
   const isOneShotCallbackResource = (type: string): boolean =>
     /(?:REQ|REQUEST)/u.test(type) || type === "TickObject" || type === "Microtask";
+  // Node 24 marks a Timeout/Immediate destroyed synchronously when its public
+  // cancellation API is called, before async_hooks necessarily emits destroy.
+  // The engine major is pinned in package.json, so this is a deterministic
+  // lifecycle observation rather than an event-loop delay or grace period.
+  const isCancelledDeferredResource = (type: string, resource: object): boolean =>
+    (type === "Timeout" || type === "Immediate")
+      && (resource as { readonly _destroyed?: unknown })._destroyed === true;
+  const discardCancelledDeferredResources = (): void => {
+    for (const [asyncId, { type, resource }] of pendingCaseResources) {
+      if (!isCancelledDeferredResource(type, resource)) continue;
+      pendingCaseResources.delete(asyncId);
+      caseAsyncIds.delete(asyncId);
+    }
+  };
+  const cleanupKnownCaseResource = (type: string, resource: object): void => {
+    try {
+      if (type === "Timeout") {
+        clearTimeout(resource as NodeJS.Timeout);
+        return;
+      }
+      if (type === "Immediate") {
+        clearImmediate(resource as NodeJS.Immediate);
+        return;
+      }
+      if (type === "DNSCHANNEL") {
+        (resource as { readonly cancel?: () => void }).cancel?.();
+        return;
+      }
+      if (type === "TCPSERVERWRAP") {
+        const handle = resource as {
+          readonly owner?: {
+            readonly closeAllConnections?: () => void;
+            readonly close?: () => void;
+          };
+          readonly close?: () => void;
+          readonly unref?: () => void;
+        };
+        handle.owner?.closeAllConnections?.();
+        if (handle.owner?.close !== undefined) handle.owner.close();
+        else handle.close?.();
+        handle.unref?.();
+      }
+    } catch {
+      // The resource has already made the case red. Cleanup is deliberately
+      // best-effort and limited to known Node 24 resource shapes; the formal
+      // conformance process has an explicit termination boundary as a backstop.
+    }
+  };
   const networkAudit = createHook({
     init: (asyncId, type, triggerAsyncId, resource) => {
-      if (auditScope.getStore() !== true && !caseAsyncIds.has(triggerAsyncId)) return;
+      const scopedAtInit = auditScope.getStore() === true;
+      if (!scopedAtInit && !caseAsyncIds.has(triggerAsyncId)) return;
       caseAsyncIds.add(asyncId);
       if (isNetworkResource(type)) networkCalls += 1;
-      if (type !== "PROMISE") pendingCaseResources.set(asyncId, { type, resource });
+      pendingCaseResources.set(asyncId, { type, resource, scopedAtInit });
     },
     after: (asyncId) => {
       const pending = pendingCaseResources.get(asyncId);
@@ -3105,13 +3160,20 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
         caseAsyncIds.delete(asyncId);
       }
     },
-    destroy: (asyncId) => { pendingCaseResources.delete(asyncId); caseAsyncIds.delete(asyncId); },
-    promiseResolve: (asyncId) => { pendingCaseResources.delete(asyncId); caseAsyncIds.delete(asyncId); },
+    destroy: (asyncId) => {
+      pendingCaseResources.delete(asyncId);
+      caseAsyncIds.delete(asyncId);
+    },
+    promiseResolve: (asyncId) => {
+      pendingCaseResources.delete(asyncId);
+      caseAsyncIds.delete(asyncId);
+    },
   });
   // This in-process audit deliberately begins before schemas or workflow dependencies load.
   networkAudit.enable();
+  let bodyPromise: Promise<boolean> | undefined;
   try {
-    return await auditScope.run(true, async () => {
+    bodyPromise = auditScope.run(true, async () => {
       try {
         await mkdir(repositoryRoot);
     const profile = located.fixture.applicable_platform_profiles[0]!;
@@ -3218,7 +3280,18 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
       executedAssertions.add(`profile:${profile}`);
     }
     await ports.onCaseAssertions?.(located.fixture.case_id, [...executedAssertions].sort(compareCodeUnits));
-    const asyncResourcesQuiescent = pendingCaseResources.size === 0;
+    discardCancelledDeferredResources();
+    const currentAsyncId = executionAsyncId();
+    const unresolvedContinuationIds = new Set([...pendingCaseResources]
+      .filter(([asyncId, { type, scopedAtInit }]) => type === "PROMISE"
+        && scopedAtInit
+        && asyncId !== bodyPromiseAsyncId
+        && asyncId !== currentAsyncId)
+      .map(([asyncId]) => asyncId));
+    const asyncResourcesQuiescent = [...pendingCaseResources].every(([asyncId, { type }]) =>
+      type === "PROMISE"
+        ? !unresolvedContinuationIds.has(asyncId)
+        : false);
     if (networkCalls === 0) executedAssertions.add("network.zero");
     if (asyncResourcesQuiescent) executedAssertions.add("async.quiescent");
     const bindingsMatched = located.ruleBindings.every(({ assertion_ids }) =>
@@ -3229,11 +3302,14 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
         return false;
       }
     });
+    bodyPromiseAsyncId = [...pendingCaseResources]
+      .find(([, { resource }]) => resource === bodyPromise)?.[0];
+    return await bodyPromise;
   } finally {
+    auditScope.disable();
     networkAudit.disable();
     for (const { type, resource } of pendingCaseResources.values()) {
-      if (type === "Timeout") clearTimeout(resource as NodeJS.Timeout);
-      else if (type === "Immediate") clearImmediate(resource as NodeJS.Immediate);
+      cleanupKnownCaseResource(type, resource);
     }
     await safeRemoveTemporary(temporary);
   }

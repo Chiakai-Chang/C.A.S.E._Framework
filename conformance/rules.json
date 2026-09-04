@@ -1577,7 +1577,7 @@
   {
     "rule_id": "M0-CORPUS-011",
     "source_section": "22.1",
-    "statement": "Every executed case audits zero case-causal in-process network initialization and no case-created timer, persistent handle, or unfinished one-shot asynchronous work pending after final assertions.",
+    "statement": "Every executed case audits zero case-causal in-process network initialization and no runnable timer, persistent handle, unfinished one-shot work, or unresolved case-registered Promise continuation pending after final assertions; synchronously cancelled timers and immediates are not pending work.",
     "requires_positive": true,
     "requires_negative": false
   },
