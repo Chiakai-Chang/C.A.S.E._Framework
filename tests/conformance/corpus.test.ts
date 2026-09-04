@@ -81,7 +81,9 @@ test("§22.1 stderr prose and the closed case schema define the same exact relat
   assert.match(section, /`@fixture replace` content/u);
   assert.match(section, /placeholder files receive no production exception/u);
   assert.match(section, /unresolved Promise continuations registered by the case must be quiescent at return/u);
-  assert.match(section, /synchronously cancelled through its public cancellation API is no longer runnable/u);
+  assert.match(section, /bare unresolved Promise with no registered continuation is not pending work/u);
+  assert.match(section, /one deterministic, non-timed event-loop lifecycle checkpoint/u);
+  assert.match(section, /mutable private handle fields carry no authority/u);
   assert.match(section, /audit hook is disabled before the library call returns/u);
   assert.match(section, /detection, not a claim that the runner can cancel a Promise or sandbox a later side effect/u);
   assert.match(section, /formal conformance command writes its final result synchronously and terminates its process explicitly/u);
@@ -833,14 +835,62 @@ test("harness-owned Git state is immutable and derived-view network attempts tur
       }
     });
   });
-  await t.test("an immediately cancelled final-hook timer is already quiescent", async () => {
+  await t.test("a bare unresolved promise with no registered continuation is not pending work", async () => {
+    await withCorpusCopy(async (root) => {
+      let barePromise: Promise<never> | undefined;
+      let passed: boolean | undefined;
+      const summary = await runCorpus(root, {
+        onCaseAssertions: (caseId) => {
+          if (caseId === "dossier-create") barePromise = new Promise<never>(() => undefined);
+        },
+        onCaseResult: (caseId, ok) => { if (caseId === "dossier-create") passed = ok; },
+      });
+      assert.ok(barePromise);
+      assert.equal(passed, true);
+      assert.equal(summary.failed, 0);
+      assert.deepEqual(summary.uncovered_positive, []);
+      assert.deepEqual(summary.uncovered_negative, []);
+    });
+  });
+  await t.test("a forged private timer flag cannot hide live delayed DNS work", async () => {
+    await withCorpusCopy(async (root) => {
+      const originalClearTimeout = globalThis.clearTimeout;
+      let targetTimer: NodeJS.Timeout | undefined;
+      let cleanupObserved = false;
+      let passed: boolean | undefined;
+      let summary;
+      globalThis.clearTimeout = ((timer: Parameters<typeof clearTimeout>[0]) => {
+        if (targetTimer !== undefined && timer === Number(targetTimer)) cleanupObserved = true;
+        return originalClearTimeout(timer);
+      }) as typeof clearTimeout;
+      try {
+        summary = await runCorpus(root, {
+          onCaseAssertions: (caseId) => {
+            if (caseId !== "walking-skeleton-offline") return;
+            targetTimer = setTimeout(() => lookup("localhost", () => undefined), 50);
+            (targetTimer as unknown as { _destroyed: boolean })._destroyed = true;
+          },
+          onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
+        });
+      } finally {
+        globalThis.clearTimeout = originalClearTimeout;
+        if (targetTimer !== undefined) originalClearTimeout(Number(targetTimer));
+      }
+      assert.equal(passed, false);
+      assert.ok(summary.failed > 0);
+      assert.equal(cleanupObserved, true);
+    });
+  });
+  await t.test("honestly cancelled final-hook timers and immediates are already quiescent", async () => {
     await withCorpusCopy(async (root) => {
       let passed: boolean | undefined;
       const summary = await runCorpus(root, {
         onCaseAssertions: (caseId) => {
           if (caseId !== "dossier-create") return;
-          const cancelled = setTimeout(() => lookup("localhost", () => undefined), 60_000);
-          clearTimeout(cancelled);
+          const cancelledTimer = setTimeout(() => lookup("localhost", () => undefined), 60_000);
+          const cancelledImmediate = setImmediate(() => lookup("localhost", () => undefined));
+          clearTimeout(cancelledTimer);
+          clearImmediate(cancelledImmediate);
         },
         onCaseResult: (caseId, ok) => { if (caseId === "dossier-create") passed = ok; },
       });

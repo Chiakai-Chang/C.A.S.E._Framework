@@ -19,6 +19,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { promiseHooks } from "node:v8";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { AnySchemaObject, ValidateFunction } from "ajv";
 import { CLI_OPTIONS, parseCliRequest } from "../cli/args.js";
@@ -3080,15 +3081,26 @@ async function initializeHarnessGitRepository(repositoryRoot: string, realGit: b
 async function executeCase(corpusRoot: string, located: LocatedCase, ports: CorpusPorts): Promise<boolean> {
   const temporary = await mkdtemp(join(tmpdir(), "case-agent-conformance-"));
   const repositoryRoot = join(temporary, "repository");
+  const scheduleImmediate = globalThis.setImmediate;
+  const cancelImmediate = globalThis.clearImmediate;
+  const cancelTimeout = globalThis.clearTimeout;
   let networkCalls = 0;
   const caseAsyncIds = new Set<number>();
   const pendingCaseResources = new Map<number, {
     readonly type: string;
     readonly resource: object;
     readonly scopedAtInit: boolean;
+    readonly timeoutId: number | undefined;
   }>();
   const auditScope = new AsyncLocalStorage<boolean>();
+  const auditInfrastructureScope = new AsyncLocalStorage<boolean>();
   let bodyPromiseAsyncId: number | undefined;
+  const registeredPromiseContinuations = new WeakSet<object>();
+  const stopPromiseAudit = promiseHooks.createHook({
+    init: (promise, parent) => {
+      if (parent !== undefined) registeredPromiseContinuations.add(promise);
+    },
+  });
   const isNetworkResource = (type: string): boolean =>
     /^(?:DNSCHANNEL|GETADDRINFOREQWRAP|GETNAMEINFOREQWRAP|QUERYWRAP|TCP.*|TLS.*|UDP.*|HTTP.*|HTTP2.*|QUIC.*)$/u.test(type);
   // Request/work resources become quiescent after their callback; persistent
@@ -3097,28 +3109,22 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
   // are excluded explicitly rather than ignoring every Promise.
   const isOneShotCallbackResource = (type: string): boolean =>
     /(?:REQ|REQUEST)/u.test(type) || type === "TickObject" || type === "Microtask";
-  // Node 24 marks a Timeout/Immediate destroyed synchronously when its public
-  // cancellation API is called, before async_hooks necessarily emits destroy.
-  // The engine major is pinned in package.json, so this is a deterministic
-  // lifecycle observation rather than an event-loop delay or grace period.
-  const isCancelledDeferredResource = (type: string, resource: object): boolean =>
-    (type === "Timeout" || type === "Immediate")
-      && (resource as { readonly _destroyed?: unknown })._destroyed === true;
-  const discardCancelledDeferredResources = (): void => {
-    for (const [asyncId, { type, resource }] of pendingCaseResources) {
-      if (!isCancelledDeferredResource(type, resource)) continue;
-      pendingCaseResources.delete(asyncId);
-      caseAsyncIds.delete(asyncId);
-    }
+  const reachLifecycleCheckpoint = async (): Promise<void> => {
+    await auditInfrastructureScope.run(true, () =>
+      new Promise<void>((resolveCheckpoint) => scheduleImmediate(resolveCheckpoint)));
   };
-  const cleanupKnownCaseResource = (type: string, resource: object): void => {
+  const cleanupKnownCaseResource = (
+    type: string,
+    resource: object,
+    timeoutId: number | undefined,
+  ): void => {
     try {
       if (type === "Timeout") {
-        clearTimeout(resource as NodeJS.Timeout);
+        cancelTimeout(timeoutId ?? (resource as NodeJS.Timeout));
         return;
       }
       if (type === "Immediate") {
-        clearImmediate(resource as NodeJS.Immediate);
+        cancelImmediate(resource as NodeJS.Immediate);
         return;
       }
       if (type === "DNSCHANNEL") {
@@ -3147,11 +3153,24 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
   };
   const networkAudit = createHook({
     init: (asyncId, type, triggerAsyncId, resource) => {
+      if (auditInfrastructureScope.getStore() === true) return;
       const scopedAtInit = auditScope.getStore() === true;
       if (!scopedAtInit && !caseAsyncIds.has(triggerAsyncId)) return;
       caseAsyncIds.add(asyncId);
       if (isNetworkResource(type)) networkCalls += 1;
-      pendingCaseResources.set(asyncId, { type, resource, scopedAtInit });
+      let timeoutId: number | undefined;
+      if (type === "Timeout") {
+        // Timeout's numeric primitive is public in Node and is captured during
+        // init, before the creating hook receives the handle and can alter it.
+        try {
+          const candidate = Number(resource);
+          if (Number.isSafeInteger(candidate) && candidate >= 0) timeoutId = candidate;
+        } catch {
+          // A malformed adapter cannot make the async hook throw globally; the
+          // live resource remains pending and the case still fails closed.
+        }
+      }
+      pendingCaseResources.set(asyncId, { type, resource, scopedAtInit, timeoutId });
     },
     after: (asyncId) => {
       const pending = pendingCaseResources.get(asyncId);
@@ -3280,11 +3299,12 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
       executedAssertions.add(`profile:${profile}`);
     }
     await ports.onCaseAssertions?.(located.fixture.case_id, [...executedAssertions].sort(compareCodeUnits));
-    discardCancelledDeferredResources();
+    await reachLifecycleCheckpoint();
     const currentAsyncId = executionAsyncId();
     const unresolvedContinuationIds = new Set([...pendingCaseResources]
-      .filter(([asyncId, { type, scopedAtInit }]) => type === "PROMISE"
+      .filter(([asyncId, { type, resource, scopedAtInit }]) => type === "PROMISE"
         && scopedAtInit
+        && registeredPromiseContinuations.has(resource)
         && asyncId !== bodyPromiseAsyncId
         && asyncId !== currentAsyncId)
       .map(([asyncId]) => asyncId));
@@ -3307,9 +3327,11 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     return await bodyPromise;
   } finally {
     auditScope.disable();
+    auditInfrastructureScope.disable();
     networkAudit.disable();
-    for (const { type, resource } of pendingCaseResources.values()) {
-      cleanupKnownCaseResource(type, resource);
+    stopPromiseAudit();
+    for (const { type, resource, timeoutId } of pendingCaseResources.values()) {
+      cleanupKnownCaseResource(type, resource, timeoutId);
     }
     await safeRemoveTemporary(temporary);
   }
