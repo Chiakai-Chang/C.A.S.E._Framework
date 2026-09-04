@@ -1,0 +1,46 @@
+{
+  "fixture_version": "1",
+  "case_id": "crlf",
+  "normative_rule_ids": [
+    "M0-PARSE-001"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [],
+  "invocations": [
+    {
+      "actor_label": "probe",
+      "argv": [
+        "@probe",
+        "crlf"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "probe",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/probe-ok.json",
+      "stderr": "empty"
+    }
+  ],
+  "expected_final_tree": [],
+  "expected_derived_view_file": null
+}

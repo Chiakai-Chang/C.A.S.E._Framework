@@ -1,0 +1,1 @@
+{"ok":false,"command":"guard.recover","code":"CASE_E_RECOVERY_REQUIRED","message":"The recorded writer process has not been conclusively proven terminated","data":null,"remediation":null}

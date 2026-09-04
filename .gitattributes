@@ -1,0 +1,2 @@
+conformance/** text eol=lf
+conformance/**/*.bin -text

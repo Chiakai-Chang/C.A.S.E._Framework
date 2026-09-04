@@ -1,0 +1,123 @@
+{
+  "fixture_version": "1",
+  "case_id": "no-brief-authority",
+  "normative_rule_ids": [
+    "M0-SHOW-001",
+    "M0-SHOW-002",
+    "M0-SOURCE-005"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
+      "content_file": "data/generated/misleading-brief.md",
+      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "content_file": "data/base-dossier.json",
+      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "content_file": "data/manifest.json",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "invocations": [
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "--json",
+        "dossier",
+        "show",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/no-brief-authority-0.json",
+      "stderr": "empty"
+    }
+  ],
+  "expected_final_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/brief.md",
+      "presence": "present",
+      "sha256": "sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "presence": "present",
+      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "presence": "present",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "expected_derived_view_file": "data/views/generated/no-brief-authority.json"
+}

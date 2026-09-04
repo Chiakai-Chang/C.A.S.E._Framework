@@ -1,0 +1,124 @@
+{
+  "fixture_version": "1",
+  "case_id": "guard-dead",
+  "normative_rule_ids": [
+    "M0-MUTATION-006",
+    "M0-MUTATION-007",
+    "M0-MUTATION-008"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "content_file": "data/base-dossier.json",
+      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/case-dossier-1.lock",
+      "content_file": "data/generated/writer-guard.json",
+      "sha256": "sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "content_file": "data/manifest.json",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "invocations": [
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "guard",
+        "recover",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-recover"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-recovery.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/guard-dead-0.json",
+      "stderr": "empty"
+    }
+  ],
+  "expected_final_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "presence": "present",
+      "sha256": "sha256:bee6eb5df1476f28f258c3dbeaadb0c5057c89bc4dbaabc02221820d27b87b06"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/case-dossier-1.lock.quarantine-op-recover",
+      "presence": "present",
+      "sha256": "sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "presence": "present",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "expected_derived_view_file": null
+}

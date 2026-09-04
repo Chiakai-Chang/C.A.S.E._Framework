@@ -1,0 +1,1 @@
+{"ok":false,"command":"evidence.add","code":"CASE_E_EVIDENCE","message":"Empty local evidence cannot be registered","data":null,"remediation":null}

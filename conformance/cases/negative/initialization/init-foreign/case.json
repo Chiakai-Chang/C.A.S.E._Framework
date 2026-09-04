@@ -1,0 +1,64 @@
+{
+  "fixture_version": "1",
+  "case_id": "init-foreign",
+  "normative_rule_ids": [
+    "M0-INIT-001",
+    "M0-INIT-002",
+    "M0-INIT-003",
+    "M0-INIT-006",
+    "M0-SOURCE-001"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [
+    {
+      "path": ".case-agent/foreign.txt",
+      "content_file": "data/foreign-namespace.txt",
+      "sha256": "sha256:c35e32ef07bc9fe1d688b84d3fe5d449ebfac7dd256e0a21bd245ab94512b13a"
+    }
+  ],
+  "invocations": [
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "--json",
+        "init",
+        "--operation",
+        "op-init"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 10,
+      "result_code": "CASE_E_NAMESPACE_COLLISION",
+      "stdout_json_file": "data/expected/generated/init-foreign-0.json",
+      "stderr": "empty"
+    }
+  ],
+  "expected_final_tree": [
+    {
+      "path": ".case-agent/foreign.txt",
+      "presence": "present",
+      "sha256": "sha256:c35e32ef07bc9fe1d688b84d3fe5d449ebfac7dd256e0a21bd245ab94512b13a"
+    }
+  ],
+  "expected_derived_view_file": null
+}

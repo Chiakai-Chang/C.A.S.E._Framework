@@ -1,0 +1,30 @@
+{
+  "fixture_version": "1",
+  "case_id": "dossier-create",
+  "normative_rule_ids": ["M0-CLI-002", "M0-SOURCE-002", "M0-STATE-002"],
+  "applicable_platform_profiles": ["controlled-test"],
+  "initial_tree": [
+    {"path":".case-agent/dossiers/.keep","content_file":"data/empty.bin","sha256":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+    {"path":".case-agent/locks/.keep","content_file":"data/empty.bin","sha256":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+    {"path":".case-agent/manifest.json","content_file":"data/manifest.json","sha256":"sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"}
+  ],
+  "invocations": [
+    {
+      "actor_label":"actor-a",
+      "argv":["--json","dossier","create","--operation","op-create","--actor","actor-a","--title","Release integrity","--objective","Keep artifact current","--brief","{\"scope\":{\"in\":[\"artifact.txt\"],\"out\":[\"deployment\"]},\"constraints\":[\"local-only\"],\"acceptance_criteria\":[{\"criterion_id\":\"criterion-a\",\"statement\":\"Artifact digest matches\",\"verification\":\"mechanical\"}]}"],
+      "stdin_mode":"none",
+      "stdin_content_file":null,
+      "fixed_environment":{"CASE_CLOCK":"2026-09-04T03:02:01Z","CASE_ID_SEED":"case","CASE_PROCESS_PROFILE":"controlled-test","CASE_PROCESS_PID":"1001","CASE_PROCESS_STARTED_AT":"2026-09-04T03:00:00Z","CASE_PROCESS_STATUS":"terminated","CASE_NETWORK":"deny","LANG":"C","LC_ALL":"C","TZ":"UTC"},
+      "concurrency_group":null,
+      "fault_point":null
+    }
+  ],
+  "expected":[{"process_exit":0,"result_code":"CASE_OK","stdout_json_file":"data/expected/dossier-create.json","stderr":"empty"}],
+  "expected_final_tree":[
+    {"path":".case-agent/dossiers/.keep","presence":"present","sha256":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+    {"path":".case-agent/dossiers/case-dossier-1/dossier.json","presence":"present","sha256":"sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"},
+    {"path":".case-agent/locks/.keep","presence":"present","sha256":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+    {"path":".case-agent/manifest.json","presence":"present","sha256":"sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"}
+  ],
+  "expected_derived_view_file":null
+}

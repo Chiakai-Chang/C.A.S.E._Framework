@@ -1,0 +1,1 @@
+{"ok":false,"command":"init","code":"CASE_E_NAMESPACE_COLLISION","message":"The existing .case-agent namespace is not owned and compatible","data":null,"remediation":null}

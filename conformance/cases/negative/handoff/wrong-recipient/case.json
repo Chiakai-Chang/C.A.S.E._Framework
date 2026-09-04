@@ -1,0 +1,161 @@
+{
+  "fixture_version": "1",
+  "case_id": "wrong-recipient",
+  "normative_rule_ids": [
+    "M0-HANDOFF-004",
+    "M0-HANDOFF-007"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "content_file": "data/base-dossier.json",
+      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "content_file": "data/manifest.json",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "invocations": [
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "handoff",
+        "offer",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-offer",
+        "--from-run",
+        "case-run-1",
+        "--to-actor",
+        "actor-b"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-c",
+      "argv": [
+        "handoff",
+        "accept",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-wrong",
+        "--handoff",
+        "handoff-op-offer",
+        "--offered-content-digest",
+        "sha256:0a3c5c4fe80a923f459dc142f6505c1114a0e6d03ae3dcfa16c6418b595dd5d3",
+        "--actor",
+        "actor-c"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/wrong-recipient-0.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 40,
+      "result_code": "CASE_E_ACTOR",
+      "stdout_json_file": "data/expected/generated/wrong-recipient-1.json",
+      "stderr": "empty"
+    }
+  ],
+  "expected_final_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "presence": "present",
+      "sha256": "sha256:3df8d6adc1d906298a19c3483fc15e5e7a592b2dcb53ca93de1718415bb69abb"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json",
+      "presence": "present",
+      "sha256": "sha256:7b4e19b645d91e49890ab8319719ee3c6da53098e59bf5b81c9c0376f2f2d0db"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "presence": "present",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    }
+  ],
+  "expected_derived_view_file": null
+}

@@ -1,0 +1,1 @@
+{"ok":false,"command":"decision.accept","code":"CASE_E_TRANSITION","message":"Every current criterion must be reviewed in canonical order","data":null,"remediation":null}

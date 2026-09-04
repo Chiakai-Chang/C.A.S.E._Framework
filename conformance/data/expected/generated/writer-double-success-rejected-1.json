@@ -1,0 +1,1 @@
+{"ok":false,"command":"evidence.add","code":"CASE_E_RECOVERY_REQUIRED","message":"The writer guard may be stale and requires explicit recovery","data":null,"remediation":null}

@@ -1,0 +1,1 @@
+{"ok":false,"command":"evidence.add","code":"CASE_E_INTERNAL","message":"Snapshot staging was interrupted; explicit recovery may be required","data":null,"remediation":null}

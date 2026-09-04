@@ -1,0 +1,52 @@
+{
+  "fixture_version": "1",
+  "case_id": "offline-boundaries",
+  "normative_rule_ids": [
+    "M0-OFFLINE-001",
+    "M0-OFFLINE-002",
+    "M0-OFFLINE-003",
+    "M0-OFFLINE-004",
+    "M0-OFFLINE-005",
+    "M0-OFFLINE-006",
+    "M0-OFFLINE-007"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [],
+  "invocations": [
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "@probe",
+        "offline-boundaries"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/offline-boundaries-0.json",
+      "stderr": "empty"
+    }
+  ],
+  "expected_final_tree": [],
+  "expected_derived_view_file": null
+}

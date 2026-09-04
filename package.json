@@ -10,7 +10,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test \"dist/tests/**/*.test.js\"",
-    "check": "npm run typecheck && npm test"
+    "conformance": "npm run build && node scripts/run-conformance.mjs",
+    "check": "npm run typecheck && npm test && npm run conformance"
   },
   "dependencies": { "ajv": "8.20.0" },
   "devDependencies": {

@@ -1,0 +1,1 @@
+{"ok":false,"command":"handoff.accept","code":"CASE_E_TRANSITION","message":"The handoff offer has already been accepted","data":null,"remediation":null}

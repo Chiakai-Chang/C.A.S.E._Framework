@@ -1,0 +1,1 @@
+{"ok":false,"command":"handoff.accept","code":"CASE_E_ACTOR","message":"Only the intended recipient actor can accept this handoff","data":null,"remediation":null}

@@ -1,0 +1,1 @@
+{"ok":false,"command":"init","code":"CASE_E_UNSUPPORTED_VERSION","message":"The existing namespace uses an unsupported protocol major","data":null,"remediation":null}

@@ -1,0 +1,1 @@
+{"ok":false,"command":"evidence.add","code":"CASE_E_ACTOR","message":"The active run does not authorize this evidence mutation","data":null,"remediation":null}

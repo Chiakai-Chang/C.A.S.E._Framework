@@ -1,0 +1,410 @@
+{
+  "fixture_version": "1",
+  "case_id": "walking-skeleton-offline",
+  "normative_rule_ids": [
+    "M0-CHECK-003",
+    "M0-CLI-004",
+    "M0-CLI-005",
+    "M0-DECISION-001",
+    "M0-DECISION-002",
+    "M0-DECISION-003",
+    "M0-DECISION-004",
+    "M0-ENVELOPE-001",
+    "M0-HANDOFF-004",
+    "M0-HANDOFF-005",
+    "M0-HANDOFF-007",
+    "M0-HANDOFF-008",
+    "M0-MUTATION-001",
+    "M0-MUTATION-002",
+    "M0-MUTATION-003",
+    "M0-MUTATION-004",
+    "M0-MUTATION-005",
+    "M0-OFFLINE-001",
+    "M0-PLATFORM-004",
+    "M0-RELEASE-005",
+    "M0-RELEASE-006",
+    "M0-SHOW-001",
+    "M0-SHOW-002",
+    "M0-SOURCE-002",
+    "M0-SOURCE-003",
+    "M0-SOURCE-004",
+    "M0-SOURCE-005",
+    "M0-STATE-007",
+    "M0-STATUS-001",
+    "M0-STATUS-002",
+    "M0-STATUS-003",
+    "M0-STATUS-004"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [
+    {
+      "path": "artifact.txt",
+      "content_file": "data/artifact-v1.txt",
+      "sha256": "sha256:2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf"
+    }
+  ],
+  "invocations": [
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "--json",
+        "init",
+        "--operation",
+        "op-init"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "--json",
+        "dossier",
+        "create",
+        "--operation",
+        "op-create",
+        "--actor",
+        "actor-a",
+        "--title",
+        "Release integrity",
+        "--objective",
+        "Keep artifact current",
+        "--brief",
+        "{\"scope\":{\"in\":[\"artifact.txt\"],\"out\":[\"deployment\"]},\"constraints\":[\"local-only\"],\"acceptance_criteria\":[{\"criterion_id\":\"criterion-a\",\"statement\":\"Artifact digest matches\",\"verification\":\"mechanical\"}]}"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "evidence",
+        "add",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-evidence",
+        "--run",
+        "case-run-1",
+        "--evidence",
+        "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "handoff",
+        "offer",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-offer",
+        "--from-run",
+        "case-run-1",
+        "--to-actor",
+        "actor-b"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-b",
+      "argv": [
+        "handoff",
+        "accept",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-accept",
+        "--handoff",
+        "handoff-op-offer",
+        "--offered-content-digest",
+        "sha256:f7f924140777ef1453580030c21cd01faef6d1dd198829ad4e841e96c21158d1",
+        "--actor",
+        "actor-b"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-b",
+      "argv": [
+        "submission",
+        "create",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-submit",
+        "--run",
+        "case-run-2"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "reviewer-a",
+      "argv": [
+        "decision",
+        "accept",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-decision",
+        "--submission",
+        "submission-op-submit",
+        "--submission-digest",
+        "sha256:cbea7679e8e2cc5e1a860c64554d6e4818b810ee380a8d34de2eb96bf8593c02",
+        "--reviewer",
+        "reviewer-a",
+        "--criteria",
+        "[\"criterion-a\"]",
+        "--comment",
+        "Reviewed exact submission"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/stdin/confirm-decision.txt",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "@fixture",
+        "replace",
+        "artifact.txt",
+        "data/artifact-v2.txt"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "actor-a",
+      "argv": [
+        "--json",
+        "dossier",
+        "show",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-0.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-1.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-2.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-3.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-4.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-5.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-6.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-7.json",
+      "stderr": "empty"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/walking-skeleton-offline-8.json",
+      "stderr": "empty"
+    }
+  ],
+  "expected_final_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json",
+      "presence": "present",
+      "sha256": "sha256:c46c12f1b0f806fa1f44784e3bbc0ba0bae7f47d79a30a78513f6a57b6f998e2"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "presence": "present",
+      "sha256": "sha256:44f4e3ae976635f24664a8aaa73ceaa1ef1083571c07ce14f547bab65d3fca65"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json",
+      "presence": "present",
+      "sha256": "sha256:d01c5411a4d8ac6032bfd093c75fc11f4069150c6b9c929d5aa3fa2048860858"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+      "presence": "present",
+      "sha256": "sha256:76e2bffb7a62f4400faf06fced4b72336a112ce2a101ba9483e2151326b20d81"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "presence": "present",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    },
+    {
+      "path": "artifact.txt",
+      "presence": "present",
+      "sha256": "sha256:81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56"
+    }
+  ],
+  "expected_derived_view_file": "data/views/generated/walking-skeleton-offline.json"
+}

@@ -1,0 +1,1 @@
+{"ok":false,"command":"dossier.show","code":"CASE_E_SCHEMA","message":"The addressed dossier does not match its schema","data":null,"remediation":"CASE_NEXT_INSPECT_STATE"}
