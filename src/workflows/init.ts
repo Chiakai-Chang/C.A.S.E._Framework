@@ -179,7 +179,7 @@ export async function initRepository(
     return failure("init", "CASE_E_INTERNAL", "The initialization target could not be classified safely");
   }
   if (!classification.supported) {
-    return failure("init", "CASE_E_INTERNAL", "The initialization target is not a proven supported local filesystem profile");
+    return failure("init", "CASE_E_UNSUPPORTED_PROFILE", "The initialization target is not a proven supported local filesystem profile");
   }
   const existing = await inspectExistingNamespace(root, ports);
   if (existing.kind === "compatible") return initSuccess(root, existing.manifest, true);

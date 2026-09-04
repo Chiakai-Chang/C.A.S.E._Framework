@@ -1,5 +1,4 @@
 import { parseArgs } from "node:util";
-import { isAbsolute } from "node:path";
 import { parseGovernedJson, type JsonValue } from "../protocol/json.js";
 import { failure, success, type ResultEnvelope } from "../protocol/result.js";
 import { isDigest, isRevision, type Digest, type Revision } from "../protocol/types.js";
@@ -25,31 +24,36 @@ export type CliRequest =
   | (MutationBase & { readonly command: "decision.reject"; readonly submission_id: string; readonly submission_digest: Digest; readonly reviewer_id: string; readonly criteria_reviewed: string[]; readonly comment: string })
   | (MutationBase & { readonly command: "handoff.offer"; readonly from_run_id: string; readonly to_actor_id: string })
   | (MutationBase & { readonly command: "handoff.accept"; readonly handoff_id: string; readonly offered_content_digest: Digest; readonly actor_id: string })
-  | (CliBase & { readonly command: "guard.recover"; readonly dossier_id: string; readonly operation_id: string });
+  | (MutationBase & { readonly command: "guard.recover" });
 
-type EvidenceInput = {
-  readonly kind: "file" | "command_result" | "external_reference" | "human_observation";
+type EvidenceCommon = {
   readonly criterion_ids: string[];
   readonly freshness: Freshness;
   readonly limitations: string[];
-  readonly location: Record<string, string>;
 };
+export type EvidenceInput = EvidenceCommon & (
+  | { readonly kind: "file" | "command_result"; readonly freshness: "immutable" | "recompute_on_check"; readonly location: { readonly repository_relative_path: string } }
+  | { readonly kind: "external_reference"; readonly freshness: "human_review"; readonly location: { readonly uri: string } }
+  | { readonly kind: "human_observation"; readonly freshness: "human_review"; readonly location: { readonly statement: string } }
+);
 
 type OptionValues = Record<string, string | boolean | undefined>;
 const stringOption = { type: "string" as const };
 
+export const MUTATION_BASIS_OPTIONS = { "expected-revision": stringOption, "expected-state-digest": stringOption } as const;
+const EXISTING_MUTATION_OPTIONS = { dossier: stringOption, operation: stringOption, ...MUTATION_BASIS_OPTIONS } as const;
 export const CLI_OPTIONS = {
   init: { operation: stringOption },
   "dossier.create": { operation: stringOption, actor: stringOption, title: stringOption, objective: stringOption, brief: stringOption },
   "dossier.show": { dossier: stringOption },
   "dossier.check": { dossier: stringOption },
-  "evidence.add": { dossier: stringOption, operation: stringOption, run: stringOption, evidence: stringOption, "expected-revision": stringOption, "expected-state-digest": stringOption },
-  "submission.create": { dossier: stringOption, operation: stringOption, run: stringOption, "expected-revision": stringOption, "expected-state-digest": stringOption },
-  "decision.accept": { dossier: stringOption, operation: stringOption, submission: stringOption, "submission-digest": stringOption, reviewer: stringOption, criteria: stringOption, comment: stringOption, "expected-revision": stringOption, "expected-state-digest": stringOption },
-  "decision.reject": { dossier: stringOption, operation: stringOption, submission: stringOption, "submission-digest": stringOption, reviewer: stringOption, criteria: stringOption, comment: stringOption, "expected-revision": stringOption, "expected-state-digest": stringOption },
-  "handoff.offer": { dossier: stringOption, operation: stringOption, "from-run": stringOption, "to-actor": stringOption, "expected-revision": stringOption, "expected-state-digest": stringOption },
-  "handoff.accept": { dossier: stringOption, operation: stringOption, handoff: stringOption, "offered-content-digest": stringOption, actor: stringOption, "expected-revision": stringOption, "expected-state-digest": stringOption },
-  "guard.recover": { dossier: stringOption, operation: stringOption },
+  "evidence.add": { ...EXISTING_MUTATION_OPTIONS, run: stringOption, evidence: stringOption },
+  "submission.create": { ...EXISTING_MUTATION_OPTIONS, run: stringOption },
+  "decision.accept": { ...EXISTING_MUTATION_OPTIONS, submission: stringOption, "submission-digest": stringOption, reviewer: stringOption, criteria: stringOption, comment: stringOption },
+  "decision.reject": { ...EXISTING_MUTATION_OPTIONS, submission: stringOption, "submission-digest": stringOption, reviewer: stringOption, criteria: stringOption, comment: stringOption },
+  "handoff.offer": { ...EXISTING_MUTATION_OPTIONS, "from-run": stringOption, "to-actor": stringOption },
+  "handoff.accept": { ...EXISTING_MUTATION_OPTIONS, handoff: stringOption, "offered-content-digest": stringOption, actor: stringOption },
+  "guard.recover": EXISTING_MUTATION_OPTIONS,
 } as const;
 
 function usage(command: string, message: string): ResultEnvelope<never> {
@@ -114,13 +118,21 @@ function parseEvidence(source: string): EvidenceInput {
   const locationKey = value.kind === "file" || value.kind === "command_result" ? "repository_relative_path" : value.kind === "external_reference" ? "uri" : "statement";
   exactKeys(locationValue, [locationKey]);
   const criterion_ids = stringArray(value.criterion_ids);
-  if (!criterion_ids.every(safeOpaqueValue)) throw new Error("invalid criterion ID");
+  if (criterion_ids.length === 0 || !criterion_ids.every(safeOpaqueValue) || new Set(criterion_ids).size !== criterion_ids.length) throw new Error("invalid criterion ID");
   if (locationKey === "repository_relative_path") {
     const path = location[locationKey]!;
-    const parts = path.replaceAll("\\", "/").split("/");
-    if (isAbsolute(path) || /^[A-Za-z]:/u.test(path) || parts.some((part) => part === "" || part === "." || part === "..")) throw new Error("unsafe evidence path");
+    const parts = path.split("/");
+    if (path.includes("\\") || path.startsWith("/") || /^[A-Za-z]:/u.test(path) || path.startsWith("//") || parts.some((part) => part === "" || part === "." || part === "..")) throw new Error("unsafe evidence path");
   }
-  return { kind: value.kind, criterion_ids, freshness: value.freshness, limitations: stringArray(value.limitations), location };
+  const limitations = stringArray(value.limitations);
+  if (value.kind === "file" || value.kind === "command_result") {
+    if (value.freshness !== "immutable" && value.freshness !== "recompute_on_check") throw new Error("invalid freshness for local evidence");
+    return { kind: value.kind, criterion_ids, freshness: value.freshness, limitations, location: { repository_relative_path: location.repository_relative_path! } };
+  }
+  if (value.freshness !== "human_review") throw new Error("invalid freshness for recorded evidence");
+  return value.kind === "external_reference"
+    ? { kind: value.kind, criterion_ids, freshness: value.freshness, limitations, location: { uri: location.uri! } }
+    : { kind: value.kind, criterion_ids, freshness: value.freshness, limitations, location: { statement: location.statement! } };
 }
 
 function basis(values: OptionValues, json: boolean): Basis | null {
@@ -161,7 +173,10 @@ export function parseCliRequest(argv: readonly string[], cwd = process.cwd()): R
     if (head.some((value, index) => value !== leading[index])) throw new Error("command must precede command options");
     const parsed = parseArgs({ args: commandArgs.slice(selected.consumed), options: CLI_OPTIONS[selected.command], allowPositionals: true, strict: true });
     if (parsed.positionals.length !== 0) throw new Error("positional extras are forbidden");
-    for (const name of Object.keys(parsed.values)) if (commandArgs.filter((arg) => arg === `--${name}`).length !== 1) throw new Error("duplicate option");
+    for (const name of Object.keys(parsed.values)) {
+      const count = commandArgs.filter((arg) => arg === `--${name}` || arg.startsWith(`--${name}=`)).length;
+      if (count !== 1) throw new Error("duplicate option");
+    }
     const values = parsed.values as OptionValues;
     const command = selected.command;
     let request: CliRequest;
@@ -173,7 +188,7 @@ export function parseCliRequest(argv: readonly string[], cwd = process.cwd()): R
     else if (command === "decision.accept" || command === "decision.reject") { const submissionDigest = text(values, "submission-digest"); if (!isDigest(submissionDigest)) throw new Error("invalid submission digest"); const criteriaReviewed = stringArray(governed(text(values, "criteria"))); if (!criteriaReviewed.every(safeOpaqueValue)) throw new Error("invalid criterion ID"); request = { command, json, dossier_id: opaque(values, "dossier"), operation_id: opaque(values, "operation"), basis: basis(values, json), submission_id: opaque(values, "submission"), submission_digest: submissionDigest, reviewer_id: text(values, "reviewer"), criteria_reviewed: criteriaReviewed, comment: text(values, "comment") }; }
     else if (command === "handoff.offer") request = { command, json, dossier_id: opaque(values, "dossier"), operation_id: opaque(values, "operation"), basis: basis(values, json), from_run_id: opaque(values, "from-run"), to_actor_id: text(values, "to-actor") };
     else if (command === "handoff.accept") { const offered = text(values, "offered-content-digest"); if (!isDigest(offered)) throw new Error("invalid content digest"); request = { command, json, dossier_id: opaque(values, "dossier"), operation_id: opaque(values, "operation"), basis: basis(values, json), handoff_id: opaque(values, "handoff"), offered_content_digest: offered, actor_id: text(values, "actor") }; }
-    else request = { command, json, dossier_id: opaque(values, "dossier"), operation_id: opaque(values, "operation") };
+    else request = { command, json, dossier_id: opaque(values, "dossier"), operation_id: opaque(values, "operation"), basis: basis(values, json) };
     return success(command, "Parsed CLI request", request);
   } catch (error) {
     return usage("cli", error instanceof Error ? error.message : "Malformed invocation");

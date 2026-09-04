@@ -12,6 +12,7 @@ import {
   recoverWriterGuard,
   type GovernedMutationPrecondition,
   type MutationPorts,
+  type RecoverWriterGuardRequest,
   type RecoveryConfirmationPort,
 } from "../../src/storage/guard.js";
 import { CaseStore } from "../../src/storage/store.js";
@@ -24,6 +25,10 @@ const CONFIRM_RECOVERY: RecoveryConfirmationPort = {
   interactive: true,
   confirmRecovery: async () => true,
 };
+
+function recoveryRequest(snapshot: DossierSnapshot, confirmation: RecoveryConfirmationPort = CONFIRM_RECOVERY): RecoverWriterGuardRequest {
+  return { dossier_id: snapshot.dossier_id, operation_id: "op-recover", expected_revision: snapshot.state_revision, expected_state_digest: snapshot.state_digest, confirmation };
+}
 
 function withStateDigest(snapshot: DossierSnapshot): DossierSnapshot {
   const candidate = { ...snapshot, state_digest: ZERO_DIGEST };
@@ -247,7 +252,7 @@ for (const identityState of ["live", "unknown"] as const) {
       processIdentity: { ...ports.processIdentity, verifyTerminated: async () => identityState },
     };
 
-    const result = await recoverWriterGuard(store, { dossier_id: "dossier-a", confirmation: CONFIRM_RECOVERY }, refusingPorts);
+    const result = await recoverWriterGuard(store, recoveryRequest(initial), refusingPorts);
 
     assert.equal(result.code, "CASE_E_RECOVERY_REQUIRED");
     assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.lock"), "utf8")).includes("guard_id"), true);
@@ -259,11 +264,11 @@ test("confirmed recovery of a terminated owner publishes a guarded no-op revisio
   const { root, store, ports, initial } = await fixture(t);
   await acquireWriterGuard(store, precondition(initial, "op-a"), ports);
 
-  const result = await recoverWriterGuard(store, { dossier_id: "dossier-a", confirmation: CONFIRM_RECOVERY }, ports);
+  const result = await recoverWriterGuard(store, recoveryRequest(initial), ports);
 
   assert.equal(result.ok, true);
   assert.equal(result.ok && result.data.snapshot.state_revision, "1");
-  assert.equal(result.ok && result.data.snapshot.last_operation?.operation_id, "recovery:guard-2");
+  assert.equal(result.ok && result.data.snapshot.last_operation?.operation_id, "op-recover");
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock")), { code: "ENOENT" });
   assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.lock.quarantine-guard-2"), "utf8")).includes("guard-1"), true);
@@ -281,21 +286,34 @@ test("recovery acquires its exclusive guard before reading dossier state", async
 
   const result = await recoverWriterGuard(
     new OrderingStore(root, schemas),
-    { dossier_id: "dossier-a", confirmation: CONFIRM_RECOVERY },
+    recoveryRequest(initial),
     ports,
   );
 
   assert.equal(result.ok, true);
 });
 
+test("recovery rejects an intervening basis before confirmation or quarantine and releases recovery exclusivity", async (t) => {
+  const { root, store, ports, initial } = await fixture(t);
+  await acquireWriterGuard(store, precondition(initial, "op-held"), ports);
+  let confirmations = 0;
+  const result = await recoverWriterGuard(store, {
+    ...recoveryRequest(initial, { interactive: true, confirmRecovery: async () => { confirmations += 1; return true; } }),
+    expected_revision: revision("1"),
+  }, ports);
+
+  assert.equal(result.code, "CASE_E_CONFLICT");
+  assert.equal(confirmations, 0);
+  assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.lock"), "utf8")).includes("op-held"), true);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock")), { code: "ENOENT" });
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock.quarantine-guard-2")), { code: "ENOENT" });
+});
+
 test("recovery refuses a non-interactive confirmation source", async (t) => {
   const { root, store, ports, initial } = await fixture(t);
   await acquireWriterGuard(store, precondition(initial, "op-a"), ports);
 
-  const result = await recoverWriterGuard(store, {
-    dossier_id: "dossier-a",
-    confirmation: { interactive: false, confirmRecovery: async () => true },
-  }, ports);
+  const result = await recoverWriterGuard(store, recoveryRequest(initial, { interactive: false, confirmRecovery: async () => true }), ports);
 
   assert.equal(result.code, "CASE_E_HUMAN_CONFIRMATION");
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock")), { code: "ENOENT" });
@@ -319,10 +337,7 @@ test("recovery retains its guard when state becomes self-digest-invalid after qu
     },
   };
 
-  const result = await recoverWriterGuard(store, {
-    dossier_id: "dossier-a",
-    confirmation: CONFIRM_RECOVERY,
-  }, corruptingPorts);
+  const result = await recoverWriterGuard(store, recoveryRequest(initial), corruptingPorts);
 
   assert.equal(result.ok, false);
   assert.ok(["CASE_E_INVARIANT", "CASE_E_RECOVERY_REQUIRED"].includes(result.code));
@@ -338,10 +353,7 @@ test("recovery retains its guard when temporary publication cannot start after q
     ids: { ...ports.ids, tempIdFor: () => "../unsafe" },
   };
 
-  const result = await recoverWriterGuard(store, {
-    dossier_id: "dossier-a",
-    confirmation: CONFIRM_RECOVERY,
-  }, failingPorts);
+  const result = await recoverWriterGuard(store, recoveryRequest(initial), failingPorts);
 
   assert.equal(result.ok, false);
   assert.equal((await readFile(join(root, ".case-agent", "locks", "dossier-a.recovery.lock"), "utf8")).includes("recovery"), true);

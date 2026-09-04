@@ -125,7 +125,7 @@ export async function createDossier(
     return failure("dossier.create", "CASE_E_USAGE", "A complete valid dossier brief is required");
   }
   if (!ports.dossiers.profile.supported) {
-    return failure("dossier.create", "CASE_E_INTERNAL", "Complete dossier publication is unavailable for this filesystem profile");
+    return failure("dossier.create", "CASE_E_UNSUPPORTED_PROFILE", "Complete dossier publication is unavailable for this filesystem profile");
   }
 
   let snapshot: DossierSnapshot;

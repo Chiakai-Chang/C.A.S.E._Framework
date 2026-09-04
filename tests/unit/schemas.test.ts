@@ -249,4 +249,8 @@ test("result schema enforces coherent success and failure branches", async () =>
     ok: false,
     code: "CASE_E_SCHEMA",
   });
+  assert.deepEqual(registry.validate("result", {
+    ok: false, command: "init", code: "CASE_E_UNSUPPORTED_PROFILE",
+    message: "Unsupported profile", data: null, remediation: null,
+  }), { ok: true });
 });

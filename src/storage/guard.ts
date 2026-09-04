@@ -11,6 +11,7 @@ import {
   type Digest,
   type DossierSnapshot,
   type MutationPrecondition,
+  type Revision,
 } from "../protocol/types.js";
 import type { AtomicFsPort } from "./atomic.js";
 import { CaseStore } from "./store.js";
@@ -80,6 +81,9 @@ export interface WriterGuard {
 
 export interface RecoverWriterGuardRequest {
   readonly dossier_id: string;
+  readonly operation_id: string;
+  readonly expected_revision: Revision;
+  readonly expected_state_digest: Digest;
   readonly confirmation: RecoveryConfirmationPort;
 }
 
@@ -246,7 +250,7 @@ async function createGuard(
     failedGuard(store, ports, precondition, writerPath, recoveryPath, mutationFailure(code, message));
 
   if (!ports.fs.profile.supported) {
-    return fail("CASE_E_INTERNAL", "Atomic publication is unavailable for this filesystem profile");
+    return fail("CASE_E_UNSUPPORTED_PROFILE", "Atomic publication is unavailable for this filesystem profile");
   }
   if (!validSegment(precondition.dossier_id)
     || !validOpaque(precondition.operation_id)
@@ -432,8 +436,12 @@ export async function recoverWriterGuard(
   request: RecoverWriterGuardRequest,
   ports: MutationPorts,
 ): Promise<ResultEnvelope<RecoverWriterGuardResult>> {
-  if (!ports.fs.profile.supported || !validSegment(request.dossier_id)) {
-    return failure("guard recover", "CASE_E_INTERNAL", "Recovery is unavailable for this filesystem profile");
+  if (!validSegment(request.dossier_id) || !validSegment(request.operation_id)
+    || !isRevision(request.expected_revision) || !isDigest(request.expected_state_digest)) {
+    return failure("guard recover", "CASE_E_USAGE", "Recovery requires a valid operation and exact mutation basis");
+  }
+  if (!ports.fs.profile.supported) {
+    return failure("guard recover", "CASE_E_UNSUPPORTED_PROFILE", "Recovery is unavailable for this filesystem profile");
   }
   const writerPath = join(".case-agent", "locks", `${request.dossier_id}.lock`);
   const recoveryPath = join(".case-agent", "locks", `${request.dossier_id}.recovery.lock`);
@@ -455,6 +463,9 @@ export async function recoverWriterGuard(
     dossier_id: request.dossier_id,
     guard_id: recoveryId,
     kind: "writer-guard-recovery",
+    operation_id: request.operation_id,
+    expected_revision: request.expected_revision,
+    expected_state_digest: request.expected_state_digest,
   });
   const recoveryRecord: GuardRecord = {
     kind: "recovery",
@@ -462,9 +473,9 @@ export async function recoverWriterGuard(
     dossier_id: request.dossier_id,
     // Recovery acquires first; these non-authoritative placeholders are replaced
     // by a fresh snapshot basis only after the exclusive recovery guard persists.
-    basis_revision: "0",
-    basis_state_digest: digestProjection({}),
-    operation_id: `recovery:${recoveryId}`,
+    basis_revision: request.expected_revision,
+    basis_state_digest: request.expected_state_digest,
+    operation_id: request.operation_id,
     input_digest: recoveryInput,
     process_identity: identity,
     created_at: createdAt,
@@ -489,6 +500,11 @@ export async function recoverWriterGuard(
     const released = await releaseRecovery(ports.fs, recoveryPath, recoveryBytes);
     return failure("guard recover", released ? "CASE_E_INTERNAL" : "CASE_E_RECOVERY_REQUIRED",
       released ? "The recovery basis could not be loaded safely" : "The recovery guard could not be released safely");
+  }
+  if (basis.state_revision !== request.expected_revision || basis.state_digest !== request.expected_state_digest) {
+    const released = await releaseRecovery(ports.fs, recoveryPath, recoveryBytes);
+    return failure("guard recover", released ? "CASE_E_CONFLICT" : "CASE_E_RECOVERY_REQUIRED",
+      released ? "The recovery basis is stale" : "The stale recovery basis could not release its guard safely");
   }
 
   let oldBytes: Uint8Array;
@@ -553,7 +569,7 @@ export async function recoverWriterGuard(
     dossier_id: request.dossier_id,
     expected_revision: basis.state_revision,
     expected_state_digest: basis.state_digest,
-    operation_id: `recovery:${recoveryId}`,
+    operation_id: request.operation_id,
     input_digest: recoveryInput,
   };
   const recoveryGuard: WriterGuard = {

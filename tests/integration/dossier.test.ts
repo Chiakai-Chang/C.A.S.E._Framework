@@ -142,7 +142,7 @@ test("create fails closed when complete-directory publication is unproven", asyn
 
   const result = await createDossier(validCreateRequest, unsupported);
 
-  assert.equal(result.code, "CASE_E_INTERNAL");
+  assert.equal(result.code, "CASE_E_UNSUPPORTED_PROFILE");
   assert.equal(publications.count, 0);
 });
 

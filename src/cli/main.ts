@@ -22,6 +22,18 @@ import { recordDecision, type DecisionRequest } from "../workflows/decision.js";
 import { initRepository, nodeRepositoryFileSystem, type InitRequest } from "../workflows/init.js";
 
 export interface CliTerminal extends ConfirmationPort, RecoveryConfirmationPort {}
+export function exactConfirmation(input: string, phrase: string): boolean { return input === phrase; }
+export function decisionConfirmationText(review: ExactSubmissionReview): string {
+  return [
+    `Submission: ${JSON.stringify(review.submission)}`,
+    `Acceptance criteria: ${JSON.stringify(review.acceptance_criteria)}`,
+    `Decision: ${JSON.stringify(review.decision_envelope)}`,
+    `Identity limitation: ${review.identity_limitation}`,
+  ].join("\n");
+}
+export function recoveryConfirmationText(view: RecoveryConfirmationView): string {
+  return `Recovery guard: ${JSON.stringify(view)}`;
+}
 type Workflow<T> = (request: T, terminal?: CliTerminal) => Promise<ResultEnvelope<unknown>>;
 export interface CliWorkflowDependencies {
   readonly init: Workflow<InitRequest>; readonly createDossier: Workflow<CreateDossierRequest>;
@@ -58,12 +70,12 @@ export async function runCli(argv: readonly string[], dependencies: CliDependenc
     if (request.command === "dossier.create") { const { command, json: _json, ...body } = request; return publicCommand(await dependencies.workflows.createDossier(body), command); }
     if (request.command === "dossier.show") return publicCommand(await dependencies.workflows.showDossier({ dossier_id: request.dossier_id }), request.command);
     if (request.command === "dossier.check") return publicCommand(await dependencies.workflows.checkDossier({ dossier_id: request.dossier_id }), request.command);
-    if (request.command === "guard.recover") return publicCommand(await dependencies.workflows.recoverGuard({ dossier_id: request.dossier_id, confirmation: dependencies.terminal }, dependencies.terminal), request.command);
     const completed = await completeBasis(request, dependencies);
     if (!completed.ok) return completed;
     const common: MutationPrecondition = { dossier_id: request.dossier_id, operation_id: request.operation_id, ...completed.data };
+    if (request.command === "guard.recover") return publicCommand(await dependencies.workflows.recoverGuard({ ...common, confirmation: dependencies.terminal }, dependencies.terminal), request.command);
     if (request.command === "evidence.add") {
-      return publicCommand(await dependencies.workflows.addEvidence({ ...common, run_id: request.run_id, ...request.evidence } as AddEvidenceRequest), request.command);
+      return publicCommand(await dependencies.workflows.addEvidence({ ...common, run_id: request.run_id, ...request.evidence }), request.command);
     }
     if (request.command === "submission.create") return publicCommand(await dependencies.workflows.createSubmission({ ...common, submitting_run_id: request.submitting_run_id }), request.command);
     if (request.command === "decision.accept" || request.command === "decision.reject") return publicCommand(await dependencies.workflows.recordDecision({ ...common, submission_id: request.submission_id, submission_digest: request.submission_digest, reviewer_id: request.reviewer_id, criteria_reviewed: request.criteria_reviewed, comment: request.comment, decision: request.command === "decision.accept" ? "accepted" : "rejected" }, dependencies.terminal), request.command);
@@ -77,7 +89,7 @@ export class TtyTerminal implements CliTerminal {
   private async exact(prompt: string, phrase: string): Promise<boolean> {
     if (!this.interactive) return false;
     const reader = createInterface({ input: stdin, output: stderr });
-    try { return (await reader.question(`${prompt}\nType exactly: ${phrase}\n> `)) === phrase; } finally { reader.close(); }
+    try { return exactConfirmation(await reader.question(`${prompt}\nType exactly: ${phrase}\n> `), phrase); } finally { reader.close(); }
   }
   async confirmBasis(view: CurrentView, proposed: ProposedTransition): Promise<boolean> {
     if (!this.interactive) return false;
@@ -86,12 +98,12 @@ export class TtyTerminal implements CliTerminal {
   }
   async confirmDecision(review: ExactSubmissionReview, phrase: string): Promise<boolean> {
     if (!this.interactive || phrase !== DECISION_CONFIRMATION_PHRASE) return false;
-    stderr.write(`Submission digest: ${review.submission.submission_digest}\nCriteria: ${review.acceptance_criteria.map(({ criterion_id }) => criterion_id).join(", ")}\n`);
+    stderr.write(`${decisionConfirmationText(review)}\n`);
     return this.exact("Record this exact human decision.", DECISION_CONFIRMATION_PHRASE);
   }
   async confirmRecovery(view: RecoveryConfirmationView): Promise<boolean> {
     if (!this.interactive) return false;
-    stderr.write(`Guard: ${view.guard_id}\nRecorded process: ${view.process_identity.profile}/${view.process_identity.pid}\n`);
+    stderr.write(`${recoveryConfirmationText(view)}\n`);
     return this.exact("Recover this writer guard.", "RECOVER THIS WRITER GUARD");
   }
 }

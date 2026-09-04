@@ -203,6 +203,9 @@ test("a crash orphan remains inert and formal recovery invalidates its old basis
 
   const recovered = await recoverWriterGuard(store, {
     dossier_id: "dossier-a",
+    operation_id: "op-recover",
+    expected_revision: initial.state_revision,
+    expected_state_digest: initial.state_digest,
     confirmation: { interactive: true, confirmRecovery: async () => true },
   }, ports);
   const retriedGuard = await acquireWriterGuard(store, governed, ports);

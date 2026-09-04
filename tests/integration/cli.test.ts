@@ -8,7 +8,7 @@ import { EXIT_BY_CODE } from "../../src/protocol/errors.js";
 import { failure, success, type ResultEnvelope } from "../../src/protocol/result.js";
 import type { CurrentView } from "../../src/protocol/types.js";
 import { parseCliRequest } from "../../src/cli/args.js";
-import { runCli, TtyTerminal, type CliDependencies, type CliTerminal } from "../../src/cli/main.js";
+import { decisionConfirmationText, exactConfirmation, recoveryConfirmationText, runCli, TtyTerminal, type CliDependencies, type CliTerminal } from "../../src/cli/main.js";
 import { SchemaRegistry } from "../../src/protocol/schema-registry.js";
 import { CaseStore } from "../../src/storage/store.js";
 import { nodePathInspection } from "../../src/storage/paths.js";
@@ -21,6 +21,7 @@ import { recordDecision } from "../../src/workflows/decision.js";
 import { initRepository, nodeRepositoryFileSystem } from "../../src/workflows/init.js";
 import { controlledAtomicFs } from "../helpers/fault-port.js";
 import { DECISION_CONFIRMATION_PHRASE } from "../../src/cli/confirm.js";
+import { renderHuman } from "../../src/cli/render.js";
 
 const digest = `sha256:${"a".repeat(64)}`;
 const basis: CurrentView = {
@@ -70,6 +71,17 @@ test("machine parsing requires an exact dossier mutation basis", () => {
   if (!missing.ok) assert.equal(missing.code, "CASE_E_USAGE");
   const parsed = parseCliRequest(["--json", "submission", "create", "--dossier", "dossier-a", "--operation", "op", "--run", "run-a", "--expected-revision", "4", "--expected-state-digest", digest]);
   assert.equal(parsed.ok, true);
+  const recovery = parseCliRequest(["--json", "guard", "recover", "--dossier", "dossier-a", "--operation", "op"]);
+  assert.equal(recovery.ok, false);
+});
+
+test("single equals-form options work and every duplicate form is rejected", () => {
+  assert.equal(parseCliRequest(["dossier", "show", "--dossier=dossier-a"]).ok, true);
+  for (const argv of [
+    ["dossier", "show", "--dossier=a", "--dossier=b"],
+    ["dossier", "show", "--dossier=a", "--dossier", "b"],
+    ["dossier", "show", "--dossier", "a", "--dossier=b"],
+  ]) assert.equal(parseCliRequest(argv).ok, false, argv.join(" "));
 });
 
 test("unknown, forbidden, duplicate, malformed, and positional arguments are usage errors", () => {
@@ -79,6 +91,9 @@ test("unknown, forbidden, duplicate, malformed, and positional arguments are usa
     ["dossier", "show", "--dossier", "a", "--yes"],
     ["submission", "create", "--dossier", "a", "--operation", "bad/op", "--run", "run-a"],
     ["evidence", "add", "--dossier", "a", "--operation", "op", "--run", "run-a", "--evidence", '{"kind":"file","criterion_ids":["c"],"freshness":"recompute_on_check","limitations":[],"location":{"repository_relative_path":"../escape"}}'],
+    ["evidence", "add", "--dossier", "a", "--operation", "op", "--run", "run-a", "--evidence", '{"kind":"file","criterion_ids":["c"],"freshness":"recompute_on_check","limitations":[],"location":{"repository_relative_path":"a\\\\b"}}'],
+    ["evidence", "add", "--dossier", "a", "--operation", "op", "--run", "run-a", "--evidence", '{"kind":"external_reference","criterion_ids":["c"],"freshness":"immutable","limitations":[],"location":{"uri":"https://example.test"}}'],
+    ["evidence", "add", "--dossier", "a", "--operation", "op", "--run", "run-a", "--evidence", '{"kind":"human_observation","criterion_ids":[],"freshness":"human_review","limitations":[],"location":{"statement":"seen"}}'],
   ];
   for (const argv of cases) {
     const parsed = parseCliRequest(argv);
@@ -118,10 +133,38 @@ test("human mutations bind the displayed basis without rebinding", async () => {
   assert.equal((deps.terminal as Terminal).basis.length, 1);
 });
 
+test("guard recovery forwards the exact machine operation and basis with specialized confirmation", async () => {
+  const calls: Array<{ command: string; request: unknown }> = [];
+  const deps = dependencies(calls);
+  const result = await runCli(["--json", "guard", "recover", "--dossier=dossier-a", "--operation=op-recover", "--expected-revision=4", `--expected-state-digest=${digest}`], deps);
+  assert.equal(result.ok, true);
+  assert.deepEqual(calls.at(-1)?.request, { dossier_id: "dossier-a", operation_id: "op-recover", expected_revision: "4", expected_state_digest: digest, confirmation: deps.terminal });
+});
+
+test("human recovery never rebinds after an intervening basis change", async () => {
+  const calls: Array<{ command: string; request: unknown }> = [];
+  const deps = dependencies(calls);
+  let currentRevision = "4";
+  const terminal: CliTerminal = {
+    interactive: true,
+    confirmBasis: async () => { currentRevision = "5"; return true; },
+    confirmDecision: async () => true,
+    confirmRecovery: async () => true,
+  };
+  const recoverGuard = async (request: unknown): Promise<ResultEnvelope<unknown>> => {
+    calls.push({ command: "guard.recover", request });
+    const expected = (request as { expected_revision: string }).expected_revision;
+    return expected === currentRevision ? success("guard.recover", "recovered", {}) : failure("guard.recover", "CASE_E_CONFLICT", "stale recovery basis");
+  };
+  const result = await runCli(["guard", "recover", "--dossier", "dossier-a", "--operation", "op-recover"], { ...deps, terminal, workflows: { ...deps.workflows, recoverGuard } });
+  assert.equal(result.code, "CASE_E_CONFLICT");
+  assert.equal((calls.at(-1)?.request as { expected_revision: string }).expected_revision, "4");
+});
+
 test("exit mapping is exhaustive", () => {
   assert.deepEqual(Object.fromEntries(Object.entries(EXIT_BY_CODE)), {
     CASE_OK: 0, CASE_E_USAGE: 2, CASE_E_NOT_INITIALIZED: 10, CASE_E_NAMESPACE_COLLISION: 10,
-    CASE_E_UNSUPPORTED_VERSION: 10, CASE_E_PARSE: 20, CASE_E_SCHEMA: 20, CASE_E_INVARIANT: 20,
+    CASE_E_UNSUPPORTED_VERSION: 10, CASE_E_UNSUPPORTED_PROFILE: 10, CASE_E_PARSE: 20, CASE_E_SCHEMA: 20, CASE_E_INVARIANT: 20,
     CASE_E_EVIDENCE: 20, CASE_E_CONFLICT: 30, CASE_E_BUSY: 30, CASE_E_RECOVERY_REQUIRED: 30,
     CASE_E_TRANSITION: 40, CASE_E_ACTOR: 40, CASE_E_HUMAN_CONFIRMATION: 40, CASE_E_INTERNAL: 70,
   });
@@ -138,8 +181,26 @@ test("real process JSON usage is one newline-terminated envelope with empty stde
 
 test("production Windows initialization fails closed", { skip: process.platform !== "win32" }, () => {
   const run = spawnSync(process.execPath, ["dist/src/cli/main.js", "--json", "init", "--operation", "op"], { encoding: "utf8" });
-  assert.equal(run.status, 70);
-  assert.equal(JSON.parse(run.stdout).code, "CASE_E_INTERNAL");
+  assert.equal(run.status, 10);
+  assert.equal(run.stderr, "");
+  assert.equal(run.stdout.endsWith("\n"), true);
+  assert.equal(run.stdout.trim().split(/\r?\n/u).length, 1);
+  assert.equal(JSON.parse(run.stdout).code, "CASE_E_UNSUPPORTED_PROFILE");
+});
+
+test("human rendering exposes bounded next-command material from views and snapshot results", () => {
+  const writes: string[] = [];
+  renderHuman(success("dossier.show", "Current dossier", basis), { write: (value) => { writes.push(value); } });
+  assert.match(writes.join(""), /active writer: actor-a/);
+  assert.match(writes.join(""), /active run: run-a/);
+  assert.match(writes.join(""), /state digest: sha256:aaaaaaaaaaaa…/);
+  assert.match(writes.join(""), /next: CASE_NEXT_CREATE_SUBMISSION/);
+  writes.length = 0;
+  renderHuman(success("evidence.add", "added", { snapshot: { ...basis, current_submission_id: "submission-a" }, evidence: { evidence_id: "evidence-a", artifact_digest: digest } }), { write: (value) => { writes.push(value); } });
+  assert.match(writes.join(""), /evidence ID: evidence-a/);
+  assert.match(writes.join(""), /artifact digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/);
+  assert.match(writes.join(""), /submission ID: submission-a/);
+  assert.doesNotMatch(writes.join(""), /"evidence":\[/);
 });
 
 test("TTY adapter refuses decisions when the terminal is unavailable or the phrase is wrong", async () => {
@@ -147,6 +208,21 @@ test("TTY adapter refuses decisions when the terminal is unavailable or the phra
   assert.equal(terminal.interactive, false);
   assert.equal(await terminal.confirmDecision({} as never, "WRONG PHRASE"), false);
   assert.equal(await terminal.confirmDecision({} as never, DECISION_CONFIRMATION_PHRASE), false);
+});
+
+test("specialized confirmation formatters expose complete governed review and recovery material", () => {
+  const review = {
+    submission: { submission_id: "submission-a", submission_digest: digest },
+    acceptance_criteria: [{ criterion_id: "c", statement: "check it", verification: "mechanical" }],
+    decision_envelope: { decision_id: "decision-a", decision: "accepted", reviewer_id: "reviewer-a", comment: "reviewed", submission_digest: digest },
+    identity_limitation: "Recorded interactive claim; not authentication or non-repudiation.",
+  } as never;
+  const decisionText = decisionConfirmationText(review);
+  for (const material of ["submission-a", "criterion_id", "decision-a", "accepted", "reviewer-a", "reviewed", "not authentication"]) assert.match(decisionText, new RegExp(material));
+  const recoveryText = recoveryConfirmationText({ dossier_id: "dossier-a", guard_id: "guard-a", created_at: "2026-09-04T00:00:00Z", process_identity: { profile: "test", pid: "7", process_started_at: "2026-09-03T00:00:00Z" } });
+  for (const material of ["dossier-a", "guard-a", "created_at", "test", '"7"', "process_started_at"]) assert.match(recoveryText, new RegExp(material));
+  assert.equal(exactConfirmation(DECISION_CONFIRMATION_PHRASE, DECISION_CONFIRMATION_PHRASE), true);
+  assert.equal(exactConfirmation(`${DECISION_CONFIRMATION_PHRASE} `, DECISION_CONFIRMATION_PHRASE), false);
 });
 
 test("injected runner completes init through acceptance and derives stale after artifact change", async (t) => {

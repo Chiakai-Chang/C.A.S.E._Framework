@@ -207,7 +207,7 @@ for (const classification of [
 
     const result = await initialize(repository, await ports([], fs));
 
-    assert.equal(result.code, "CASE_E_INTERNAL");
+    assert.equal(result.code, "CASE_E_UNSUPPORTED_PROFILE");
     assert.equal((await readdir(repository)).includes(".case-agent"), false);
   });
 }
@@ -217,7 +217,7 @@ test("the Node-only adapter is unclassified and cannot initialize", async (t) =>
 
   const result = await initialize(repository, await ports([], nodeRepositoryFileSystem));
 
-  assert.equal(result.code, "CASE_E_INTERNAL");
+  assert.equal(result.code, "CASE_E_UNSUPPORTED_PROFILE");
   assert.equal((await readdir(repository)).includes(".case-agent"), false);
 });
 
@@ -228,7 +228,7 @@ test("the Node-only adapter cannot trust an existing namespace without classific
 
   const result = await initialize(repository, await ports([], nodeRepositoryFileSystem));
 
-  assert.equal(result.code, "CASE_E_INTERNAL");
+  assert.equal(result.code, "CASE_E_UNSUPPORTED_PROFILE");
   assert.deepEqual(await snapshotTree(repository), before);
 });
 
