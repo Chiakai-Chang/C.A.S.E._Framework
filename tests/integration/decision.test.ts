@@ -429,3 +429,35 @@ test("decision classifies a re-digested foreign criterion link as an invariant b
   assert.equal((await ports.store.loadDossier("dossier-a")).current_decision_id, null);
   await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
 });
+
+test("decision reports a structural invariant before a non-current submission conflict", async (t) => {
+  const { root, ports, snapshot, submission } = await fixture(t);
+  const evidence = snapshot.evidence[0];
+  assert.notEqual(evidence, undefined);
+  if (evidence === undefined) return;
+  const candidate = {
+    ...snapshot,
+    evidence: [
+      { ...evidence, criterion_ids: ["criterion-foreign"] },
+      ...snapshot.evidence.slice(1),
+    ],
+  };
+  const injected = { ...candidate, state_digest: digestProjection(projectState(candidate)) };
+  const dossierPath = join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json");
+  const injectedBytes = Buffer.from(`${JSON.stringify(injected)}\n`);
+  await writeFile(dossierPath, injectedBytes);
+  const confirmation = new ScriptedConfirmationPort(true);
+  const request = {
+    ...decisionRequest(injected, submission, "op-invalid-link-old-submission"),
+    submission_id: "submission-older",
+  };
+
+  const result = await recordDecision(request, { ...ports, confirmation });
+
+  assert.equal(result.command, "decision.accept");
+  assert.equal(result.code, "CASE_E_INVARIANT");
+  assert.equal(confirmation.decisionConfirmations.length, 0);
+  assert.deepEqual(await readFile(dossierPath), injectedBytes);
+  assert.equal((await ports.store.loadDossier("dossier-a")).current_decision_id, null);
+  await assert.rejects(readFile(join(root, ".case-agent", "locks", "dossier-a.lock")), { code: "ENOENT" });
+});

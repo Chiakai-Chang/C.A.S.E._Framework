@@ -242,9 +242,6 @@ export async function recordDecision(
       ?? failure("mutation", "CASE_E_INTERNAL", "Writer acquisition failed"));
   }
   if (guard.basis === null) return failHeld(request, guard, "CASE_E_INTERNAL", "The decision has no validated basis");
-  if (guard.basis.current_submission_id !== request.submission_id) {
-    return failHeld(request, guard, "CASE_E_CONFLICT", "The addressed submission is no longer current");
-  }
   let checked: Awaited<ReturnType<typeof checkSnapshot>>;
   try {
     checked = await checkSnapshot(guard.basis, ports);
@@ -256,6 +253,9 @@ export async function recordDecision(
     || hasStructuralInvariantFailure(checked.checks)
     || submission === null) {
     return failHeld(request, guard, "CASE_E_INVARIANT", "The current submission envelope is unavailable or inconsistent");
+  }
+  if (guard.basis.current_submission_id !== request.submission_id) {
+    return failHeld(request, guard, "CASE_E_CONFLICT", "The addressed submission is no longer current");
   }
   if (submission.submission_digest !== request.submission_digest
     || !currentSubmissionIsExact(submission, guard.basis, checked)) {
