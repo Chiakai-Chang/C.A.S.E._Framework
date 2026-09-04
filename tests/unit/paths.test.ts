@@ -1,16 +1,21 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { promisify } from "node:util";
 import {
   nodePathInspection,
   discoverRepositoryRoot,
+  nodeGitDiscovery,
   resolveEvidencePath,
   type PathInspectionPort,
 } from "../../src/storage/paths.js";
 import { CaseStore } from "../../src/storage/store.js";
 import { SchemaRegistry } from "../../src/protocol/schema-registry.js";
+
+const run = promisify(execFile);
 
 async function createTree(t: test.TestContext): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "case-agent-paths-"));
@@ -89,15 +94,59 @@ test("rejects a root that is itself a junction", async (t) => {
   await assert.rejects(resolveEvidencePath(alias, "artifacts/Evidence.txt", nodePathInspection), /CASE_E_EVIDENCE/);
 });
 
-test("repository discovery rejects arbitrary foreign .git bytes", async (t) => {
-  const root = await mkdtemp(join(tmpdir(), "case-agent-foreign-git-"));
+async function createGitRepository(t: test.TestContext): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "case-agent-git-root-"));
   t.after(async () => rm(root, { recursive: true, force: true }));
-  await mkdir(join(root, ".git", "objects"), { recursive: true });
-  await mkdir(join(root, ".git", "refs"), { recursive: true });
-  await writeFile(join(root, ".git", "HEAD"), "this is not a git head\n");
-  await writeFile(join(root, ".git", "config"), "[core]\n\tbare = false\n");
+  await run("git", ["init", "--quiet", root]);
+  return root;
+}
 
-  await assert.rejects(discoverRepositoryRoot(root), /CASE_E_NOT_INITIALIZED/);
+test("repository discovery accepts a Git-confirmed normal worktree root", async (t) => {
+  const root = await createGitRepository(t);
+  const nested = join(root, "nested");
+  await mkdir(nested);
+
+  assert.equal(await discoverRepositoryRoot(nested, nodePathInspection, nodeGitDiscovery), root);
+});
+
+test("repository discovery accepts a Git-confirmed linked worktree root", async (t) => {
+  const root = await createGitRepository(t);
+  await run("git", ["-C", root, "-c", "user.name=Case Test", "-c", "user.email=case@example.invalid", "commit", "--quiet", "--allow-empty", "-m", "root"]);
+  const linked = `${root}-linked`;
+  t.after(async () => rm(linked, { recursive: true, force: true }));
+  await run("git", ["-C", root, "worktree", "add", "--quiet", "-b", "case-linked", linked]);
+  const nested = join(linked, "nested");
+  await mkdir(nested);
+
+  assert.equal(await discoverRepositoryRoot(nested, nodePathInspection, nodeGitDiscovery), linked);
+});
+
+test("repository discovery stops at a closest marker with adversarial bare config", async (t) => {
+  const outer = await createGitRepository(t);
+  const inner = join(outer, "inner");
+  await mkdir(join(inner, ".git", "objects"), { recursive: true });
+  await mkdir(join(inner, ".git", "refs"), { recursive: true });
+  await writeFile(join(inner, ".git", "HEAD"), "ref: refs/heads/main\n");
+  await writeFile(join(inner, ".git", "config"), "[core]\n\tbare = true\n[unrelated]\n\tbare = false\n");
+
+  await assert.rejects(
+    discoverRepositoryRoot(inner, nodePathInspection, nodeGitDiscovery),
+    /CASE_E_NOT_INITIALIZED/,
+  );
+});
+
+test("repository discovery stops at a closest marker with an invalid Git ref", async (t) => {
+  const outer = await createGitRepository(t);
+  const inner = join(outer, "inner");
+  await mkdir(join(inner, ".git", "objects"), { recursive: true });
+  await mkdir(join(inner, ".git", "refs"), { recursive: true });
+  await writeFile(join(inner, ".git", "HEAD"), "ref: refs/heads/main..invalid\n");
+  await writeFile(join(inner, ".git", "config"), "[core]\n\tbare = false\n");
+
+  await assert.rejects(
+    discoverRepositoryRoot(inner, nodePathInspection, nodeGitDiscovery),
+    /CASE_E_NOT_INITIALIZED/,
+  );
 });
 
 const dossier = {

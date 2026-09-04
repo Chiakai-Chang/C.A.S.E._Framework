@@ -2,11 +2,12 @@ import {
   lstat,
   open,
   readdir,
-  readFile,
   realpath,
   type FileHandle,
 } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
+import { promisify } from "node:util";
 
 export interface PathInfo {
   readonly device: bigint;
@@ -30,7 +31,6 @@ export interface OpenedFile {
 export interface PathInspectionPort {
   lstat(path: string): Promise<PathInfo>;
   realpath(path: string): Promise<string>;
-  readFile(path: string): Promise<Uint8Array>;
   listDirectory(path: string): Promise<readonly DirectoryEntryInfo[]>;
   openRead(path: string): Promise<OpenedFile>;
 }
@@ -58,14 +58,9 @@ function openedFile(handle: FileHandle): OpenedFile {
 export const nodePathInspection: PathInspectionPort = {
   lstat: async (path) => pathInfo(await lstat(path)),
   realpath,
-  readFile,
   listDirectory: async (path) => (await readdir(path, { withFileTypes: true })).map(({ name }) => ({ name })),
   openRead: async (path) => openedFile(await open(path, "r")),
 };
-
-function isMissing(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
-}
 
 function isLinkOrReparse(info: PathInfo): boolean {
   return info.isSymbolicLink() || info.isReparsePoint();
@@ -75,105 +70,72 @@ async function exactEntryExists(directory: string, name: string, fs: PathInspect
   return (await fs.listDirectory(directory)).some((entry) => entry.name === name);
 }
 
-async function isPlainFile(path: string, fs: PathInspectionPort): Promise<boolean> {
-  try {
-    const info = await fs.lstat(path);
-    return info.isFile() && !isLinkOrReparse(info);
-  } catch (error) {
-    if (isMissing(error)) return false;
-    throw error;
-  }
+export interface GitDiscoveryPort {
+  /** Return the Git-confirmed non-bare worktree root, or null when confirmation fails. */
+  confirmWorktreeRoot(directory: string): Promise<string | null>;
 }
 
-async function isPlainDirectory(path: string, fs: PathInspectionPort): Promise<boolean> {
-  try {
-    const info = await fs.lstat(path);
-    return info.isDirectory() && !isLinkOrReparse(info);
-  } catch (error) {
-    if (isMissing(error)) return false;
-    throw error;
-  }
-}
+const execFileAsync = promisify(execFile);
 
-async function isGitCommonDirectory(path: string, fs: PathInspectionPort): Promise<boolean> {
-  return await exactEntryExists(path, "HEAD", fs)
-    && await exactEntryExists(path, "config", fs)
-    && await exactEntryExists(path, "objects", fs)
-    && await exactEntryExists(path, "refs", fs)
-    && await isPlainFile(join(path, "HEAD"), fs)
-    && await isPlainFile(join(path, "config"), fs)
-    && await isPlainDirectory(join(path, "objects"), fs)
-    && await isPlainDirectory(join(path, "refs"), fs)
-    && await hasValidGitHead(join(path, "HEAD"), fs)
-    && await hasWorktreeGitConfig(join(path, "config"), fs);
-}
+export const nodeGitDiscovery: GitDiscoveryPort = {
+  async confirmWorktreeRoot(directory) {
+    try {
+      const { stdout } = await execFileAsync(
+        "git",
+        ["-C", directory, "rev-parse", "--path-format=absolute", "--show-toplevel", "--is-inside-work-tree", "--is-bare-repository"],
+        { encoding: "utf8", windowsHide: true },
+      );
+      const [root, inside, bare, ...extra] = stdout.trim().split(/\r?\n/);
+      if (root === undefined || inside !== "true" || bare !== "false" || extra.length !== 0) return null;
 
-function decodeGitText(bytes: Uint8Array): string | undefined {
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  } catch {
-    return undefined;
-  }
-}
+      const configuredBare = await execFileAsync(
+        "git",
+        ["-C", directory, "config", "--local", "--type=bool", "--get", "core.bare"],
+        { encoding: "utf8", windowsHide: true },
+      );
+      if (configuredBare.stdout.trim() !== "false") return null;
 
-async function hasValidGitHead(path: string, fs: PathInspectionPort): Promise<boolean> {
-  const source = decodeGitText(await fs.readFile(path));
-  if (source === undefined || source.includes("\0")) return false;
-  const head = source.replace(/\r?\n$/, "");
-  if (/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/.test(head)) return true;
-  if (!head.startsWith("ref: refs/")) return false;
-  const reference = head.slice("ref: ".length);
-  return !reference.includes("\\")
-    && !reference.includes("//")
-    && reference.split("/").every((segment) => segment.length > 0 && segment !== "." && segment !== "..");
-}
-
-async function hasWorktreeGitConfig(path: string, fs: PathInspectionPort): Promise<boolean> {
-  const source = decodeGitText(await fs.readFile(path));
-  if (source === undefined || source.includes("\0")) return false;
-  return /^\s*\[core\]\s*$/im.test(source) && /^\s*bare\s*=\s*false\s*$/im.test(source);
-}
-
-async function isLinkedWorktreeMarker(marker: string, fs: PathInspectionPort): Promise<boolean> {
-  const source = decodeGitText(await fs.readFile(marker));
-  if (source === undefined || source.includes("\0")) return false;
-  const match = /^gitdir: ([^\r\n]+)\r?\n?$/.exec(source);
-  if (match === null) return false;
-
-  const worktreeGitDirectory = resolve(dirname(marker), match[1]!);
-  if (!await isPlainDirectory(worktreeGitDirectory, fs)) return false;
-  if (!await isPlainFile(join(worktreeGitDirectory, "HEAD"), fs)
-    || !await isPlainFile(join(worktreeGitDirectory, "commondir"), fs)
-    || !await isPlainFile(join(worktreeGitDirectory, "gitdir"), fs)) return false;
-
-  if (!await hasValidGitHead(join(worktreeGitDirectory, "HEAD"), fs)) return false;
-  const commonSource = decodeGitText(await fs.readFile(join(worktreeGitDirectory, "commondir")));
-  const backlinkSource = decodeGitText(await fs.readFile(join(worktreeGitDirectory, "gitdir")));
-  if (commonSource === undefined || backlinkSource === undefined) return false;
-  const commonPath = resolve(worktreeGitDirectory, commonSource.trim());
-  const backlinkPath = resolve(worktreeGitDirectory, backlinkSource.trim());
-  if (!await isGitCommonDirectory(commonPath, fs)) return false;
-
-  return await fs.realpath(backlinkPath) === await fs.realpath(marker);
-}
+      try {
+        const symbolic = await execFileAsync("git", ["-C", directory, "symbolic-ref", "-q", "HEAD"], {
+          encoding: "utf8",
+          windowsHide: true,
+        });
+        const reference = symbolic.stdout.trim();
+        if (reference.length === 0) return null;
+        await execFileAsync("git", ["check-ref-format", reference], { encoding: "utf8", windowsHide: true });
+      } catch {
+        await execFileAsync("git", ["-C", directory, "rev-parse", "--verify", "HEAD^{commit}"], {
+          encoding: "utf8",
+          windowsHide: true,
+        });
+      }
+      return root;
+    } catch {
+      return null;
+    }
+  },
+};
 
 async function gitWorktreeMarker(
   directory: string,
   fs: PathInspectionPort,
+  git: GitDiscoveryPort,
 ): Promise<"absent" | "valid" | "invalid"> {
   if (!await exactEntryExists(directory, ".git", fs)) return "absent";
   const marker = join(directory, ".git");
   const info = await fs.lstat(marker);
   if (isLinkOrReparse(info)) return "invalid";
-  if (info.isDirectory()) return await isGitCommonDirectory(marker, fs) ? "valid" : "invalid";
-  if (info.isFile()) return await isLinkedWorktreeMarker(marker, fs) ? "valid" : "invalid";
-  return "invalid";
+  if (!info.isDirectory() && !info.isFile()) return "invalid";
+  const confirmedRoot = await git.confirmWorktreeRoot(directory);
+  if (confirmedRoot === null) return "invalid";
+  return await fs.realpath(confirmedRoot) === await fs.realpath(directory) ? "valid" : "invalid";
 }
 
 /** Discover the closest validated Git work-tree owner without crossing a volume root. */
 export async function discoverRepositoryRoot(
   start: string,
   fs: PathInspectionPort = nodePathInspection,
+  git: GitDiscoveryPort = nodeGitDiscovery,
 ): Promise<string> {
   if (start.length === 0 || start.includes("\0")) {
     throw new Error("CASE_E_NOT_INITIALIZED: invalid start directory");
@@ -192,7 +154,7 @@ export async function discoverRepositoryRoot(
   while (true) {
     let marker: "absent" | "valid" | "invalid";
     try {
-      marker = await gitWorktreeMarker(current, fs);
+      marker = await gitWorktreeMarker(current, fs, git);
     } catch {
       throw new Error("CASE_E_NOT_INITIALIZED: repository ownership could not be proven");
     }
