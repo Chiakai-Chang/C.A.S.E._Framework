@@ -412,6 +412,12 @@ test("observed, checks, and submission mutation matrices use only specified mate
   const observedChanged = structuredClone(observed);
   observedChanged.evidence_results[0]!.status = "changed";
   assert.notEqual(digestProjection(projectObservedEvidence(observed)), digestProjection(projectObservedEvidence(observedChanged)), "observed evidence includes result status");
+  const observedChangedDossier = structuredClone(observed);
+  observedChangedDossier.dossier_id = "dossier-2";
+  assert.notEqual(digestProjection(projectObservedEvidence(observed)), digestProjection(projectObservedEvidence(observedChangedDossier)), "observed evidence includes dossier_id");
+  const observedChangedContent = structuredClone(observed);
+  observedChangedContent.content_digest = otherDigest;
+  assert.notEqual(digestProjection(projectObservedEvidence(observed)), digestProjection(projectObservedEvidence(observedChangedContent)), "observed evidence includes content_digest");
   const observedReorderedCodes = structuredClone(observed);
   observedReorderedCodes.evidence_results[0]!.stable_limitation_codes.reverse();
   assert.equal(digestProjection(projectObservedEvidence(observed)), digestProjection(projectObservedEvidence(observedReorderedCodes)), "observed stable codes are order-independent");
@@ -538,5 +544,86 @@ test("checks and submissions mutation matrices include every emitted top-level f
     const changed = submission();
     mutate(changed);
     assert.notEqual(envelopeDigest, digestProjection(projectSubmission(changed)), `submission includes ${field}`);
+  }
+});
+
+test("content excludes captured_at and includes every emitted field for all evidence kinds", () => {
+  const snapshot = dossier();
+  snapshot.evidence = [
+    snapshot.evidence[0]!,
+    {
+      evidence_id: "evidence-command",
+      criterion_ids: ["criterion-1"],
+      captured_at: "2026-09-04T00:00:01Z",
+      freshness: "recompute_on_check",
+      limitations: ["command-limitation"],
+      kind: "command_result",
+      location: { repository_relative_path: "scripts/check.ps1" },
+      artifact_digest: otherDigest,
+      artifact_size: decimalString("43"),
+    },
+    {
+      evidence_id: "evidence-external",
+      criterion_ids: ["criterion-2"],
+      captured_at: "2026-09-04T00:00:02Z",
+      freshness: "human_review",
+      limitations: ["external-limitation"],
+      kind: "external_reference",
+      location: { uri: "https://example.test/reference" },
+    },
+    {
+      evidence_id: "evidence-human",
+      criterion_ids: ["criterion-2"],
+      captured_at: "2026-09-04T00:00:03Z",
+      freshness: "human_review",
+      limitations: ["human-limitation"],
+      kind: "human_observation",
+      location: { statement: "A reviewer observed the result." },
+    },
+  ];
+  const baseline = digestProjection(projectContent(snapshot));
+
+  for (const [index, kind] of ["file", "command_result", "external_reference", "human_observation"].entries()) {
+    const changed = structuredClone(snapshot);
+    changed.evidence[index]!.captured_at = "2099-01-01T00:00:00Z";
+    assert.equal(baseline, digestProjection(projectContent(changed)), `content excludes ${kind} captured_at`);
+  }
+
+  const commonMutations: Array<[string, (snapshot: DossierSnapshot, index: number) => void]> = [
+    ["evidence_id", (value, index) => { value.evidence[index]!.evidence_id = `evidence-changed-${index}`; }],
+    ["criterion_ids", (value, index) => { value.evidence[index]!.criterion_ids[0] = `criterion-changed-${index}`; }],
+    ["freshness", (value, index) => { value.evidence[index]!.freshness = "immutable"; }],
+    ["limitations", (value, index) => { value.evidence[index]!.limitations[0] = `changed-${index}`; }],
+  ];
+  for (const [field, mutate] of commonMutations) {
+    for (const index of [0, 1, 2, 3]) {
+      const changed = structuredClone(snapshot);
+      mutate(changed, index);
+      assert.notEqual(baseline, digestProjection(projectContent(changed)), `content includes ${field} for evidence ${index}`);
+    }
+  }
+
+  const changedFilePath = structuredClone(snapshot);
+  if (changedFilePath.evidence[0]?.kind === "file") changedFilePath.evidence[0].location.repository_relative_path = "src/changed.ts";
+  assert.notEqual(baseline, digestProjection(projectContent(changedFilePath)), "content includes file location");
+  const changedCommandPath = structuredClone(snapshot);
+  if (changedCommandPath.evidence[1]?.kind === "command_result") changedCommandPath.evidence[1].location.repository_relative_path = "scripts/changed.ps1";
+  assert.notEqual(baseline, digestProjection(projectContent(changedCommandPath)), "content includes command-result location");
+  const changedExternalUri = structuredClone(snapshot);
+  if (changedExternalUri.evidence[2]?.kind === "external_reference") changedExternalUri.evidence[2].location.uri = "https://example.test/changed";
+  assert.notEqual(baseline, digestProjection(projectContent(changedExternalUri)), "content includes external-reference location");
+  const changedHumanStatement = structuredClone(snapshot);
+  if (changedHumanStatement.evidence[3]?.kind === "human_observation") changedHumanStatement.evidence[3].location.statement = "The observation changed.";
+  assert.notEqual(baseline, digestProjection(projectContent(changedHumanStatement)), "content includes human-observation location");
+
+  for (const index of [0, 1]) {
+    const changedDigest = structuredClone(snapshot);
+    const record = changedDigest.evidence[index]!;
+    if (record.kind === "file" || record.kind === "command_result") record.artifact_digest = index === 0 ? otherDigest : primaryDigest;
+    assert.notEqual(baseline, digestProjection(projectContent(changedDigest)), `content includes artifact_digest for evidence ${index}`);
+    const changedSize = structuredClone(snapshot);
+    const sizedRecord = changedSize.evidence[index]!;
+    if (sizedRecord.kind === "file" || sizedRecord.kind === "command_result") sizedRecord.artifact_size = decimalString(index === 0 ? "44" : "42");
+    assert.notEqual(baseline, digestProjection(projectContent(changedSize)), `content includes artifact_size for evidence ${index}`);
   }
 });
