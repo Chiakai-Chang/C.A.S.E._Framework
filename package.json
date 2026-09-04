@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/tests/smoke/cli.test.js",
+    "test": "npm run build && node --test \"dist/tests/**/*.test.js\"",
     "check": "npm run typecheck && npm test"
   },
   "dependencies": { "ajv": "8.20.0" },
