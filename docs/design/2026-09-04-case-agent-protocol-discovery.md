@@ -539,3 +539,15 @@ The review changed the specification in these material ways:
 Two additional review rounds checked the revisions. The standards review, specification review, and stakeholder journey review reported no remaining known blocker within the approved M0 scope.
 
 This closure means the design is ready for implementation planning. It does not prove the protocol works, that the reference implementation will conform, or that C.A.S.E. improves outcomes over Markdown. Those claims remain gated by schemas, executable fixtures, fault injection, cross-profile results, and the preregistered baseline comparison.
+
+## 23. M0 implementation-planning checkpoint — 2026-09-04
+
+The approved design has been translated into an executable, test-first plan at [M0 Local Dossier Integrity Implementation Plan](../superpowers/plans/2026-09-04-m0-local-dossier-integrity.md). The plan uses Node.js 24 LTS, TypeScript, Ajv Draft 2020-12 validation, built-in tests, injected operating-system seams, and a private package boundary. This is a reference-implementation choice, not a protocol dependency or a decision about later skill/plugin packaging.
+
+Plan review added a specification-to-task coverage map and made the conformance corpus depend on a frozen normative-rule ledger rather than an informal count of test families. It also corrected executable details that could otherwise produce false confidence: focused test invocation on Windows, package-content allowlisting, decoded duplicate-key fixtures, legal busy-or-conflict race outcomes, and a reusable corpus-runner module.
+
+One ambiguity found during planning was resolved without changing the intended semantics: a handoff envelope has no stored `status` or `status_basis` field. Its status is derived from immutable offer fields and current snapshot links. This preserves the rule that status is not duplicated mutable truth.
+
+**Alignment assessment**: the plan remains confined to the smallest deterministic oracle needed to test whether C.A.S.E. catches stale and conflicting work while reducing human reconstruction effort. It does not repair Pi, add orchestration, or commit to skills/plugins before the B0/M0 evidence exists.
+
+**Next decision gate**: choose how to execute the plan. Outcome claims remain prohibited until the implementation, frozen corpus, platform-profile results, and preregistered baseline have been independently verified.

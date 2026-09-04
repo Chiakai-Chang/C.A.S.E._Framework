@@ -379,8 +379,9 @@ basis_state_digest
 published_revision
 offered_content_digest
 created_operation_id
-status_basis: immutable offer data
 ```
+
+Handoff status has no stored `status` or `status_basis` member. Its status basis is the immutable offer fields above plus the current snapshot links described below; `offered`, `accepted`, and `stale` are derived views.
 
 - only the active run can create an offer;
 - creating an offer does not transfer responsibility;
