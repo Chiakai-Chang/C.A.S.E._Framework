@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
 import { digestProjection } from "../../src/protocol/canonical.js";
-import { projectChecks, projectState, projectSubmission } from "../../src/protocol/projections.js";
+import type { JsonValue } from "../../src/protocol/json.js";
+import { projectState, projectSubmission } from "../../src/protocol/projections.js";
 import { SchemaRegistry } from "../../src/protocol/schema-registry.js";
 import { revision, type DecisionEnvelope, type DossierSnapshot, type SubmissionEnvelope } from "../../src/protocol/types.js";
 import { CaseStore } from "../../src/storage/store.js";
@@ -188,11 +189,23 @@ async function replaceSnapshot(root: string, candidate: DossierSnapshot): Promis
   return snapshot;
 }
 
-test("show derives current acceptance and stales it when covered artifact bytes change", async (t) => {
+async function acceptedDossierFixture(t: TestContext): Promise<{
+  root: string;
+  ports: WorkflowPorts;
+  decision: DecisionEnvelope;
+}>;
+async function acceptedDossierFixture(
+  t: TestContext,
+  criteria: DossierSnapshot["acceptance_criteria"],
+): Promise<{ root: string; ports: WorkflowPorts; decision: DecisionEnvelope }>;
+async function acceptedDossierFixture(
+  t: TestContext,
+  criteria: DossierSnapshot["acceptance_criteria"] = validCreateRequest.acceptance_criteria,
+): Promise<{ root: string; ports: WorkflowPorts; decision: DecisionEnvelope }> {
   const { root, ports } = await fixture(t);
-  const created = await createDossier(validCreateRequest, ports);
+  const created = await createDossier({ ...validCreateRequest, acceptance_criteria: criteria }, ports);
   assert.equal(created.ok, true);
-  if (!created.ok) return;
+  if (!created.ok) throw new Error("accepted fixture dossier creation failed");
   await mkdir(join(root, "artifacts"));
   await writeFile(join(root, "artifacts", "release.txt"), "current");
   const added = await addEvidence({
@@ -201,17 +214,17 @@ test("show derives current acceptance and stales it when covered artifact bytes 
     expected_state_digest: created.data.snapshot.state_digest,
     operation_id: "op-add",
     run_id: "run-a",
-    criterion_ids: ["criterion-a"],
+    criterion_ids: criteria.map(({ criterion_id }) => criterion_id),
     kind: "file",
     location: { repository_relative_path: "artifacts/release.txt" },
     freshness: "recompute_on_check",
     limitations: [],
   }, ports);
   assert.equal(added.ok, true);
-  if (!added.ok) return;
+  if (!added.ok) throw new Error("accepted fixture evidence registration failed");
   const checked = await checkDossier({ dossier_id: "dossier-a" }, ports);
   assert.equal(checked.ok, true);
-  if (!checked.ok) return;
+  if (!checked.ok) throw new Error("accepted fixture check failed");
 
   const submissionWithoutDigest = {
     submission_id: "submission-current",
@@ -222,7 +235,7 @@ test("show derives current acceptance and stales it when covered artifact bytes 
     published_revision: revision("2"),
     content_digest: checked.data.content_digest,
     observed_evidence_digest: checked.data.observed_evidence_digest,
-    checks_digest: digestProjection(projectChecks(checked.data)),
+    checks_digest: digestProjection(checked.data as unknown as JsonValue),
     created_at: now,
     created_operation_id: "op-submit",
   };
@@ -253,7 +266,7 @@ test("show derives current acceptance and stales it when covered artifact bytes 
     submission_digest: submission.submission_digest,
     decision: "accepted",
     reviewer_id: "reviewer-a",
-    criteria_reviewed: ["criterion-a"],
+    criteria_reviewed: criteria.map(({ criterion_id }) => criterion_id),
     comment: "Accepted",
     decided_at: now,
     created_operation_id: "op-decide",
@@ -272,6 +285,11 @@ test("show derives current acceptance and stales it when covered artifact bytes 
     },
     current_decision_id: decision.decision_id,
   });
+  return { root, ports, decision };
+}
+
+test("show derives current acceptance and stales it when covered artifact bytes change", async (t) => {
+  const { root, ports } = await acceptedDossierFixture(t);
 
   const current = await showDossier({ dossier_id: "dossier-a" }, ports);
   assert.equal(current.ok, true);
@@ -290,3 +308,87 @@ test("show derives current acceptance and stales it when covered artifact bytes 
   assert.equal(stale.data.acceptance, "stale");
   assert.equal(stale.data.recommended_next_action, "CASE_NEXT_ADD_EVIDENCE");
 });
+
+for (const [name, criteriaReviewed] of [
+  ["empty", []],
+  ["foreign", ["criterion-foreign"]],
+  ["reordered", ["criterion-b", "criterion-a"]],
+  ["duplicate", ["criterion-a", "criterion-a"]],
+] as const) {
+  test(`show never accepts a decision with ${name} criterion coverage`, async (t) => {
+    const criteria = name === "reordered"
+      ? [
+          validCreateRequest.acceptance_criteria[0]!,
+          { criterion_id: "criterion-b", statement: "Second criterion", verification: "mechanical" as const },
+        ]
+      : validCreateRequest.acceptance_criteria;
+    const { root, ports, decision } = await acceptedDossierFixture(t, criteria);
+    await writeFile(
+      join(root, ".case-agent", "dossiers", "dossier-a", "decisions", "decision-current.json"),
+      `${JSON.stringify({ ...decision, criteria_reviewed: criteriaReviewed })}\n`,
+    );
+
+    const result = await showDossier({ dossier_id: "dossier-a" }, ports);
+
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.data.acceptance, "stale");
+    assert.equal(result.data.current_checks, "failed");
+    assert.equal(result.data.recommended_next_action, "CASE_NEXT_INSPECT_STATE");
+  });
+}
+
+test("show recommends non-mutating inspection for corrupt state and leaves it unchanged", async (t) => {
+  const { root, ports } = await fixture(t);
+  const created = await createDossier(validCreateRequest, ports);
+  assert.equal(created.ok, true);
+  if (!created.ok) return;
+  const dossierPath = join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json");
+  const corrupted = Buffer.from(`${JSON.stringify({ ...created.data.snapshot, title: "tampered" })}\n`);
+  await writeFile(dossierPath, corrupted);
+
+  const result = await showDossier({ dossier_id: "dossier-a" }, ports);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.data.current_checks, "failed");
+  assert.equal(result.data.recommended_next_action, "CASE_NEXT_INSPECT_STATE");
+  assert.deepEqual(await readFile(dossierPath), corrupted);
+});
+
+test("show recommends non-mutating inspection for a missing current envelope", async (t) => {
+  const { root, ports } = await fixture(t);
+  const created = await createDossier(validCreateRequest, ports);
+  assert.equal(created.ok, true);
+  if (!created.ok) return;
+  await replaceSnapshot(root, { ...created.data.snapshot, current_submission_id: "submission-missing" });
+  const dossierPath = join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json");
+  const before = await readFile(dossierPath);
+
+  const result = await showDossier({ dossier_id: "dossier-a" }, ports);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.data.current_checks, "failed");
+  assert.equal(result.data.recommended_next_action, "CASE_NEXT_INSPECT_STATE");
+  assert.deepEqual(await readFile(dossierPath), before);
+});
+
+for (const [name, bytes, code] of [
+  ["unparseable", Buffer.from("{"), "CASE_E_PARSE"],
+  ["schema-invalid", Buffer.from("{}\n"), "CASE_E_SCHEMA"],
+] as const) {
+  test(`show recommends non-mutating inspection for ${name} dossier bytes`, async (t) => {
+    const { root, ports } = await fixture(t);
+    const created = await createDossier(validCreateRequest, ports);
+    assert.equal(created.ok, true);
+    const dossierPath = join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json");
+    await writeFile(dossierPath, bytes);
+
+    const result = await showDossier({ dossier_id: "dossier-a" }, ports);
+
+    assert.equal(result.code, code);
+    assert.equal(result.remediation, "CASE_NEXT_INSPECT_STATE");
+    assert.deepEqual(await readFile(dossierPath), bytes);
+  });
+}

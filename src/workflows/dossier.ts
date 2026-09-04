@@ -6,6 +6,7 @@ import type { SchemaRegistry } from "../protocol/schema-registry.js";
 import {
   revision,
   type AcceptanceCriterion,
+  type ChecksProjection,
   type CurrentView,
   type DossierSnapshot,
 } from "../protocol/types.js";
@@ -182,14 +183,17 @@ export async function createDossier(
 }
 
 function nextAction(
-  checks: CurrentView["current_checks"],
+  checks: ChecksProjection,
   review: CurrentView["review"],
   acceptance: CurrentView["acceptance"],
   handoff: CurrentView["handoff"],
 ): string {
+  const requiresInspection = checks.invariant_results.some(({ stage, status }) =>
+    status === "failed" && stage !== "evidence_safety" && stage !== "evidence_integrity");
+  if (requiresInspection) return "CASE_NEXT_INSPECT_STATE";
   if (handoff === "offered") return "CASE_NEXT_ACCEPT_HANDOFF";
   if (review === "changes_requested") return "CASE_NEXT_ADDRESS_CHANGES";
-  if (checks === "failed") return "CASE_NEXT_ADD_EVIDENCE";
+  if (checks.verdict === "failed") return "CASE_NEXT_ADD_EVIDENCE";
   if (acceptance === "accepted") return "CASE_NEXT_NONE";
   if (review === "ready_for_review") return "CASE_NEXT_REVIEW_SUBMISSION";
   return "CASE_NEXT_CREATE_SUBMISSION";
@@ -258,15 +262,21 @@ export async function showDossier(
       review,
       acceptance,
       handoff,
-      recommended_next_action: nextAction(currentChecks, review, acceptance, handoff),
+      recommended_next_action: nextAction(checks, review, acceptance, handoff),
       unresolved_warnings: warnings,
     };
     return success("dossier.show", "Current dossier", view);
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
-    if (message.startsWith("CASE_E_PARSE:")) return failure("dossier.show", "CASE_E_PARSE", "The addressed dossier could not be parsed");
-    if (message.startsWith("CASE_E_SCHEMA:")) return failure("dossier.show", "CASE_E_SCHEMA", "The addressed dossier does not match its schema");
-    if (message.startsWith("CASE_E_INVARIANT:")) return failure("dossier.show", "CASE_E_INVARIANT", "The addressed dossier is unavailable or inconsistent");
+    if (message.startsWith("CASE_E_PARSE:")) {
+      return failure("dossier.show", "CASE_E_PARSE", "The addressed dossier could not be parsed", "CASE_NEXT_INSPECT_STATE");
+    }
+    if (message.startsWith("CASE_E_SCHEMA:")) {
+      return failure("dossier.show", "CASE_E_SCHEMA", "The addressed dossier does not match its schema", "CASE_NEXT_INSPECT_STATE");
+    }
+    if (message.startsWith("CASE_E_INVARIANT:")) {
+      return failure("dossier.show", "CASE_E_INVARIANT", "The addressed dossier is unavailable or inconsistent", "CASE_NEXT_INSPECT_STATE");
+    }
     return failure("dossier.show", "CASE_E_INTERNAL", "Current view derivation failed unexpectedly");
   }
 }

@@ -12,7 +12,9 @@ import {
   isRevision,
   revision,
   type ChecksProjection,
+  type CriterionResult,
   type DecisionEnvelope,
+  type Digest,
   type DossierSnapshot,
   type EvidenceRecord,
   type Freshness,
@@ -56,6 +58,17 @@ export interface SnapshotCheckResult {
   readonly checks: ChecksProjection;
   readonly observed: ObservedEvidenceProjection;
   readonly envelopes: CurrentEnvelopeInspection;
+}
+
+/** Exact public/checks.schema shape; source-only check stages never cross this boundary. */
+export interface PublicChecksProjection {
+  readonly dossier_id: string;
+  readonly content_digest: Digest;
+  readonly observed_evidence_digest: Digest;
+  readonly invariant_results: Array<{ code: string; status: "passed" | "failed" }>;
+  readonly criterion_results: CriterionResult[];
+  readonly stable_warning_codes: string[];
+  readonly verdict: "passed" | "failed";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -395,12 +408,15 @@ export async function inspectCurrentEnvelopes(snapshot: DossierSnapshot, ports: 
   if (snapshot.current_decision_id !== null) {
     const parsed = await readEnvelope(snapshot, "decision", snapshot.current_decision_id, ports);
     decision = parsed as unknown as DecisionEnvelope | null;
+    const expectedCriteria = snapshot.acceptance_criteria.map(({ criterion_id }) => criterion_id);
     integrity = integrity && decision !== null
       && decision.decision_id === snapshot.current_decision_id
       && decision.dossier_id === snapshot.dossier_id
       && submission !== null
       && decision.submission_id === submission.submission_id
-      && decision.submission_digest === submission.submission_digest;
+      && decision.submission_digest === submission.submission_digest
+      && decision.criteria_reviewed.length === expectedCriteria.length
+      && decision.criteria_reviewed.every((criterionId, index) => criterionId === expectedCriteria[index]);
   }
   return { integrity, handoff, submission, decision };
 }
@@ -436,14 +452,22 @@ function loadFailure(error: unknown): FailureResultEnvelope {
 export async function checkDossier(
   request: { dossier_id: string },
   ports: ReadPorts,
-): Promise<ResultEnvelope<ChecksProjection>> {
+): Promise<ResultEnvelope<PublicChecksProjection>> {
   if (!isSafeOpaqueId(request.dossier_id)) {
     return failure("dossier.check", "CASE_E_USAGE", "An explicit valid dossier ID is required");
   }
   try {
     const snapshot = await ports.store.loadDossier(request.dossier_id);
     const { checks } = await checkSnapshot(snapshot, ports);
-    return success("dossier.check", checks.verdict === "passed" ? "Dossier checks passed" : "Dossier checks failed", checks);
+    const publicChecks = projectChecks(checks) as unknown as PublicChecksProjection;
+    if (!ports.schemas.validate("checks", publicChecks).ok) {
+      return failure("dossier.check", "CASE_E_INTERNAL", "The public checks projection failed validation");
+    }
+    return success(
+      "dossier.check",
+      publicChecks.verdict === "passed" ? "Dossier checks passed" : "Dossier checks failed",
+      publicChecks,
+    );
   } catch (error) {
     return loadFailure(error);
   }

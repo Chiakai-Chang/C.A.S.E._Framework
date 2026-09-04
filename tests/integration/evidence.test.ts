@@ -122,6 +122,9 @@ test("add evidence hashes and counts the one safely opened local artifact", asyn
   const checked = await checkDossier({ dossier_id: snapshot.dossier_id }, ports);
   assert.equal(checked.ok, true);
   assert.equal(checked.ok && checked.data.verdict, "passed");
+  if (!checked.ok) return;
+  assert.equal(Object.hasOwn(checked.data.invariant_results[0]!, "stage"), false);
+  assert.deepEqual(ports.schemas.validate("checks", checked.data), { ok: true });
 });
 
 test("an identical immediate add retry returns the committed evidence without reopening the artifact", async (t) => {
