@@ -1,5 +1,7 @@
 export type JsonValue = null | boolean | string | JsonValue[] | { [key: string]: JsonValue };
 
+const MAX_CONTAINER_DEPTH = 256;
+
 function caseParse(reason: string): Error {
   return new Error(`CASE_E_PARSE: ${reason}`);
 }
@@ -14,6 +16,7 @@ function isNoncharacter(codePoint: number): boolean {
 
 class StrictParser {
   private position = 0;
+  private containerDepth = 0;
 
   constructor(private readonly text: string) {}
 
@@ -39,57 +42,74 @@ class StrictParser {
   }
 
   private parseObject(): { [key: string]: JsonValue } {
-    this.consume("{");
-    this.skipWhitespace();
-    const result: { [key: string]: JsonValue } = {};
-    const names = new Set<string>();
-    if (this.peek() === "}") {
-      this.position += 1;
-      return result;
-    }
-
-    while (true) {
+    this.enterContainer();
+    try {
+      this.consume("{");
       this.skipWhitespace();
-      if (this.peek() !== '"') throw caseParse("expected an object member name");
-      const name = this.parseString();
-      if (names.has(name)) throw caseParse("duplicate object member name");
-      names.add(name);
-      this.skipWhitespace();
-      this.consume(":");
-      const value = this.parseValue();
-      Object.defineProperty(result, name, {
-        configurable: true,
-        enumerable: true,
-        value,
-        writable: true,
-      });
-      this.skipWhitespace();
+      const result: { [key: string]: JsonValue } = {};
+      const names = new Set<string>();
       if (this.peek() === "}") {
         this.position += 1;
         return result;
       }
-      this.consume(",");
+
+      while (true) {
+        this.skipWhitespace();
+        if (this.peek() !== '"') throw caseParse("expected an object member name");
+        const name = this.parseString();
+        if (names.has(name)) throw caseParse("duplicate object member name");
+        names.add(name);
+        this.skipWhitespace();
+        this.consume(":");
+        const value = this.parseValue();
+        Object.defineProperty(result, name, {
+          configurable: true,
+          enumerable: true,
+          value,
+          writable: true,
+        });
+        this.skipWhitespace();
+        if (this.peek() === "}") {
+          this.position += 1;
+          return result;
+        }
+        this.consume(",");
+      }
+    } finally {
+      this.containerDepth -= 1;
     }
   }
 
   private parseArray(): JsonValue[] {
-    this.consume("[");
-    this.skipWhitespace();
-    const result: JsonValue[] = [];
-    if (this.peek() === "]") {
-      this.position += 1;
-      return result;
-    }
-
-    while (true) {
-      result.push(this.parseValue());
+    this.enterContainer();
+    try {
+      this.consume("[");
       this.skipWhitespace();
+      const result: JsonValue[] = [];
       if (this.peek() === "]") {
         this.position += 1;
         return result;
       }
-      this.consume(",");
+
+      while (true) {
+        result.push(this.parseValue());
+        this.skipWhitespace();
+        if (this.peek() === "]") {
+          this.position += 1;
+          return result;
+        }
+        this.consume(",");
+      }
+    } finally {
+      this.containerDepth -= 1;
     }
+  }
+
+  private enterContainer(): void {
+    if (this.containerDepth === MAX_CONTAINER_DEPTH) {
+      throw caseParse(`container nesting exceeds ${MAX_CONTAINER_DEPTH}`);
+    }
+    this.containerDepth += 1;
   }
 
   private parseString(): string {
@@ -195,6 +215,7 @@ class StrictParser {
   }
 }
 
+/** Parse number-free governed JSON with at most 256 nested object/array containers. */
 export function parseGovernedJson(bytes: Uint8Array): JsonValue {
   if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) throw caseParse("BOM");
 

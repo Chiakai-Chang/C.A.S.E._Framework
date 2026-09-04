@@ -37,3 +37,13 @@ test("accepts nested number-free JSON", () => {
     a: [true, null, { b: "x" }],
   });
 });
+
+test("accepts 256 nested containers", () => {
+  const source = `${"[".repeat(256)}null${"]".repeat(256)}`;
+  assert.doesNotThrow(() => parseGovernedJson(Buffer.from(source)));
+});
+
+test("rejects 257 nested containers with a stable parse error", () => {
+  const source = `${"[".repeat(257)}null${"]".repeat(257)}`;
+  assert.throws(() => parseGovernedJson(Buffer.from(source)), /CASE_E_PARSE/);
+});

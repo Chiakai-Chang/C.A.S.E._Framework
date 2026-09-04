@@ -37,7 +37,9 @@ function protocolMajor(version: string): string | undefined {
 }
 
 function hasUnsupportedProtocolMajor(value: unknown): boolean {
-  if (!isRecord(value) || typeof value.protocol_version !== "string") return false;
+  if (!isRecord(value) || !Object.hasOwn(value, "protocol_version") || typeof value.protocol_version !== "string") {
+    return false;
+  }
   const major = protocolMajor(value.protocol_version);
   return major !== undefined && major !== SUPPORTED_PROTOCOL_MAJOR;
 }
@@ -62,10 +64,14 @@ function isRfc3339Utc(value: unknown): boolean {
 
 function timestampsAreValid(kind: SchemaKind, value: unknown): boolean {
   if (!isRecord(value)) return true;
-  if (kind === "manifest" || kind === "submission") return isRfc3339Utc(value.created_at);
-  if (kind === "decision") return isRfc3339Utc(value.decided_at);
+  if (kind === "manifest" || kind === "submission") {
+    return Object.hasOwn(value, "created_at") && isRfc3339Utc(value.created_at);
+  }
+  if (kind === "decision") return Object.hasOwn(value, "decided_at") && isRfc3339Utc(value.decided_at);
   if (kind !== "dossier" || !Array.isArray(value.evidence)) return true;
-  return value.evidence.every((entry) => isRecord(entry) && isRfc3339Utc(entry.captured_at));
+  return value.evidence.every(
+    (entry) => isRecord(entry) && Object.hasOwn(entry, "captured_at") && isRfc3339Utc(entry.captured_at),
+  );
 }
 
 function assertBundledSchema(schema: AnySchemaObject, fileName: string): void {
@@ -92,6 +98,7 @@ export class SchemaRegistry {
       allErrors: true,
       validateFormats: false,
       loadSchema: undefined as never,
+      ownProperties: true,
     });
 
     const definitionsFile = "definitions.schema.json";

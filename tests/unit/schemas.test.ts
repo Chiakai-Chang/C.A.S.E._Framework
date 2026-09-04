@@ -208,6 +208,30 @@ test("manifest reports an unsupported protocol version without leaking validator
   );
 });
 
+test("manifest rejects required fields inherited through its prototype", async () => {
+  const registry = await SchemaRegistry.load(schemaDirectory);
+  const manifest = validByKind.manifest as Record<string, unknown>;
+  for (const field of ["protocol", "protocol_version", "schema_dialect", "repository_id", "created_at"]) {
+    const inherited = Object.create({ [field]: manifest[field] }) as Record<string, unknown>;
+    for (const [key, value] of Object.entries(manifest)) {
+      if (key !== field) inherited[key] = value;
+    }
+    assert.deepEqual(registry.validate("manifest", inherited), { ok: false, code: "CASE_E_SCHEMA" });
+  }
+});
+
+test("an inherited version cannot alter unsupported-version classification", async () => {
+  const registry = await SchemaRegistry.load(schemaDirectory);
+  const inheritedVersion = Object.create({ protocol_version: "1.0.0" }) as Record<string, unknown>;
+  Object.assign(inheritedVersion, {
+    protocol: "case-agent",
+    schema_dialect: "https://json-schema.org/draft/2020-12/schema",
+    repository_id: "repository-1",
+    created_at: timestamp,
+  });
+  assert.deepEqual(registry.validate("manifest", inheritedVersion), { ok: false, code: "CASE_E_SCHEMA" });
+});
+
 test("result schema enforces coherent success and failure branches", async () => {
   const registry = await SchemaRegistry.load(schemaDirectory);
   assert.deepEqual(
