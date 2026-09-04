@@ -8,7 +8,7 @@ import {
   projectState,
   projectSubmission,
 } from "../../src/protocol/projections.js";
-import { decimalString, digest, revision, type ChecksProjection, type DossierSnapshot, type ObservedEvidenceProjection, type SubmissionEnvelope } from "../../src/protocol/types.js";
+import { decimalString, digest, revision, type ChecksProjection, type DossierSnapshot, type EvidenceRecord, type ObservedEvidenceProjection, type SubmissionEnvelope } from "../../src/protocol/types.js";
 
 const primaryDigest = digest("sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
 const otherDigest = digest("sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789");
@@ -626,4 +626,54 @@ test("content excludes captured_at and includes every emitted field for all evid
     if (sizedRecord.kind === "file" || sizedRecord.kind === "command_result") sizedRecord.artifact_size = decimalString(index === 0 ? "44" : "42");
     assert.notEqual(baseline, digestProjection(projectContent(changedSize)), `content includes artifact_size for evidence ${index}`);
   }
+});
+
+test("content projects the discriminator for every evidence variant", () => {
+  const common = {
+    evidence_id: "evidence-1",
+    criterion_ids: ["criterion-1"],
+    captured_at: "2026-09-04T00:00:00Z",
+    freshness: "recompute_on_check" as const,
+    limitations: ["limitation-1"],
+  };
+  const variants: EvidenceRecord[] = [
+    {
+      ...common,
+      kind: "file",
+      location: { repository_relative_path: "src/index.ts" },
+      artifact_digest: primaryDigest,
+      artifact_size: decimalString("42"),
+    },
+    {
+      ...common,
+      kind: "command_result",
+      location: { repository_relative_path: "src/index.ts" },
+      artifact_digest: primaryDigest,
+      artifact_size: decimalString("42"),
+    },
+    {
+      ...common,
+      kind: "external_reference",
+      location: { uri: "https://example.test/reference" },
+    },
+    {
+      ...common,
+      kind: "human_observation",
+      location: { statement: "The reviewer observed the result." },
+    },
+  ];
+  const projectedKinds: string[] = [];
+  const digests: string[] = [];
+
+  for (const record of variants) {
+    const snapshot = dossier();
+    snapshot.evidence = [record];
+    const projected = projectContent(snapshot) as unknown as { evidence: Array<{ kind: string }> };
+    projectedKinds.push(projected.evidence[0]!.kind);
+    digests.push(digestProjection(projectContent(snapshot)));
+  }
+
+  assert.deepEqual(projectedKinds, ["file", "command_result", "external_reference", "human_observation"]);
+  assert.notEqual(digests[0], digests[1], "file and command_result differ only by kind in their projected records");
+  assert.equal(new Set(digests).size, 4, "each valid tagged evidence variant has a distinct content digest");
 });
