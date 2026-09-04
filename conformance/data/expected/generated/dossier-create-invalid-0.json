@@ -1,1 +1,1 @@
-{"ok":false,"command":"cli","code":"CASE_E_USAGE","message":"--actor is required","data":null,"remediation":null}
+{"ok":false,"command":"cli","code":"CASE_E_USAGE","message":"--operation is required","data":null,"remediation":null}

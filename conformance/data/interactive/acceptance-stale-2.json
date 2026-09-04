@@ -1,0 +1,15 @@
+{
+  "script_version": "1",
+  "steps": [
+    {
+      "kind": "basis",
+      "expected_prompt_file": "data/prompts/acceptance-stale-2-0.txt",
+      "response": "CONFIRM THIS BASIS"
+    },
+    {
+      "kind": "decision",
+      "expected_prompt_file": "data/prompts/acceptance-stale-2-1.txt",
+      "response": "RECORD THIS HUMAN DECISION"
+    }
+  ]
+}

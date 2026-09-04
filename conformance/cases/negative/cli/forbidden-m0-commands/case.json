@@ -3,9 +3,9 @@
   "case_id": "forbidden-m0-commands",
   "normative_rule_ids": [
     "M0-CLI-001",
-    "M0-OFFLINE-003",
-    "M0-OFFLINE-006",
-    "M0-STATUS-005"
+    "M0-ERROR-002",
+    "M0-STATUS-009",
+    "M0-STATUS-010"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -44,7 +44,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -70,7 +70,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -96,7 +96,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "update"
@@ -119,7 +119,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "purge"
@@ -147,25 +147,29 @@
       "process_exit": 2,
       "result_code": "CASE_E_USAGE",
       "stdout_json_file": "data/expected/generated/forbidden-m0-commands-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 2,
       "result_code": "CASE_E_USAGE",
       "stdout_json_file": "data/expected/generated/forbidden-m0-commands-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 2,
       "result_code": "CASE_E_USAGE",
       "stdout_json_file": "data/expected/generated/forbidden-m0-commands-2.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 2,
       "result_code": "CASE_E_USAGE",
       "stdout_json_file": "data/expected/generated/forbidden-m0-commands-3.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

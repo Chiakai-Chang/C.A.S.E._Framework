@@ -210,7 +210,7 @@ export async function showDossier(
   try {
     const snapshot = await ports.store.loadDossier(request.dossier_id);
     const { checkSnapshot } = await import("./evidence.js");
-    const { checks, envelopes } = await checkSnapshot(snapshot, ports);
+    const { checks, envelopes, orphanEnvelope } = await checkSnapshot(snapshot, ports);
     const submissionCurrent = envelopes.submission !== null
       && envelopes.integrity
       && envelopes.submission.content_digest === checks.content_digest
@@ -244,6 +244,7 @@ export async function showDossier(
     const warnings = [...new Set([
       ...checks.stable_warning_codes,
       ...(envelopes.integrity ? [] : ["CASE_W_ENVELOPE_INTEGRITY"]),
+      ...(orphanEnvelope ? ["CASE_L_ORPHAN_ENVELOPE"] : []),
     ])].sort();
     const view: CurrentView = {
       dossier_id: snapshot.dossier_id,

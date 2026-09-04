@@ -1,0 +1,10 @@
+{
+  "script_version": "1",
+  "steps": [
+    {
+      "kind": "basis",
+      "expected_prompt_file": "data/prompts/submission-success-0-0.txt",
+      "response": "CONFIRM THIS BASIS"
+    }
+  ]
+}

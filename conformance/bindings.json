@@ -1,0 +1,4159 @@
+{
+  "binding_version": "1",
+  "rules": [
+    {
+      "rule_id": "M0-SOURCE-001",
+      "positive": [
+        {
+          "case_id": "init-clean",
+          "assertion_ids": [
+            "tree-json:/.case-agent/manifest.json:/created_at=\"2026-09-04T03:02:01Z\"",
+            "tree-json:/.case-agent/manifest.json:/protocol=\"case-agent\"",
+            "tree-json:/.case-agent/manifest.json:/protocol_version=\"0.1.0-preview\"",
+            "tree-json:/.case-agent/manifest.json:/repository_id=\"case-repository\"",
+            "tree-json:/.case-agent/manifest.json:/schema_dialect=\"https://json-schema.org/draft/2020-12/schema\"",
+            "tree-json:/.case-agent/manifest.json::keys=created_at,protocol,protocol_version,repository_id,schema_dialect"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.foreign-protocol-ownership-is-rejected",
+            "probe.protocol-ownership-field-is-required",
+            "probe.repository-identity-field-is-required"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-002",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/dossier_id=\"case-dossier-1\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json::keys=acceptance_criteria,active_run,constraints,current_decision_id,current_handoff_id,current_submission_id,dossier_id,evidence,last_operation,objective,scope,state_digest,state_revision,title",
+            "tree:no-authoritative-brief"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "state-direct-edit",
+          "assertion_ids": [
+            "stdout:0:/data/verdict=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-006",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "stdout:4:/data/acceptance=\"accepted\"",
+            "stdout:4:/data/current_checks=\"passed\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-envelope-create",
+          "assertion_ids": [
+            "stdout:1:/data/stable_warning_codes/0=\"CASE_L_ORPHAN_ENVELOPE\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=null",
+            "tree:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json=sha256:29e6c85a5bc50708e52f561038e5c7d82f14915bcf2d8fda05249e7e1e481707"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-003",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "storage:op-decision:73=atomic.create-once:.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json",
+            "storage:op-preserve:9=atomic.create-once:.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-preserve.json"
+          ]
+        },
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:36=atomic.create-once:.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "orphan-envelope-conflict",
+          "assertion_ids": [
+            "stdout:0:/message=\"The existing immutable envelope conflicts with this operation\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json:/to_actor_id=\"actor-c\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-007",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "fault-after-envelope-create",
+          "assertion_ids": [
+            "stdout:1:/data/stable_warning_codes/0=\"CASE_L_ORPHAN_ENVELOPE\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-004",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "tree:/.case-agent/locks/case-dossier-1.lock=absent"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "guard-live",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"0\"",
+            "tree-json:/.case-agent/locks/case-dossier-1.lock:/guard_id=\"old-guard\"",
+            "tree-json:/.case-agent/locks/case-dossier-1.lock:/kind=\"writer\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SOURCE-005",
+      "positive": [
+        {
+          "case_id": "show-context-loss",
+          "assertion_ids": [
+            "tree:no-authoritative-brief",
+            "view:/title=\"Release integrity\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "no-brief-authority",
+          "assertion_ids": [
+            "stdout:0:/data/title=\"Release integrity\"",
+            "tree:/.case-agent/dossiers/case-dossier-1/brief.md=sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-001",
+      "positive": [
+        {
+          "case_id": "scalar-valid",
+          "assertion_ids": [
+            "probe.all-identifier-bearing-schema-positions-use-shared-opaque-scalar",
+            "probe.opaque-identifier-accepted-without-semantic-interpretation"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "scalar-invalid",
+          "assertion_ids": [
+            "probe.empty-opaque-identifier-rejected",
+            "probe.shared-opaque-identifier-rejects-empty-across-root-schemas"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-002",
+      "positive": [
+        {
+          "case_id": "init-idempotent",
+          "assertion_ids": [
+            "stdout:0:/data/already_initialized=true",
+            "stdout:0:/data/repository_id=\"case-repository\"",
+            "tree-json:/.case-agent/manifest.json:/repository_id=\"case-repository\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SCALAR-011",
+      "positive": [
+        {
+          "case_id": "material-brief-new-dossier",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/dossier_id=\"case-dossier-1\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-2/dossier.json:/dossier_id=\"case-dossier-2\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SCALAR-012",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/run_id=\"case-run-2\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json:/from_run_id=\"case-run-1\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "old-writer",
+          "assertion_ids": [
+            "stdout:2:/message=\"Only the active run can offer a handoff\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/run_id=\"case-run-2\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-013",
+      "positive": [
+        {
+          "case_id": "replacement",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-first.json:/handoff_id=\"handoff-op-first\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-second.json:/handoff_id=\"handoff-op-second\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "orphan-envelope-conflict",
+          "assertion_ids": [
+            "stdout:0:/message=\"The existing immutable envelope conflicts with this operation\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json:/handoff_id=\"handoff-op-envelope\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-014",
+      "positive": [
+        {
+          "case_id": "identifier-nonreuse",
+          "assertion_ids": [
+            "probe.latest-pointers-advance-without-overwriting-earlier-envelopes",
+            "probe.two-governed-submissions-in-one-dossier-retain-distinct-immutable-identifiers"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SCALAR-015",
+      "positive": [
+        {
+          "case_id": "identifier-nonreuse",
+          "assertion_ids": [
+            "probe.latest-pointers-advance-without-overwriting-earlier-envelopes",
+            "probe.two-governed-decisions-in-one-dossier-retain-distinct-immutable-identifiers"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SCALAR-016",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "stdout:0:/data/snapshot/acceptance_criteria/0/criterion_id=\"criterion-a\"",
+            "stdout:0:/data/snapshot/acceptance_criteria:length=1"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.duplicate-criterion-identifiers-fail-evidence-link-invariant"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-017",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/evidence/0/evidence_id=\"evidence-op-evidence\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.duplicate-evidence-identifiers-fail-evidence-integrity-invariant"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-009",
+      "positive": [
+        {
+          "case_id": "retry-immediate",
+          "assertion_ids": [
+            "process:1:code=CASE_OK",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/operation_id=\"op-retry\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "operation-reuse-different-input",
+          "assertion_ids": [
+            "stdout:1:/message=\"The operation ID was already used with different input\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/basis_revision=\"0\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-010",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SCALAR-003",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "stdout:0:/data/snapshot/dossier_id=\"case-dossier-1\"",
+            "stdout:0:/data/snapshot/title=\"Release integrity\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "title-not-identity",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/title=\"Same display title\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-2/dossier.json:/title=\"Same display title\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-004",
+      "positive": [
+        {
+          "case_id": "scalar-revision-valid",
+          "assertion_ids": [
+            "probe.nonnegative-revision-grammar-without-leading-zero"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "scalar-revision-invalid",
+          "assertion_ids": [
+            "probe.negative-and-leading-zero-revisions-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-005",
+      "positive": [
+        {
+          "case_id": "scalar-digest-valid",
+          "assertion_ids": [
+            "probe.lowercase-sha-256-digest-grammar"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "scalar-digest-invalid",
+          "assertion_ids": [
+            "probe.uppercase-digest-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-006",
+      "positive": [
+        {
+          "case_id": "scalar-timestamp-valid",
+          "assertion_ids": [
+            "probe.utc-rfc3339-z-timestamp-accepted"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "scalar-timestamp-invalid",
+          "assertion_ids": [
+            "probe.non-z-timestamp-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCALAR-007",
+      "positive": [
+        {
+          "case_id": "wall-clock-independent",
+          "assertion_ids": [
+            "probe.evidence-append-order-ignores-wall-clock-chronology",
+            "probe.reverse-wall-clock-mutation-advances-by-revision"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SCALAR-008",
+      "positive": [
+        {
+          "case_id": "scalar-locale-valid",
+          "assertion_ids": [
+            "probe.machine-fields-and-code-stay-english-ascii-under-localized-message"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "scalar-locale-invalid",
+          "assertion_ids": [
+            "probe.localized-text-cannot-alter-machine-field-or-code-spelling"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PARSE-001",
+      "positive": [
+        {
+          "case_id": "crlf",
+          "assertion_ids": [
+            "probe.crlf-json"
+          ]
+        },
+        {
+          "case_id": "strict-json-valid",
+          "assertion_ids": [
+            "probe.valid-utf-8-byte-sequence-accepted-before-schema"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "json-invalid-utf8",
+          "assertion_ids": [
+            "probe.invalid-utf-8-rejected-before-schema"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PARSE-002",
+      "positive": [
+        {
+          "case_id": "strict-json-valid",
+          "assertion_ids": [
+            "probe.distinct-decoded-object-members-accepted"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "json-duplicate",
+          "assertion_ids": [
+            "probe.duplicate-decoded-object-member-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PARSE-003",
+      "positive": [
+        {
+          "case_id": "strict-json-valid",
+          "assertion_ids": [
+            "probe.paired-unicode-scalar-accepted"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "json-invalid-unicode",
+          "assertion_ids": [
+            "probe.isolated-unicode-surrogate-rejected",
+            "probe.unicode-noncharacter-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PARSE-004",
+      "positive": [
+        {
+          "case_id": "strict-json-valid",
+          "assertion_ids": [
+            "probe.number-free-protocol-json-accepted"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "json-number",
+          "assertion_ids": [
+            "probe.numeric-protocol-value-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PARSE-005",
+      "positive": [
+        {
+          "case_id": "strict-json-valid",
+          "assertion_ids": [
+            "probe.bom-absent-governed-json-accepted"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "json-bom",
+          "assertion_ids": [
+            "probe.governed-json-bom-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCHEMA-001",
+      "positive": [
+        {
+          "case_id": "schema-valid",
+          "assertion_ids": [
+            "probe.all-nine-bundled-governed-roots-inspected",
+            "probe.manifest-schema-json-dialect"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.missing-schema-dialect-rejected-by-bundle-policy"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCHEMA-006",
+      "positive": [
+        {
+          "case_id": "schema-valid",
+          "assertion_ids": [
+            "probe.manifest-schema-json-dialect",
+            "probe.manifest-schema-json-stable-id"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.missing-schema-dialect-rejected-by-bundle-policy",
+            "probe.missing-schema-identity-rejected-by-bundle-policy"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCHEMA-002",
+      "positive": [
+        {
+          "case_id": "schema-valid",
+          "assertion_ids": [
+            "probe.valid-bundled-manifest-root"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.protocol-version-is-required-separately",
+            "probe.schema-dialect-is-required-separately"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCHEMA-003",
+      "positive": [
+        {
+          "case_id": "schema-valid",
+          "assertion_ids": [
+            "probe.all-nine-bundled-governed-roots-inspected",
+            "probe.manifest-schema-json-dialect",
+            "probe.manifest-schema-json-stable-id"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.unbundled-schema-reference-rejected-offline"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCHEMA-004",
+      "positive": [
+        {
+          "case_id": "schema-valid",
+          "assertion_ids": [
+            "probe.critical-roots-are-closed"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "critical-field-unknown",
+          "assertion_ids": [
+            "stdout:0:/message=\"The addressed dossier does not match its schema\"",
+            "tree:/.case-agent/dossiers/case-dossier-1/dossier.json=sha256:0b3a56831fe15a37996121c62d94d5c471d58e1f79ce9fe686ad2f550b2b7109"
+          ]
+        },
+        {
+          "case_id": "schema-unknown",
+          "assertion_ids": [
+            "probe.unknown-dossier-field-rejected"
+          ]
+        },
+        {
+          "case_id": "state-unknown",
+          "assertion_ids": [
+            "stdout:0:/message=\"The addressed dossier does not match its schema\"",
+            "tree:/.case-agent/dossiers/case-dossier-1/dossier.json=sha256:c046e52e4bd23eaad08431bd501ee4d9e1accc39e6b847a26961e881339bd76c"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCHEMA-007",
+      "positive": [
+        {
+          "case_id": "init-clean",
+          "assertion_ids": [
+            "tree-json:/.case-agent/manifest.json:/protocol_version=\"0.1.0-preview\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "version-newer",
+          "assertion_ids": [
+            "stdout:0:/message=\"The existing namespace uses an unsupported protocol major\"",
+            "tree-json:/.case-agent/manifest.json:/protocol_version=\"1.0.0\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SCHEMA-005",
+      "positive": [
+        {
+          "case_id": "schema-valid",
+          "assertion_ids": [
+            "probe.timestamp-semantics-do-not-rely-on-format-annotation-alone"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.invalid-timestamp-rejected-by-semantic-validator-not-annotation"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-JCS-001",
+      "positive": [
+        {
+          "case_id": "key-order",
+          "assertion_ids": [
+            "probe.canonical-key-order"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "jcs-mutation",
+          "assertion_ids": [
+            "probe.noncanonical-member-order-differs-from-jcs-bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-JCS-003",
+      "positive": [
+        {
+          "case_id": "jcs-unicode",
+          "assertion_ids": [
+            "probe.canonical-projection-hashes-to-lowercase-sha-256-wire-digest"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "jcs-mutation",
+          "assertion_ids": [
+            "probe.wrong-canonical-digest-is-detected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-JCS-002",
+      "positive": [
+        {
+          "case_id": "jcs-unicode",
+          "assertion_ids": [
+            "probe.canonical-array-order-remains-significant"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "jcs-mutation",
+          "assertion_ids": [
+            "probe.array-reorder-changes-canonical-digest"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-JCS-004",
+      "positive": [
+        {
+          "case_id": "unicode-nfd",
+          "assertion_ids": [
+            "probe.nfc-and-nfd-remain-distinct"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "jcs-mutation",
+          "assertion_ids": [
+            "probe.unicode-normalization-changes-canonical-digest"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-001",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.six-named-protocol-digest-and-revision-concepts-remain-distinct"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.artifact-byte-observation-stales-derived-digests-without-changing-stored-content"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-002",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.state-projection-has-every-stored-field-except-state-digest"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.title-retained-by-state"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-003",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.content-projection-exact-fields-and-captured-at-exclusion"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.invented-content-field-changes-canonical-bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-004",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.observed-evidence-projection-has-exact-fields"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.unknown-observed-evidence-projection-root-field-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-009",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.observed-evidence-preserves-dossier-evidence-order"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.reordered-evidence-observations-change-digest"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-010",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.observed-limitation-codes-use-ascii-order"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.unsorted-observed-limitation-input-is-canonicalized"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-011",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.observed-evidence-excludes-unstable-filesystem-and-diagnostic-data"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.all-unstable-observed-evidence-fields-are-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-005",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.external-reference-projects-human-review-with-null-artifact-observations"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.external-current-observation-with-artifact-fields-fails-evidence-integrity"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-006",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.checks-projection-has-exact-fields"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.unknown-checks-projection-root-field-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-017",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.check-invariants-use-protocol-stage-then-ascii-code-order"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.reordered-check-invariants-change-digest"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-018",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.check-criteria-preserve-canonical-criterion-order"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.reordered-check-criteria-change-digest"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-019",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.check-warning-codes-use-ascii-order"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.unsorted-check-warnings-are-canonicalized"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-020",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.checks-projection-excludes-state-envelope-and-diagnostic-metadata"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.all-state-and-diagnostic-checks-fields-are-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-007",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.any-failed-invariant-fails-checks"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-012",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.current-linked-local-artifact-mechanically-satisfies-its-criterion",
+            "probe.current-mechanical-evidence-plus-linked-human-review-makes-checks-pass"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.unsatisfied-mechanical-criterion-fails-checks"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-013",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.linked-recorded-human-criterion-remains-human-review-required"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.unlinked-recorded-human-criterion-fails-checks"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-014",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.human-review-required-alone-does-not-fail-checks-or-assert-approval"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-PROJECTION-008",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.assignment-revision-and-display-metadata-do-not-change-content-digest",
+            "probe.content-projection-exact-fields-and-captured-at-exclusion"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.title-excluded-from-content"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-015",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.adding-registered-evidence-changes-content-digest"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.removing-registered-evidence-changes-content-digest"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PROJECTION-016",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.current-artifact-observations-match-embedded-checks-digest"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "changed",
+          "assertion_ids": [
+            "stdout:2:/data/invariant_results/4/status=\"failed\"",
+            "stdout:2:/data/stable_warning_codes/0=\"CASE_L_EVIDENCE_CHANGED\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-001",
+      "positive": [
+        {
+          "case_id": "init-clean",
+          "assertion_ids": [
+            "tree-json:/.case-agent/manifest.json::keys=created_at,protocol,protocol_version,repository_id,schema_dialect"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.manifest-creation-timestamp-field-is-required",
+            "probe.protocol-version-is-required-separately",
+            "probe.repository-identity-field-is-required",
+            "probe.schema-dialect-is-required-separately"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-002",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation=null",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"0\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json::keys=acceptance_criteria,active_run,constraints,current_decision_id,current_handoff_id,current_submission_id,dossier_id,evidence,last_operation,objective,scope,state_digest,state_revision,title"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "schema-contract-negative",
+          "assertion_ids": [
+            "probe.complete-dossier-rejects-a-missing-active-run-field"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-003",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/evidence/0/artifact_size=\"3\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/evidence/0/kind=\"file\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.local-evidence-without-digest-and-size-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-004",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/evidence/0/location/repository_relative_path=\"artifact.txt\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "separator",
+          "assertion_ids": [
+            "probe.ads-evidence-path-rejected-at-cli-boundary",
+            "probe.backslash-evidence-path-rejected-at-cli-boundary",
+            "probe.device-evidence-path-rejected-at-cli-boundary",
+            "probe.dot-segment-evidence-path-rejected-at-cli-boundary",
+            "probe.trailing-dot-evidence-path-rejected-at-cli-boundary",
+            "probe.unc-evidence-path-rejected-at-cli-boundary"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-008",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:10=evidence.lstat:.",
+            "storage:op-evidence:11=evidence.realpath:.",
+            "storage:op-evidence:12=evidence.list:.",
+            "storage:op-evidence:13=evidence.lstat:artifact.txt",
+            "storage:op-evidence:14=evidence.open:artifact.txt",
+            "storage:op-evidence:15=evidence.stat:artifact.txt",
+            "storage:op-evidence:16=evidence.realpath:artifact.txt",
+            "storage:op-evidence:17=evidence.lstat:artifact.txt"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "alias",
+          "assertion_ids": [
+            "probe.adapter-reported-case-fold-ambiguity-is-rejected"
+          ]
+        },
+        {
+          "case_id": "case-alias",
+          "assertion_ids": [
+            "probe.wrong-case-path-spelling-is-rejected"
+          ]
+        },
+        {
+          "case_id": "hardlink",
+          "assertion_ids": [
+            "probe.real-hardlink-evidence-alias-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-009",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "junction",
+          "assertion_ids": [
+            "probe.junction-escape-is-rejected-before-artifact-open"
+          ]
+        },
+        {
+          "case_id": "symlink",
+          "assertion_ids": [
+            "probe.symbolic-link-segment-is-rejected-before-artifact-open"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-005",
+      "positive": [
+        {
+          "case_id": "external",
+          "assertion_ids": [
+            "stdout:1:/data/stable_warning_codes/0=\"CASE_L_HUMAN_REVIEW_REQUIRED\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.forged-external-current-observation-cannot-mechanically-satisfy-criterion"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-006",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.current-linked-local-artifact-mechanically-satisfies-its-criterion",
+            "probe.linked-recorded-human-criterion-remains-human-review-required"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.one-unlinked-criterion-makes-an-otherwise-satisfied-conjunction-fail"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-010",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.current-linked-local-artifact-mechanically-satisfies-its-criterion"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATE-018",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.multiple-linked-artifacts-are-alternatives-and-one-current-artifact-satisfies-criterion"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATE-011",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.human-review-required-alone-does-not-fail-checks-or-assert-approval",
+            "probe.linked-recorded-human-criterion-remains-human-review-required"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.unlinked-recorded-human-criterion-has-no-supporting-evidence-identifiers"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-007",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/checks_digest=\"sha256:3a21d18f87fc1600a73678c384a0beb0c057c100ef03181a1dc2b85130f02dd6\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/submission_id=\"submission-op-submit\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json::keys=basis_revision,basis_state_digest,checks_digest,content_digest,created_at,created_operation_id,dossier_id,observed_evidence_digest,published_revision,submission_digest,submission_id,submitting_run_id"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATE-019",
+      "positive": [
+        {
+          "case_id": "projections-positive",
+          "assertion_ids": [
+            "probe.submission-self-projection-excludes-only-submission-digest"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATE-012",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "process:1:code=CASE_OK",
+            "tree:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json=sha256:912c3ec250de7448e5cce87cd4a91aabc7fa5ac1a46c91fb5841df682bea7a8c"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "submit-failed-check",
+          "assertion_ids": [
+            "stdout:0:/message=\"Current checks do not permit submission\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=null"
+          ]
+        },
+        {
+          "case_id": "submit-inactive-run",
+          "assertion_ids": [
+            "stdout:0:/message=\"Only the active run can submit work\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/run_id=\"case-run-1\""
+          ]
+        },
+        {
+          "case_id": "submit-open-handoff",
+          "assertion_ids": [
+            "process:2:code=CASE_E_TRANSITION",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-013",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=null",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"2\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATE-014",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATE-015",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "acceptance-stale",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\"",
+            "view:/acceptance=\"stale\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-016",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "decision-old-submission",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=null",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit-new\"",
+            "tree:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit-new.json=sha256:d97a109b11763da90dd6c3bf2f07420774c424ba9e2ddbc6224e6d16b9eac6da",
+            "tree:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json=sha256:912c3ec250de7448e5cce87cd4a91aabc7fa5ac1a46c91fb5841df682bea7a8c"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATE-017",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-preserve\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATUS-001",
+      "positive": [
+        {
+          "case_id": "show-context-loss",
+          "assertion_ids": [
+            "view:/acceptance=\"pending\"",
+            "view:/current_checks=\"failed\"",
+            "view:/handoff=\"none\"",
+            "view:/review=\"working\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "projections-negative",
+          "assertion_ids": [
+            "probe.free-standing-dossier-status-is-rejected",
+            "probe.mutable-dossier-checks-cache-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-002",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "stdout:1:/data/criterion_results/0/status=\"mechanically_satisfied\"",
+            "stdout:1:/data/verdict=\"passed\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "changed",
+          "assertion_ids": [
+            "stdout:2:/data/stable_warning_codes/0=\"CASE_L_EVIDENCE_CHANGED\"",
+            "stdout:2:/data/verdict=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-003",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "transcript:0:view:/current_checks=\"passed\"",
+            "transcript:0:view:/review=\"ready_for_review\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "acceptance-stale",
+          "assertion_ids": [
+            "view:/acceptance=\"stale\"",
+            "view:/review=\"working\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-006",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json:/decision=\"accepted\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "acceptance-stale",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\"",
+            "view:/acceptance=\"stale\"",
+            "view:/current_checks=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-004",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "acceptance-stale",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\"",
+            "view:/acceptance=\"stale\"",
+            "view:/unresolved_warnings/0=\"CASE_L_EVIDENCE_CHANGED\""
+          ]
+        },
+        {
+          "case_id": "handoff-stale",
+          "assertion_ids": [
+            "process:2:code=CASE_E_CONFLICT",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-offer\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-007",
+      "positive": [
+        {
+          "case_id": "decision-rejection",
+          "assertion_ids": [
+            "stdout:3:/data/review=\"changes_requested\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/decisions/decision-op-rejection.json:/decision=\"rejected\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATUS-008",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "decision-old-submission",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit-new\"",
+            "tree:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit-new.json=sha256:d97a109b11763da90dd6c3bf2f07420774c424ba9e2ddbc6224e6d16b9eac6da",
+            "tree:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json=sha256:912c3ec250de7448e5cce87cd4a91aabc7fa5ac1a46c91fb5841df682bea7a8c"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-005",
+      "positive": [
+        {
+          "case_id": "cli-contract-positive",
+          "assertion_ids": [
+            "probe.dossier-abandonment-command-is-absent"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-STATUS-009",
+      "positive": [
+        {
+          "case_id": "cli-contract-positive",
+          "assertion_ids": [
+            "probe.dossier-archive-and-reopen-commands-are-absent"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "forbidden-m0-commands",
+          "assertion_ids": [
+            "stdout:1:/message=\"unknown or forbidden command\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-010",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "forbidden-m0-commands",
+          "assertion_ids": [
+            "stdout:0:/message=\"unknown or forbidden command\"",
+            "stdout:3:/message=\"unknown or forbidden command\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-STATUS-011",
+      "positive": [
+        {
+          "case_id": "material-brief-new-dossier",
+          "assertion_ids": [
+            "tree:/.case-agent/dossiers/case-dossier-1/dossier.json=sha256:2951f71f4640cb04eb306420239b2290ecd32496002c2a32bffd3c83f4941f3d",
+            "tree:/.case-agent/dossiers/case-dossier-2/dossier.json=sha256:ef783c60f11f2ede5f0d9a7aab0f84ece4be10353712a5bb08877d72b2cad6de"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-MUTATION-001",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:5=atomic.create-once:.case-agent/locks/case-dossier-1.lock",
+            "storage:op-evidence:9=store.load:case-dossier-1"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "writer-double-success-rejected",
+          "assertion_ids": [
+            "concurrency:writers-negative:successes=1",
+            "stdout:1:/message=\"The writer guard may be stale and requires explicit recovery\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-002",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:9=store.load:case-dossier-1",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/basis_revision=\"0\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-MUTATION-022",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "mutation-invalid-snapshot",
+          "assertion_ids": [
+            "probe.failed-loaded-snapshot-validation-preserves-state-and-releases-guard",
+            "probe.guarded-mutation-acquires-before-loading-invalid-snapshot",
+            "probe.schema-invalid-loaded-snapshot-fails-before-transition"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-009",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:writer-guard:/basis_state_digest=\"sha256:c8fdd08bc12368f98d3aaa736d1bc1057d07ea18aba6b549a6039021205c175d\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/basis_revision=\"0\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/operation_id=\"op-evidence\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "operation-reuse-different-input",
+          "assertion_ids": [
+            "stdout:1:/message=\"The operation ID was already used with different input\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/operation_id=\"op-reuse\""
+          ]
+        },
+        {
+          "case_id": "retry-old-basis",
+          "assertion_ids": [
+            "stdout:1:/message=\"The dossier basis no longer matches the mutation precondition\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/operation_id=\"op-new\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-010",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/resulting_revision=\"1\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"1\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-MUTATION-003",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:22=atomic.create-once:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-temp-open",
+          "assertion_ids": [
+            "storage:op-after_temp_open:18=atomic.create-once:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1",
+            "tree:/.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-011",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:23=atomic.flush-close:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-temp-flush",
+          "assertion_ids": [
+            "process:0:code=CASE_E_INTERNAL",
+            "storage:op-after_temp_flush:19=atomic.flush-close:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-012",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:25=atomic.replace:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1->.case-agent/dossiers/case-dossier-1/dossier.json"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-snapshot-replace",
+          "assertion_ids": [
+            "process:0:code=CASE_E_RECOVERY_REQUIRED",
+            "storage:op-after_snapshot_replace:21=atomic.replace:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1->.case-agent/dossiers/case-dossier-1/dossier.json"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-004",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:26=store.load:case-dossier-1",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_digest=\"sha256:ac9e00e434216d3dcce344a464fd16dfd52924ca8dddeae5212ce0aadef2a9b5\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-snapshot-replace",
+          "assertion_ids": [
+            "storage:op-after_snapshot_replace:22=store.load:case-dossier-1",
+            "tree:/.case-agent/locks/case-dossier-1.lock=sha256:61da7ab5822d43a5889a7767b8d5704c513455d1680014925f195bb159f9e610"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-013",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:26=store.load:case-dossier-1",
+            "storage:op-evidence:28=atomic.remove:.case-agent/locks/case-dossier-1.lock"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-snapshot-replace",
+          "assertion_ids": [
+            "tree:/.case-agent/locks/case-dossier-1.lock=sha256:61da7ab5822d43a5889a7767b8d5704c513455d1680014925f195bb159f9e610"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-005",
+      "positive": [
+        {
+          "case_id": "retry-immediate",
+          "assertion_ids": [
+            "stdout:1:/message=\"Identical operation already committed\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"1\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "operation-reuse-different-input",
+          "assertion_ids": [
+            "stdout:1:/message=\"The operation ID was already used with different input\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"1\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-014",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "retry-old-basis",
+          "assertion_ids": [
+            "stdout:1:/message=\"The dossier basis no longer matches the mutation precondition\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/operation_id=\"op-new\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"1\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-015",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "operation-reuse-different-input",
+          "assertion_ids": [
+            "stdout:1:/message=\"The operation ID was already used with different input\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/input_digest=\"sha256:5955b7df07a916b6ad78b8a04622e09fb7bcc5a7de35ab386598163fcc2df9aa\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-006",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "storage:op-evidence:writer-guard:/basis_revision=\"0\"",
+            "storage:op-evidence:writer-guard:/basis_state_digest=\"sha256:c8fdd08bc12368f98d3aaa736d1bc1057d07ea18aba6b549a6039021205c175d\"",
+            "storage:op-evidence:writer-guard:/created_at=\"2026-09-04T03:02:01Z\"",
+            "storage:op-evidence:writer-guard:/guard_id=\"case-guard-1\"",
+            "storage:op-evidence:writer-guard:/kind=\"writer\"",
+            "storage:op-evidence:writer-guard:/operation_id=\"op-evidence\"",
+            "storage:op-evidence:writer-guard:/process_identity/pid=\"1001\"",
+            "storage:op-evidence:writer-guard:/process_identity/process_started_at=\"2026-09-04T03:00:00Z\"",
+            "storage:op-evidence:writer-guard:/process_identity/profile=\"controlled-test\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-MUTATION-016",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "guard-live",
+          "assertion_ids": [
+            "process:0:code=CASE_E_RECOVERY_REQUIRED",
+            "transcript:1:recovery:/created_at=\"2026-09-04T02:01:00Z\"",
+            "tree:/.case-agent/locks/case-dossier-1.lock=sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-007",
+      "positive": [
+        {
+          "case_id": "guard-dead",
+          "assertion_ids": [
+            "storage:op-recover:4=atomic.create-once:.case-agent/locks/case-dossier-1.recovery.lock"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-MUTATION-017",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "recovery-excludes-writer",
+          "assertion_ids": [
+            "concurrency:recovery-writer-race:successes=1",
+            "stdout:1:/message=\"The writer guard may be stale and requires explicit recovery\""
+          ]
+        },
+        {
+          "case_id": "recovery-exclusivity-race",
+          "assertion_ids": [
+            "concurrency:recovery-race:successes=1",
+            "human-stdout:1:0=ERROR CASE_E_BUSY: Another recovery is already in progress"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-018",
+      "positive": [
+        {
+          "case_id": "guard-dead",
+          "assertion_ids": [
+            "identity-verification:op-recover=terminated",
+            "storage:op-recover:8=atomic.read:.case-agent/locks/case-dossier-1.lock",
+            "transcript:1:kind=recovery",
+            "transcript:1:prompt=sha256:e27eac5bb71ddacf63bb57dfa5e7799ebf6455a94813ebe87bfd38a67bb75f53",
+            "transcript:1:response=\"RECOVER THIS WRITER GUARD\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "guard-live",
+          "assertion_ids": [
+            "identity-verification:op-recover=live",
+            "process:0:code=CASE_E_RECOVERY_REQUIRED",
+            "tree:/.case-agent/locks/case-dossier-1.lock=sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31"
+          ]
+        },
+        {
+          "case_id": "guard-unknown",
+          "assertion_ids": [
+            "identity-verification:op-recover=unknown",
+            "process:0:code=CASE_E_RECOVERY_REQUIRED",
+            "tree:/.case-agent/locks/case-dossier-1.lock=sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-019",
+      "positive": [
+        {
+          "case_id": "guard-dead",
+          "assertion_ids": [
+            "human-stdout:0:6=revision: 1",
+            "storage:op-recover:10=atomic.quarantine:.case-agent/locks/case-dossier-1.lock->.case-agent/locks/case-dossier-1.lock.quarantine-op-recover",
+            "storage:op-recover:11=store.load:case-dossier-1"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "guard-live",
+          "assertion_ids": [
+            "process:0:code=CASE_E_RECOVERY_REQUIRED",
+            "tree:/.case-agent/locks/case-dossier-1.lock=sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-020",
+      "positive": [
+        {
+          "case_id": "guard-dead",
+          "assertion_ids": [
+            "storage:op-recover:17=store.load:case-dossier-1",
+            "storage:op-recover:19=atomic.remove:.case-agent/locks/case-dossier-1.recovery.lock"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-MUTATION-008",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "guard-live",
+          "assertion_ids": [
+            "human-stdout:0:0=ERROR CASE_E_RECOVERY_REQUIRED: The recorded writer process has not been conclusively proven terminated",
+            "transcript:1:recovery:/process_identity/pid=\"999\""
+          ]
+        },
+        {
+          "case_id": "guard-unknown",
+          "assertion_ids": [
+            "human-stdout:0:0=ERROR CASE_E_RECOVERY_REQUIRED: The recorded writer process has not been conclusively proven terminated",
+            "transcript:1:recovery:/process_identity/pid=\"999\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-MUTATION-021",
+      "positive": [
+        {
+          "case_id": "guard-dead",
+          "assertion_ids": [
+            "process:1:code=CASE_OK",
+            "storage:op-after-recovery:mutation-count=6",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/operation_id=\"op-after-recovery\"",
+            "tree:/.case-agent/locks/case-dossier-1.lock.quarantine-op-recover=sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31",
+            "tree:/.case-agent/locks/case-dossier-1.lock=absent"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "recovery-exclusivity-race",
+          "assertion_ids": [
+            "concurrency:recovery-race:successes=1",
+            "process:1:code=CASE_E_BUSY",
+            "tree:/.case-agent/locks/case-dossier-1.lock.quarantine-op-recover=sha256:a7a7b6370bfb0d5d2cc2764b9ae6fab187cd48312041e94c28f892ea15268b31"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ENVELOPE-001",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "storage:op-decision:33=atomic.create-once:.case-agent/locks/case-dossier-1.lock",
+            "storage:op-decision:37=store.load:case-dossier-1",
+            "storage:op-decision:73=atomic.create-once:.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json",
+            "storage:op-preserve:1=atomic.create-once:.case-agent/locks/case-dossier-1.lock",
+            "storage:op-preserve:5=store.load:case-dossier-1",
+            "storage:op-preserve:9=atomic.create-once:.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-preserve.json"
+          ]
+        },
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:15=atomic.create-once:.case-agent/locks/case-dossier-1.lock",
+            "storage:op-submit:36=atomic.create-once:.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+            "storage:op-submit:42=atomic.replace:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-2->.case-agent/dossiers/case-dossier-1/dossier.json"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-ENVELOPE-011",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:15=atomic.create-once:.case-agent/locks/case-dossier-1.lock",
+            "storage:op-submit:19=store.load:case-dossier-1",
+            "storage:op-submit:36=atomic.create-once:.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "submit-failed-check",
+          "assertion_ids": [
+            "stdout:0:/message=\"Current checks do not permit submission\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=null",
+            "tree:/.case-agent/dossiers/case-dossier-1/submissions/.keep=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ENVELOPE-004",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:36=atomic.create-once:.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/created_operation_id=\"op-submit\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-envelope-create",
+          "assertion_ids": [
+            "process:1:code=CASE_OK",
+            "storage:op-envelope:9=atomic.create-once:.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ENVELOPE-005",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:37=atomic.flush-close:.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+            "storage:op-submit:38=atomic.read:.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/submission_digest=\"sha256:161d38370434dbbfb48a693574c48cdc08849362f3132e91c56e001c80fba731\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-ENVELOPE-006",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:42=atomic.replace:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-2->.case-agent/dossiers/case-dossier-1/dossier.json",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-envelope-create",
+          "assertion_ids": [
+            "process:1:code=CASE_OK",
+            "storage:op-envelope:9=atomic.create-once:.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ENVELOPE-007",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:43=store.load:case-dossier-1",
+            "storage:op-submit:45=atomic.remove:.case-agent/locks/case-dossier-1.lock"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-snapshot-replace",
+          "assertion_ids": [
+            "storage:op-after_snapshot_replace:21=atomic.replace:.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1->.case-agent/dossiers/case-dossier-1/dossier.json",
+            "storage:op-after_snapshot_replace:22=store.load:case-dossier-1",
+            "tree:/.case-agent/locks/case-dossier-1.lock=sha256:61da7ab5822d43a5889a7767b8d5704c513455d1680014925f195bb159f9e610"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ENVELOPE-002",
+      "positive": [
+        {
+          "case_id": "orphan-envelope-retry",
+          "assertion_ids": [
+            "storage:op-envelope:8=atomic.read:.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-envelope\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-envelope-create",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=null",
+            "tree:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json=sha256:29e6c85a5bc50708e52f561038e5c7d82f14915bcf2d8fda05249e7e1e481707"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ENVELOPE-003",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/created_operation_id=\"op-submit\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-ENVELOPE-008",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/created_at=\"2026-09-04T03:02:01Z\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/created_operation_id=\"op-submit\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "fault-after-envelope-create",
+          "assertion_ids": [
+            "process:0:code=CASE_E_INTERNAL",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json:/created_operation_id=\"op-envelope\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json:/handoff_id=\"handoff-op-envelope\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ENVELOPE-009",
+      "positive": [
+        {
+          "case_id": "orphan-envelope-retry",
+          "assertion_ids": [
+            "storage:op-envelope:8=atomic.read:.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json:/created_operation_id=\"op-envelope\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-ENVELOPE-010",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "orphan-envelope-conflict",
+          "assertion_ids": [
+            "process:0:code=CASE_E_CONFLICT",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=null",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-envelope.json:/to_actor_id=\"actor-c\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-001",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json::keys=basis_revision,basis_state_digest,created_operation_id,dossier_id,from_run_id,handoff_id,offered_content_digest,published_revision,to_actor_id"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "handoff-shape-negative",
+          "assertion_ids": [
+            "probe.unknown-handoff-field-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-010",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "handoff-shape-negative",
+          "assertion_ids": [
+            "probe.stored-handoff-status-basis-is-rejected",
+            "probe.stored-handoff-status-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-002",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "transcript:0:prompt=sha256:3b8271febf78717bbfe53181b7e4acbcc0813d811e42f2f1a3fd569ff0791c61",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json:/from_run_id=\"case-run-1\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "old-writer",
+          "assertion_ids": [
+            "process:2:code=CASE_E_ACTOR",
+            "stdout:2:/message=\"Only the active run can offer a handoff\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-014",
+      "positive": [
+        {
+          "case_id": "replacement",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/run_id=\"case-run-1\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-second\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "wrong-recipient",
+          "assertion_ids": [
+            "process:1:code=CASE_E_ACTOR",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/run_id=\"case-run-1\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-003",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json:/basis_revision=\"1\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json:/offered_content_digest=\"sha256:f7f924140777ef1453580030c21cd01faef6d1dd198829ad4e841e96c21158d1\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json:/published_revision=\"2\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "handoff-stale",
+          "assertion_ids": [
+            "process:2:code=CASE_E_CONFLICT",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-offer\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"2\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-004",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/actor_id=\"actor-b\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/started_by_handoff_id=\"handoff-op-offer\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "handoff-stale",
+          "assertion_ids": [
+            "process:2:code=CASE_E_CONFLICT",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"2\""
+          ]
+        },
+        {
+          "case_id": "wrong-recipient",
+          "assertion_ids": [
+            "process:1:code=CASE_E_ACTOR",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/actor_id=\"actor-a\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-005",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/actor_id=\"actor-b\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/run_id=\"case-run-2\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/started_by_handoff_id=\"handoff-op-offer\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "old-writer",
+          "assertion_ids": [
+            "process:2:code=CASE_E_ACTOR",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/actor_id=\"actor-b\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-006",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "handoff-stale",
+          "assertion_ids": [
+            "human-stdout:2:0=ERROR CASE_E_CONFLICT: The handoff offer is stale against the current dossier state",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-offer\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"2\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-011",
+      "positive": [
+        {
+          "case_id": "cli-contract-positive",
+          "assertion_ids": [
+            "probe.handoff-cancellation-command-is-absent"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-HANDOFF-007",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-HANDOFF-008",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/actor_id=\"actor-b\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/started_by_handoff_id=\"handoff-op-offer\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-offer\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-offer.json:/to_actor_id=\"actor-b\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "handoff-stale",
+          "assertion_ids": [
+            "human-stdout:2:0=ERROR CASE_E_CONFLICT: The handoff offer is stale against the current dossier state",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-offer\""
+          ]
+        },
+        {
+          "case_id": "wrong-recipient",
+          "assertion_ids": [
+            "human-stdout:1:0=ERROR CASE_E_ACTOR: Only the intended recipient actor can accept this handoff",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/started_by_handoff_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-012",
+      "positive": [
+        {
+          "case_id": "handoff-submission-success",
+          "assertion_ids": [
+            "process:2:code=CASE_OK",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/started_by_handoff_id=\"handoff-op-offer\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "double-accept",
+          "assertion_ids": [
+            "process:2:code=CASE_E_TRANSITION",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/active_run/started_by_handoff_id=\"handoff-op-offer\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-009",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "accepted-handoff-later-work",
+          "assertion_ids": [
+            "human-stdout:3:0=OK CASE_OK: Governed snapshot mutation committed",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/operation_id=\"op-later-work\"",
+            "view:/handoff=\"accepted\"",
+            "view:/state_revision=\"4\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-HANDOFF-013",
+      "positive": [
+        {
+          "case_id": "replacement",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_handoff_id=\"handoff-op-second\"",
+            "tree:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-first.json=sha256:ed66e0fa9a6952a3caa221324bcb2a9bf89f50d9d0a7c82ac80e2ff8b662c783",
+            "tree:/.case-agent/dossiers/case-dossier-1/handoffs/handoff-op-second.json=sha256:46c0383ba1b0ec5d9ab3e65e8eb24f6f5e0d167fd2861a0757f293c7ffde076e"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CHECK-001",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "stdout:1:/data/verdict=\"passed\"",
+            "storage:--json.dossier.check:mutation-count=0",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"1\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "state-direct-edit",
+          "assertion_ids": [
+            "stdout:0:/data/invariant_results/2/status=\"failed\"",
+            "storage:--json.dossier.check:mutation-count=0",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/state_revision=\"0\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-006",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "stdout:1:/data/invariant_results/0/code=\"CASE_I_PARSE\"",
+            "stdout:1:/data/invariant_results/1/code=\"CASE_I_SCHEMA\"",
+            "stdout:1:/data/invariant_results/2/code=\"CASE_I_STATE\"",
+            "stdout:1:/data/invariant_results/3/code=\"CASE_I_EVIDENCE_SAFETY\"",
+            "stdout:1:/data/invariant_results/4/code=\"CASE_I_EVIDENCE_INTEGRITY\"",
+            "stdout:1:/data/invariant_results/5/code=\"CASE_I_EVIDENCE_LINKS\"",
+            "stdout:1:/data/invariant_results/6/code=\"CASE_I_ENVELOPE_INTEGRITY\"",
+            "stdout:1:/data/invariant_results/7/code=\"CASE_I_DERIVED_STATUS\"",
+            "stdout:1:/data/invariant_results:length=8"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "state-direct-edit",
+          "assertion_ids": [
+            "stdout:0:/data/invariant_results/2/code=\"CASE_I_STATE\"",
+            "stdout:0:/data/invariant_results/2/status=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-002",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "storage:op-submit:15=atomic.create-once:.case-agent/locks/case-dossier-1.lock",
+            "storage:op-submit:19=store.load:case-dossier-1",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/checks_digest=\"sha256:3a21d18f87fc1600a73678c384a0beb0c057c100ef03181a1dc2b85130f02dd6\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "submit-failed-check",
+          "assertion_ids": [
+            "process:0:code=CASE_E_EVIDENCE",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-010",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json::keys=acceptance_criteria,active_run,constraints,current_decision_id,current_handoff_id,current_submission_id,dossier_id,evidence,last_operation,objective,scope,state_digest,state_revision,title"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CHECK-011",
+      "positive": [
+        {
+          "case_id": "submission-success",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/checks_digest=\"sha256:3a21d18f87fc1600a73678c384a0beb0c057c100ef03181a1dc2b85130f02dd6\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/content_digest=\"sha256:f7f924140777ef1453580030c21cd01faef6d1dd198829ad4e841e96c21158d1\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json:/observed_evidence_digest=\"sha256:c3fd7f5f189f8a4b1c2234b76648265bb5cafb817e145fbdcc326cba0d34c5eb\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CHECK-003",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "stdout:1:/data/observed_evidence_digest=\"sha256:c3fd7f5f189f8a4b1c2234b76648265bb5cafb817e145fbdcc326cba0d34c5eb\"",
+            "storage:--json.dossier.check:0=store.load:case-dossier-1"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "changed",
+          "assertion_ids": [
+            "stdout:2:/data/observed_evidence_digest=\"sha256:2b92347a799d352c48df1644e47f5cb9c2b32c671187e9521fb86b6ab7a47872\"",
+            "stdout:2:/data/verdict=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-012",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "stdout:4:/data/acceptance=\"accepted\"",
+            "stdout:4:/data/current_checks=\"passed\"",
+            "stdout:4:/data/review=\"ready_for_review\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "acceptance-stale",
+          "assertion_ids": [
+            "view:/acceptance=\"stale\"",
+            "view:/current_checks=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-004",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "stdout:1:/data/verdict=\"passed\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "validator-throws",
+          "assertion_ids": [
+            "probe.validator-exception-fails-closed",
+            "probe.validator-fault-is-read-only"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-005",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "stdout:1:/data/criterion_results/0/status=\"mechanically_satisfied\"",
+            "storage:--json.dossier.check:10=evidence.close:artifact.txt",
+            "storage:--json.dossier.check:5=evidence.open:artifact.txt",
+            "storage:--json.dossier.check:6=evidence.stat:artifact.txt",
+            "storage:--json.dossier.check:9=evidence.read:artifact.txt"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CHECK-007",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "outside-root",
+          "assertion_ids": [
+            "probe.outside-root-evidence-path-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-008",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CHECK-009",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CHECK-013",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "junction",
+          "assertion_ids": [
+            "probe.junction-evidence-is-rejected"
+          ]
+        },
+        {
+          "case_id": "symlink",
+          "assertion_ids": [
+            "probe.symbolic-link-evidence-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-014",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "directory",
+          "assertion_ids": [
+            "probe.directory-evidence-target-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-015",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "empty",
+          "assertion_ids": [
+            "stdout:0:/code=\"CASE_E_EVIDENCE\"",
+            "stdout:0:/message=\"Empty local evidence cannot be registered\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-016",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "evidence-missing",
+          "assertion_ids": [
+            "stdout:0:/code=\"CASE_E_EVIDENCE\"",
+            "stdout:0:/message=\"The evidence artifact could not be opened and captured safely\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CHECK-017",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "changed",
+          "assertion_ids": [
+            "stdout:2:/data/invariant_results/4/code=\"CASE_I_EVIDENCE_INTEGRITY\"",
+            "stdout:2:/data/invariant_results/4/status=\"failed\"",
+            "stdout:2:/data/stable_warning_codes/0=\"CASE_L_EVIDENCE_CHANGED\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-DECISION-001",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json::keys=comment,created_operation_id,criteria_reviewed,decided_at,decision,decision_id,dossier_id,identity_assurance,reviewer_id,submission_digest,submission_id"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "decision-shape-negative",
+          "assertion_ids": [
+            "probe.unknown-decision-field-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-DECISION-005",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json:/identity_assurance=\"recorded-interactive-claim\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json:/submission_digest=\"sha256:161d38370434dbbfb48a693574c48cdc08849362f3132e91c56e001c80fba731\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "decision-old-submission",
+          "assertion_ids": [
+            "human-stdout:4:0=ERROR CASE_E_CONFLICT: The addressed submission is no longer current",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit-new\""
+          ]
+        },
+        {
+          "case_id": "decision-shape-negative",
+          "assertion_ids": [
+            "probe.unsupported-strong-identity-assurance-is-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-DECISION-002",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "transcript:1:review:/acceptance_criteria:length=1",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json:/criteria_reviewed/0=\"criterion-a\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "decision-partial-criteria",
+          "assertion_ids": [
+            "human-stdout:2:0=ERROR CASE_E_TRANSITION: Every current criterion must be reviewed in canonical order",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-DECISION-003",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "tree-json:/.case-agent/dossiers/case-dossier-1/decisions/decision-op-decision.json:/submission_id=\"submission-op-submit\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "decision-old-submission",
+          "assertion_ids": [
+            "process:4:code=CASE_E_CONFLICT",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_submission_id=\"submission-op-submit-new\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-DECISION-004",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "transcript:1:prompt=sha256:b3d8cccdd527d8e8080fd14e910db01575e3c51f2a6d09c242b8e66ced14dcba",
+            "transcript:1:required-phrase=\"RECORD THIS HUMAN DECISION\"",
+            "transcript:1:response=\"RECORD THIS HUMAN DECISION\"",
+            "transcript:1:review:/acceptance_criteria/0/criterion_id=\"criterion-a\"",
+            "transcript:1:review:/decision_envelope/comment=\"Reviewed exact submission\"",
+            "transcript:1:review:/decision_envelope/decision=\"accepted\"",
+            "transcript:1:review:/decision_envelope/identity_assurance=\"recorded-interactive-claim\"",
+            "transcript:1:review:/decision_envelope/reviewer_id=\"reviewer-a\"",
+            "transcript:1:review:/identity_limitation=\"Recorded interactive claim; not authentication or non-repudiation.\"",
+            "transcript:1:review:/submission/submission_id=\"submission-op-submit\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "decision-no-tty",
+          "assertion_ids": [
+            "process:2:code=CASE_E_HUMAN_CONFIRMATION",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-DECISION-006",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "transcript:1:kind=decision"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "decision-no-tty",
+          "assertion_ids": [
+            "human-stdout:2:0=ERROR CASE_E_HUMAN_CONFIRMATION: Interactive basis confirmation was not recorded",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-DECISION-007",
+      "positive": [
+        {
+          "case_id": "orphan-decision-reconfirm",
+          "assertion_ids": [
+            "transcript:1:prompt=sha256:b3d8cccdd527d8e8080fd14e910db01575e3c51f2a6d09c242b8e66ced14dcba",
+            "transcript:1:response=\"RECORD THIS HUMAN DECISION\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/current_decision_id=\"decision-op-decision\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-DECISION-008",
+      "positive": [
+        {
+          "case_id": "decision-acceptance",
+          "assertion_ids": [
+            "human-stdout:2:0=OK CASE_OK: Recorded Human Acceptance"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-DECISION-009",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CLI-001",
+      "positive": [
+        {
+          "case_id": "cli-contract-positive",
+          "assertion_ids": [
+            "probe.cli-exposes-exactly-the-eleven-m0-commands",
+            "probe.version-request-parses"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "forbidden-m0-commands",
+          "assertion_ids": [
+            "stdout:0:/message=\"unknown or forbidden command\"",
+            "stdout:1:/message=\"unknown or forbidden command\"",
+            "stdout:2:/message=\"unknown or forbidden command\"",
+            "stdout:3:/message=\"unknown or forbidden command\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-002",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "stdout:0:/data/snapshot/active_run/actor_id=\"actor-a\"",
+            "stdout:0:/data/snapshot/active_run/run_id=\"case-run-1\"",
+            "stdout:0:/data/snapshot/active_run/started_by_handoff_id=null"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "dossier-create-invalid",
+          "assertion_ids": [
+            "stdout:0:/message=\"--operation is required\"",
+            "tree:/.case-agent/dossiers/.keep=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-003",
+      "positive": [
+        {
+          "case_id": "show-context-loss",
+          "assertion_ids": [
+            "stdout:0:/data/dossier_id=\"case-dossier-1\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "cli-missing-dossier",
+          "assertion_ids": [
+            "stdout:0:/code=\"CASE_E_USAGE\"",
+            "stdout:0:/message=\"--dossier is required\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-004",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "stdout:0:/command=\"dossier.create\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation=null"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "dossier-create-invalid",
+          "assertion_ids": [
+            "process:0:code=CASE_E_USAGE",
+            "stdout:0:/message=\"--operation is required\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-007",
+      "positive": [
+        {
+          "case_id": "retry-immediate",
+          "assertion_ids": [
+            "process:0:code=CASE_OK",
+            "stdout:0:/data/snapshot/last_operation/basis_revision=\"0\"",
+            "storage:op-retry:writer-guard:/basis_revision=\"0\"",
+            "storage:op-retry:writer-guard:/basis_state_digest=\"sha256:c8fdd08bc12368f98d3aaa736d1bc1057d07ea18aba6b549a6039021205c175d\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "machine-missing-basis",
+          "assertion_ids": [
+            "stdout:0:/code=\"CASE_E_USAGE\"",
+            "stdout:0:/message=\"machine mutations require a complete basis\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-005",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "transcript:0:kind=basis",
+            "transcript:0:prompt=sha256:3345514d96a38435d4c7670e3375b68c4636d4fcff6f2f79bb202db68d8f8309",
+            "transcript:0:response=\"CONFIRM THIS BASIS\"",
+            "transcript:0:transition:/command=\"evidence.add\"",
+            "transcript:0:view:/state_revision=\"0\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "human-declines-basis",
+          "assertion_ids": [
+            "process:0:code=CASE_E_HUMAN_CONFIRMATION",
+            "transcript:0:prompt=sha256:afd96f7ea363811261d436901767640f785366837335d8f8c4e24f8d13b844d3",
+            "transcript:0:response=\"DECLINE\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-008",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "transcript:0:view:/state_revision=\"0\"",
+            "tree-json:/.case-agent/dossiers/case-dossier-1/dossier.json:/last_operation/basis_revision=\"0\""
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "human-basis-race",
+          "assertion_ids": [
+            "probe.confirmed-human-mutation-retains-displayed-basis-after-intervening-state",
+            "probe.intervening-state-rejects-rather-than-silently-rebinding-human-mutation"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-006",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "stdout:0:/code=\"CASE_OK\"",
+            "stdout:0::keys=code,command,data,message,ok,remediation"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "machine-missing-basis",
+          "assertion_ids": [
+            "stdout:0:/code=\"CASE_E_USAGE\"",
+            "stdout:0::keys=code,command,data,message,ok,remediation"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-009",
+      "positive": [
+        {
+          "case_id": "evidence-current",
+          "assertion_ids": [
+            "process:1:stderr=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout:1:/data/stable_warning_codes:length=0"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "changed",
+          "assertion_ids": [
+            "process:2:stderr=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout:2:/data/stable_warning_codes/0=\"CASE_L_EVIDENCE_CHANGED\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CLI-010",
+      "positive": [
+        {
+          "case_id": "scalar-locale-valid",
+          "assertion_ids": [
+            "probe.localized-message-preserves-exact-conflict-process-exit-class"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "machine-missing-basis",
+          "assertion_ids": [
+            "process:0:exit=2",
+            "stdout:0:/code=\"CASE_E_USAGE\""
+          ]
+        },
+        {
+          "case_id": "scalar-locale-invalid",
+          "assertion_ids": [
+            "probe.machine-branch-uses-code-rather-than-localized-text"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ERROR-001",
+      "positive": [
+        {
+          "case_id": "error-contract-positive",
+          "assertion_ids": [
+            "probe.exit-mapping-for-case-e-unsupported-profile",
+            "probe.stable-symbolic-codes-map-to-exact-process-exit-classes"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "machine-missing-basis",
+          "assertion_ids": [
+            "process:0:code=CASE_E_USAGE",
+            "stdout:0:/code=\"CASE_E_USAGE\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-ERROR-002",
+      "positive": [
+        {
+          "case_id": "error-contract-positive",
+          "assertion_ids": [
+            "probe.case-e-actor-has-no-destructive-default-remediation",
+            "probe.case-e-busy-has-no-destructive-default-remediation",
+            "probe.case-e-conflict-has-no-destructive-default-remediation",
+            "probe.case-e-evidence-has-no-destructive-default-remediation",
+            "probe.case-e-human-confirmation-has-no-destructive-default-remediation",
+            "probe.case-e-internal-has-no-destructive-default-remediation",
+            "probe.case-e-invariant-has-no-destructive-default-remediation",
+            "probe.case-e-namespace-collision-has-no-destructive-default-remediation",
+            "probe.case-e-not-initialized-has-no-destructive-default-remediation",
+            "probe.case-e-parse-has-no-destructive-default-remediation",
+            "probe.case-e-recovery-required-has-no-destructive-default-remediation",
+            "probe.case-e-schema-has-no-destructive-default-remediation",
+            "probe.case-e-transition-has-no-destructive-default-remediation",
+            "probe.case-e-unsupported-profile-has-no-destructive-default-remediation",
+            "probe.case-e-unsupported-version-has-no-destructive-default-remediation",
+            "probe.case-e-usage-has-no-destructive-default-remediation"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "forbidden-m0-commands",
+          "assertion_ids": [
+            "stdout:0:/remediation=null",
+            "stdout:1:/remediation=null",
+            "stdout:2:/remediation=null",
+            "stdout:3:/remediation=null"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SHOW-001",
+      "positive": [
+        {
+          "case_id": "human-show-20",
+          "assertion_ids": [
+            "human-stdout:0:1=dossier ID: case-dossier-1",
+            "human-stdout:0:29=current checks: failed",
+            "human-stdout:0:3=objective: Resume with bounded criteria"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-SHOW-003",
+      "positive": [
+        {
+          "case_id": "human-show-20",
+          "assertion_ids": [
+            "human-stdout:0:33=next: CASE_NEXT_ADD_EVIDENCE",
+            "human-stdout:0:34=warnings: none"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "acceptance-stale",
+          "assertion_ids": [
+            "view:/recommended_next_action=\"CASE_NEXT_ADD_EVIDENCE\"",
+            "view:/unresolved_warnings/0=\"CASE_L_EVIDENCE_CHANGED\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SHOW-002",
+      "positive": [
+        {
+          "case_id": "show-context-loss",
+          "assertion_ids": [
+            "view:/state_digest=\"sha256:c8fdd08bc12368f98d3aaa736d1bc1057d07ea18aba6b549a6039021205c175d\"",
+            "view::keys=acceptance,active_run,constraints,criterion_results,current_checks,dossier_id,evidence_gaps,handoff,objective,recommended_next_action,review,scope,state_digest,state_revision,title,unresolved_warnings"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "no-brief-authority",
+          "assertion_ids": [
+            "tree:/.case-agent/dossiers/case-dossier-1/brief.md=sha256:6f1fcc5e3c18f8e43a240ba1f12780ab51d14cc3b8fbec4c97a96d34fbe8be8d",
+            "view:/title=\"Release integrity\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-SHOW-004",
+      "positive": [
+        {
+          "case_id": "human-show-20",
+          "assertion_ids": [
+            "human-stdout:0:7=state digest: sha256:735426045650…",
+            "human-stdout:0:line-count=35"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "human-show-21",
+          "assertion_ids": [
+            "human-stdout:0:27=criterion: criterion-20 = failed",
+            "human-stdout:0:line-count=35"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-001",
+      "positive": [
+        {
+          "case_id": "init-root-discovery",
+          "assertion_ids": [
+            "probe.git-ownership-confirmation-and-display-use-resolved-root",
+            "probe.initialization-writes-only-at-resolved-owning-root",
+            "probe.nested-current-directory-resolves-owning-worktree-root"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-INIT-008",
+      "positive": [
+        {
+          "case_id": "init-clean",
+          "assertion_ids": [
+            "storage:op-init:0=init.display-root-before-namespace"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-INIT-002",
+      "positive": [
+        {
+          "case_id": "init-clean",
+          "assertion_ids": [
+            "git-tree:exact",
+            "tree:/.case-agent/manifest.json=sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45",
+            "tree:exact-set"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "init-partial",
+          "assertion_ids": [
+            "git-tree:exact",
+            "stdout:0:/message=\"The existing .case-agent namespace is not owned and compatible\"",
+            "tree:/.case-agent/dossiers/.keep=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-003",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-foreign",
+          "assertion_ids": [
+            "process:0:code=CASE_E_NAMESPACE_COLLISION",
+            "tree:/.case-agent/foreign.txt=sha256:c35e32ef07bc9fe1d688b84d3fe5d449ebfac7dd256e0a21bd245ab94512b13a"
+          ]
+        },
+        {
+          "case_id": "init-partial",
+          "assertion_ids": [
+            "process:0:code=CASE_E_NAMESPACE_COLLISION",
+            "tree:/.case-agent/dossiers/.keep=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          ]
+        },
+        {
+          "case_id": "namespace-collision",
+          "assertion_ids": [
+            "process:0:code=CASE_E_NAMESPACE_COLLISION",
+            "tree:/.case-agent/foreign.txt=sha256:c35e32ef07bc9fe1d688b84d3fe5d449ebfac7dd256e0a21bd245ab94512b13a"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-004",
+      "positive": [
+        {
+          "case_id": "init-idempotent",
+          "assertion_ids": [
+            "stdout:0:/data/already_initialized=true",
+            "tree:/.case-agent/manifest.json=sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-INIT-005",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "version-newer",
+          "assertion_ids": [
+            "process:0:code=CASE_E_UNSUPPORTED_VERSION",
+            "tree:/.case-agent/manifest.json=sha256:892877c3c0f51b4effbc9e0175af08ae1166ffe5ad55fce51d2184f0625a6a6b"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-006",
+      "positive": [
+        {
+          "case_id": "init-clean",
+          "assertion_ids": [
+            "git-tree:exact",
+            "tree:/.case-agent/manifest.json=sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "init-foreign",
+          "assertion_ids": [
+            "git-tree:exact",
+            "tree:/.case-agent/foreign.txt=sha256:c35e32ef07bc9fe1d688b84d3fe5d449ebfac7dd256e0a21bd245ab94512b13a"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-007",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-nested-repository-classification",
+          "assertion_ids": [
+            "probe.nested-repository-classification-is-read-only",
+            "probe.nested-repository-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-009",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-submodule-classification",
+          "assertion_ids": [
+            "probe.submodule-classification-is-read-only",
+            "probe.submodule-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-010",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-linked-worktree-classification",
+          "assertion_ids": [
+            "probe.linked-worktree-classification-is-read-only",
+            "probe.linked-worktree-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-011",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-case-alias-classification",
+          "assertion_ids": [
+            "probe.case-alias-classification-is-read-only",
+            "probe.case-alias-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-012",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-unc-classification",
+          "assertion_ids": [
+            "probe.unc-classification-is-read-only",
+            "probe.unc-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-013",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-cloud-sync-classification",
+          "assertion_ids": [
+            "probe.cloud-sync-classification-is-read-only",
+            "probe.cloud-sync-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-014",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-active-writer-classification",
+          "assertion_ids": [
+            "probe.active-writer-classification-is-read-only",
+            "probe.active-writer-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-INIT-015",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "init-non-local-classification",
+          "assertion_ids": [
+            "probe.non-local-classification-is-read-only",
+            "probe.non-local-init-target-explicitly-classified-and-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-OFFLINE-001",
+      "positive": [
+        {
+          "case_id": "walking-skeleton-offline",
+          "assertion_ids": [
+            "network.zero",
+            "process:8:code=CASE_OK"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-OFFLINE-002",
+      "positive": [
+        {
+          "case_id": "corpus-contract-positive",
+          "assertion_ids": [
+            "probe.all-runtime-corpus-data-references-are-bundled-relative-files"
+          ]
+        },
+        {
+          "case_id": "offline-boundaries-positive",
+          "assertion_ids": [
+            "probe.bundled-schema-registry-validates-offline"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-OFFLINE-008",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-OFFLINE-003",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "offline-boundaries",
+          "assertion_ids": [
+            "probe.update-is-outside-m0"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-OFFLINE-009",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "offline-boundaries",
+          "assertion_ids": [
+            "probe.telemetry-is-outside-m0"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-OFFLINE-004",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-OFFLINE-005",
+      "positive": [
+        {
+          "case_id": "offline-boundaries-positive",
+          "assertion_ids": [
+            "probe.evidence-stores-digest-and-reference-without-artifact-bytes"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-OFFLINE-006",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-OFFLINE-010",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-OFFLINE-007",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-PLATFORM-001",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-PLATFORM-002",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-PLATFORM-005",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "production-windows-unsupported",
+          "assertion_ids": [
+            "execution.public-cli-process",
+            "process:0:code=CASE_E_UNSUPPORTED_PROFILE",
+            "profile.production-windows-unsupported.actual",
+            "stdout:0:/code=\"CASE_E_UNSUPPORTED_PROFILE\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-PLATFORM-003",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-PLATFORM-004",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "controlled-test-boundary",
+          "assertion_ids": [
+            "probe.controlled-adapter-is-explicitly-test-only",
+            "probe.unproven-production-adapter-stays-unsupported"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-001",
+      "positive": [
+        {
+          "case_id": "coverage-accounting-positive",
+          "assertion_ids": [
+            "probe.executed-covered-direction-clears-uncovered-set"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "coverage-accounting-negative",
+          "assertion_ids": [
+            "probe.missing-executed-direction-remains-uncovered"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-002",
+      "positive": [
+        {
+          "case_id": "corpus-contract-positive",
+          "assertion_ids": [
+            "probe.closed-fixture-version-one-validates"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "corpus-contract-negative",
+          "assertion_ids": [
+            "probe.unknown-fault-rejected",
+            "probe.unknown-profile-rejected",
+            "probe.unknown-root-field-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-003",
+      "positive": [
+        {
+          "case_id": "corpus-contract-positive",
+          "assertion_ids": [
+            "probe.all-four-corpus-reference-kinds-resolve-to-regular-in-corpus-files"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CORPUS-009",
+      "positive": [
+        {
+          "case_id": "corpus-contract-positive",
+          "assertion_ids": [
+            "probe.declared-fixture-input-digest-matches-bytes"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CORPUS-004",
+      "positive": [
+        {
+          "case_id": "corpus-contract-positive",
+          "assertion_ids": [
+            "probe.safe-unique-repository-paths-in-stable-order-validate"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "corpus-contract-negative",
+          "assertion_ids": [
+            "probe.all-lexical-fixture-path-escape-spellings-are-rejected",
+            "probe.duplicate-fixture-tree-path-rejected",
+            "probe.unstable-tree-path-order-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-010",
+      "positive": [
+        {
+          "case_id": "dossier-create",
+          "assertion_ids": [
+            "git-tree:exact",
+            "population.safe-confined",
+            "tree:exact-set"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "corpus-contract-negative",
+          "assertion_ids": [
+            "probe.all-lexical-fixture-path-escape-spellings-are-rejected",
+            "probe.duplicate-fixture-tree-path-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-005",
+      "positive": [
+        {
+          "case_id": "corpus-contract-positive",
+          "assertion_ids": [
+            "probe.clock-ids-locale-process-profile-and-network-policy-are-fixed"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CORPUS-011",
+      "positive": [
+        {
+          "case_id": "walking-skeleton-offline",
+          "assertion_ids": [
+            "network.zero"
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-CORPUS-006",
+      "positive": [
+        {
+          "case_id": "walking-skeleton-offline",
+          "assertion_ids": [
+            "execution.controlled-cli-dispatcher",
+            "execution.controlled-workflow.dossier.create",
+            "execution.controlled-workflow.dossier.show",
+            "execution.controlled-workflow.init",
+            "tree:exact-set"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "writer-double-success-rejected",
+          "assertion_ids": [
+            "concurrency:writers-negative:successes=1",
+            "execution.controlled-cli-dispatcher",
+            "execution.controlled-workflow.evidence.add",
+            "stdout:1:/message=\"The writer guard may be stale and requires explicit recovery\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-012",
+      "positive": [
+        {
+          "case_id": "corpus-contract-positive",
+          "assertion_ids": [
+            "probe.invocation-and-expectation-counts-are-explicit-and-equal"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "corpus-contract-negative",
+          "assertion_ids": [
+            "probe.invocation-expectation-count-mismatch-rejected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-013",
+      "positive": [
+        {
+          "case_id": "writer-same-basis",
+          "assertion_ids": [
+            "concurrency:writers:successes=1",
+            "process:0:code=CASE_OK",
+            "process:1:code=CASE_E_RECOVERY_REQUIRED"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "writer-double-success-rejected",
+          "assertion_ids": [
+            "concurrency:writers-negative:successes=1",
+            "process:1:code=CASE_E_RECOVERY_REQUIRED"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-007",
+      "positive": [
+        {
+          "case_id": "required-family-contract-positive",
+          "assertion_ids": [
+            "probe.complete-required-family-inventory-is-present"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "required-family-contract-negative",
+          "assertion_ids": [
+            "probe.missing-required-family-is-detected"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-008",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "fault-after-temp-open",
+          "assertion_ids": [
+            "process:0:code=CASE_E_INTERNAL",
+            "tree:/.case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-CORPUS-014",
+      "positive": [
+        {
+          "case_id": "corpus-red-capability-positive",
+          "assertion_ids": [
+            "probe.exact-derived-view-matches",
+            "probe.exact-final-tree-matches",
+            "probe.exact-invocation-expectation-matches"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "corpus-red-capability-negative",
+          "assertion_ids": [
+            "probe.derived-view-expectation-mutation-turns-red",
+            "probe.stdout-expectation-mutation-turns-red",
+            "probe.tree-expectation-mutation-turns-red"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-BASELINE-001",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-BASELINE-002",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-BASELINE-003",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-RELEASE-001",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-RELEASE-002",
+      "positive": [
+        {
+          "case_id": "coverage-accounting-positive",
+          "assertion_ids": [
+            "probe.complete-required-directions-pass-the-release-gate"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "coverage-accounting-negative",
+          "assertion_ids": [
+            "probe.missing-required-direction-fails-the-release-gate"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-RELEASE-003",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-RELEASE-004",
+      "positive": [
+        {
+          "case_id": "writer-same-basis",
+          "assertion_ids": [
+            "concurrency:writers:successes=1"
+          ]
+        }
+      ],
+      "negative": [
+        {
+          "case_id": "recovery-exclusivity-race",
+          "assertion_ids": [
+            "concurrency:recovery-race:successes=1",
+            "process:1:code=CASE_E_BUSY"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-RELEASE-005",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "state-direct-edit",
+          "assertion_ids": [
+            "stdout:0:/data/invariant_results/2/status=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-RELEASE-009",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "changed",
+          "assertion_ids": [
+            "stdout:2:/data/invariant_results/4/status=\"failed\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-RELEASE-010",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "handoff-stale",
+          "assertion_ids": [
+            "human-stdout:2:0=ERROR CASE_E_CONFLICT: The handoff offer is stale against the current dossier state"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-RELEASE-011",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "acceptance-stale",
+          "assertion_ids": [
+            "view:/acceptance=\"stale\""
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-RELEASE-012",
+      "positive": [],
+      "negative": [
+        {
+          "case_id": "validator-throws",
+          "assertion_ids": [
+            "probe.validator-exception-fails-closed"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "M0-RELEASE-006",
+      "positive": [
+        {
+          "case_id": "walking-skeleton-offline",
+          "assertion_ids": [
+            "network.zero",
+            "process:8:code=CASE_OK",
+            "view:/acceptance=\"stale\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-RELEASE-013",
+      "positive": [
+        {
+          "case_id": "show-context-loss",
+          "assertion_ids": [
+            "view:/recommended_next_action=\"CASE_NEXT_ADD_EVIDENCE\"",
+            "view:/title=\"Release integrity\""
+          ]
+        }
+      ],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-RELEASE-007",
+      "positive": [],
+      "negative": []
+    },
+    {
+      "rule_id": "M0-RELEASE-008",
+      "positive": [],
+      "negative": []
+    }
+  ]
+}

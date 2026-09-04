@@ -3,8 +3,7 @@
   "case_id": "orphan-envelope-retry",
   "normative_rule_ids": [
     "M0-ENVELOPE-002",
-    "M0-ENVELOPE-003",
-    "M0-SOURCE-003"
+    "M0-ENVELOPE-009"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -48,7 +47,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "handoff",
@@ -89,7 +88,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/orphan-envelope-retry-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

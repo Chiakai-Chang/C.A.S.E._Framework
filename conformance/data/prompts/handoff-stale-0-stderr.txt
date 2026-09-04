@@ -1,0 +1,5 @@
+Current view: {"dossier_id":"case-dossier-1","title":"Release integrity","objective":"Keep artifact current","scope":null,"constraints":null,"active_run":{"run_id":"case-run-1","actor_id":"actor-a","started_by_handoff_id":null},"state_revision":"0","state_digest":"sha256:c8fdd08bc12368f98d3aaa736d1bc1057d07ea18aba6b549a6039021205c175d","criterion_results":[{"criterion_id":"criterion-a","status":"failed","supporting_evidence_ids":[]}],"evidence_gaps":["criterion-a"],"current_checks":"failed","review":"working","acceptance":"pending","handoff":"none","recommended_next_action":"CASE_NEXT_ADD_EVIDENCE","unresolved_warnings":[]}
+Proposed transition: {"command":"handoff.offer","operation_id":"op-offer"}
+Confirm this exact basis.
+Type exactly: CONFIRM THIS BASIS
+> 

@@ -11,7 +11,7 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
         "error-contract"
@@ -39,7 +39,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/error-contract-positive-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

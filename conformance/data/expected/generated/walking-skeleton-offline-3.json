@@ -1,1 +1,10 @@
-{"ok":true,"command":"handoff.offer","code":"CASE_OK","message":"Handoff offered","data":{"handoff_id":"handoff-op-offer","dossier_id":"case-dossier-1","from_run_id":"case-run-1","to_actor_id":"actor-b","basis_revision":"1","basis_state_digest":"sha256:ac9e00e434216d3dcce344a464fd16dfd52924ca8dddeae5212ce0aadef2a9b5","published_revision":"2","offered_content_digest":"sha256:f7f924140777ef1453580030c21cd01faef6d1dd198829ad4e841e96c21158d1","created_operation_id":"op-offer"},"remediation":null}
+OK CASE_OK: Handoff offered
+dossier ID: case-dossier-1
+handoff ID: handoff-op-offer
+offered content digest: sha256:f7f924140777ef1453580030c21cd01faef6d1dd198829ad4e841e96c21158d1
+from run: case-run-1
+to actor: actor-b
+operation ID: op-offer
+basis revision: 1
+basis state digest: sha256:ac9e00e434216d3dcce344a464fd16dfd52924ca8dddeae5212ce0aadef2a9b5
+published revision: 2

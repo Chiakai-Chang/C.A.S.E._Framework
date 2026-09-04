@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "required": ["dossier_id", "content_digest", "observed_evidence_digest", "invariant_results", "criterion_results", "stable_warning_codes", "verdict"],
   "properties": {
-    "dossier_id": { "type": "string" },
+    "dossier_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
     "content_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
     "observed_evidence_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
     "invariant_results": {
@@ -27,9 +27,9 @@
         "additionalProperties": false,
         "required": ["criterion_id", "status", "supporting_evidence_ids"],
         "properties": {
-          "criterion_id": { "type": "string" },
+          "criterion_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
           "status": { "enum": ["mechanically_satisfied", "human_review_required", "failed"] },
-          "supporting_evidence_ids": { "$ref": "definitions.schema.json#/$defs/string_array" }
+          "supporting_evidence_ids": { "$ref": "definitions.schema.json#/$defs/opaque_id_array" }
         }
       }
     },

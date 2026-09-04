@@ -2,7 +2,6 @@
   "fixture_version": "1",
   "case_id": "no-brief-authority",
   "normative_rule_ids": [
-    "M0-SHOW-001",
     "M0-SHOW-002",
     "M0-SOURCE-005"
   ],
@@ -48,7 +47,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -79,7 +78,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/no-brief-authority-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

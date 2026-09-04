@@ -1,1 +1,1 @@
-{"ok":false,"command":"decision.accept","code":"CASE_E_CONFLICT","message":"The addressed submission is no longer current","data":null,"remediation":null}
+ERROR CASE_E_CONFLICT: The addressed submission is no longer current

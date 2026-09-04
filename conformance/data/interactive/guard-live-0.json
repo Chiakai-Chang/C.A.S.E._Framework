@@ -1,0 +1,15 @@
+{
+  "script_version": "1",
+  "steps": [
+    {
+      "kind": "basis",
+      "expected_prompt_file": "data/prompts/guard-live-0-0.txt",
+      "response": "CONFIRM THIS BASIS"
+    },
+    {
+      "kind": "recovery",
+      "expected_prompt_file": "data/prompts/guard-live-0-1.txt",
+      "response": "RECOVER THIS WRITER GUARD"
+    }
+  ]
+}

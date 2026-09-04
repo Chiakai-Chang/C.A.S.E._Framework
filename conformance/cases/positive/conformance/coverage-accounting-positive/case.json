@@ -11,10 +11,10 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
-        "coverage-accounting"
+        "coverage-accounting-positive"
       ],
       "stdin_mode": "none",
       "stdin_content_file": null,
@@ -39,7 +39,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/coverage-accounting-positive-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

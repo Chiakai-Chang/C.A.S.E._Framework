@@ -1,0 +1,7 @@
+Submission: {"submission_id":"submission-op-submit","dossier_id":"case-dossier-1","submitting_run_id":"case-run-1","basis_revision":"1","basis_state_digest":"sha256:ac9e00e434216d3dcce344a464fd16dfd52924ca8dddeae5212ce0aadef2a9b5","published_revision":"2","content_digest":"sha256:f7f924140777ef1453580030c21cd01faef6d1dd198829ad4e841e96c21158d1","observed_evidence_digest":"sha256:c3fd7f5f189f8a4b1c2234b76648265bb5cafb817e145fbdcc326cba0d34c5eb","checks_digest":"sha256:3a21d18f87fc1600a73678c384a0beb0c057c100ef03181a1dc2b85130f02dd6","created_at":"2026-09-04T03:02:01Z","created_operation_id":"op-submit","submission_digest":"sha256:161d38370434dbbfb48a693574c48cdc08849362f3132e91c56e001c80fba731"}
+Acceptance criteria: [{"criterion_id":"criterion-a","statement":"Artifact digest matches","verification":"mechanical"}]
+Decision: {"decision_id":"decision-op-decision","dossier_id":"case-dossier-1","submission_id":"submission-op-submit","submission_digest":"sha256:161d38370434dbbfb48a693574c48cdc08849362f3132e91c56e001c80fba731","decision":"accepted","reviewer_id":"reviewer-a","criteria_reviewed":["criterion-a"],"comment":"Reviewed exact submission","decided_at":"2026-09-04T03:02:01Z","created_operation_id":"op-decision","identity_assurance":"recorded-interactive-claim"}
+Identity limitation: Recorded interactive claim; not authentication or non-repudiation.
+Record this exact human decision.
+Type exactly: RECORD THIS HUMAN DECISION
+> 

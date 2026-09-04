@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.local/conformance/bindings.schema.json",
+  "$defs": {
+    "direction_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "assertion_ids"],
+      "properties": {
+        "case_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "assertion_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^(?:probe\\.|process:[0-9]+:|stdout:[0-9]+:|human-stdout:[0-9]+:|transcript:[0-9]+:|tree-json:/|tree:/|view:|storage:|identity-verification:|concurrency:|population\\.safe-confined$|git-tree:exact$|network\\.zero$|tree:exact-set$|tree:no-authoritative-brief$|execution\\.(?:public-cli-process|controlled-cli-dispatcher|controlled-workflow\\.[a-z.]+)$|profile\\.production-windows-unsupported\\.actual$)"
+          }
+        }
+      }
+    },
+    "rule_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "positive", "negative"],
+      "properties": {
+        "rule_id": { "type": "string", "pattern": "^M0-[A-Z]+-[0-9]{3}$" },
+        "positive": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/direction_binding" }
+        },
+        "negative": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/direction_binding" }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["binding_version", "rules"],
+  "properties": {
+    "binding_version": { "const": "1" },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/rule_binding" }
+    }
+  }
+}

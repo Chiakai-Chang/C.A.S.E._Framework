@@ -2,7 +2,8 @@
   "fixture_version": "1",
   "case_id": "handoff-shape-negative",
   "normative_rule_ids": [
-    "M0-HANDOFF-001"
+    "M0-HANDOFF-001",
+    "M0-HANDOFF-010"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -41,7 +42,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
         "handoff-shape-negative"
@@ -69,7 +70,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/handoff-shape-negative-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

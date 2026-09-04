@@ -3,14 +3,10 @@
   "case_id": "show-context-loss",
   "normative_rule_ids": [
     "M0-CLI-003",
-    "M0-CLI-006",
-    "M0-RELEASE-006",
-    "M0-SHOW-001",
+    "M0-RELEASE-013",
     "M0-SHOW-002",
-    "M0-SOURCE-002",
     "M0-SOURCE-005",
-    "M0-STATUS-001",
-    "M0-STATUS-002"
+    "M0-STATUS-001"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -49,7 +45,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -80,7 +76,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/show-base.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

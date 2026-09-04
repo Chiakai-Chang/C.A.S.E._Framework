@@ -2,38 +2,10 @@
   "fixture_version": "1",
   "case_id": "walking-skeleton-offline",
   "normative_rule_ids": [
-    "M0-CHECK-003",
-    "M0-CLI-004",
-    "M0-CLI-005",
-    "M0-DECISION-001",
-    "M0-DECISION-002",
-    "M0-DECISION-003",
-    "M0-DECISION-004",
-    "M0-ENVELOPE-001",
-    "M0-HANDOFF-004",
-    "M0-HANDOFF-005",
-    "M0-HANDOFF-007",
-    "M0-HANDOFF-008",
-    "M0-MUTATION-001",
-    "M0-MUTATION-002",
-    "M0-MUTATION-003",
-    "M0-MUTATION-004",
-    "M0-MUTATION-005",
+    "M0-CORPUS-006",
+    "M0-CORPUS-011",
     "M0-OFFLINE-001",
-    "M0-PLATFORM-004",
-    "M0-RELEASE-005",
-    "M0-RELEASE-006",
-    "M0-SHOW-001",
-    "M0-SHOW-002",
-    "M0-SOURCE-002",
-    "M0-SOURCE-003",
-    "M0-SOURCE-004",
-    "M0-SOURCE-005",
-    "M0-STATE-007",
-    "M0-STATUS-001",
-    "M0-STATUS-002",
-    "M0-STATUS-003",
-    "M0-STATUS-004"
+    "M0-RELEASE-006"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -47,7 +19,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "init",
@@ -72,7 +44,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -106,7 +78,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -120,7 +92,7 @@
         "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/walking-skeleton-offline-2.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -137,7 +109,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "handoff",
         "offer",
@@ -151,7 +123,7 @@
         "actor-b"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/walking-skeleton-offline-3.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -168,7 +140,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-b",
+      "actor_label": "trace-peer",
       "argv": [
         "handoff",
         "accept",
@@ -184,7 +156,7 @@
         "actor-b"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/walking-skeleton-offline-4.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -201,7 +173,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-b",
+      "actor_label": "trace-peer",
       "argv": [
         "submission",
         "create",
@@ -213,7 +185,7 @@
         "case-run-2"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/walking-skeleton-offline-5.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -230,7 +202,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "reviewer-a",
+      "actor_label": "trace-reviewer",
       "argv": [
         "decision",
         "accept",
@@ -250,7 +222,7 @@
         "Reviewed exact submission"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-decision.txt",
+      "stdin_content_file": "data/interactive/walking-skeleton-offline-6.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -267,7 +239,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@fixture",
         "replace",
@@ -292,7 +264,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -323,55 +295,64 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-2.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/walking-skeleton-offline-2-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-3.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/walking-skeleton-offline-3-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-4.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/walking-skeleton-offline-4-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-5.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/walking-skeleton-offline-5-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-6.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/walking-skeleton-offline-6-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-7.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/walking-skeleton-offline-8.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

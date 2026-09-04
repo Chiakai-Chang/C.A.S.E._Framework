@@ -3,10 +3,20 @@
   "case_id": "submission-success",
   "normative_rule_ids": [
     "M0-CHECK-002",
+    "M0-CHECK-010",
+    "M0-CHECK-011",
     "M0-ENVELOPE-001",
     "M0-ENVELOPE-003",
+    "M0-ENVELOPE-004",
+    "M0-ENVELOPE-005",
+    "M0-ENVELOPE-006",
+    "M0-ENVELOPE-007",
+    "M0-ENVELOPE-008",
+    "M0-ENVELOPE-011",
+    "M0-SOURCE-003",
     "M0-STATE-007",
-    "M0-STATUS-003"
+    "M0-STATE-012",
+    "M0-STATE-013"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -50,7 +60,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -64,7 +74,7 @@
         "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/submission-success-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -81,7 +91,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "submission",
         "create",
@@ -93,7 +103,7 @@
         "case-run-1"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/submission-success-1.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -115,13 +125,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/submission-success-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/submission-success-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/submission-success-1.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/submission-success-1-stderr.txt"
     }
   ],
   "expected_final_tree": [

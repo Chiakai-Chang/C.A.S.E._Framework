@@ -2,10 +2,13 @@
   "fixture_version": "1",
   "case_id": "acceptance-stale",
   "normative_rule_ids": [
-    "M0-CHECK-003",
-    "M0-RELEASE-005",
+    "M0-CHECK-012",
+    "M0-RELEASE-011",
+    "M0-SHOW-003",
+    "M0-STATE-015",
     "M0-STATUS-003",
-    "M0-STATUS-004"
+    "M0-STATUS-004",
+    "M0-STATUS-006"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -49,7 +52,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -63,7 +66,7 @@
         "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/acceptance-stale-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -80,7 +83,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "submission",
         "create",
@@ -92,7 +95,7 @@
         "case-run-1"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/acceptance-stale-1.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -109,7 +112,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "decision",
         "accept",
@@ -129,7 +132,7 @@
         "Reviewed exact submission"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-decision.txt",
+      "stdin_content_file": "data/interactive/acceptance-stale-2.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -146,7 +149,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@fixture",
         "replace",
@@ -171,7 +174,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -202,31 +205,36 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/acceptance-stale-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/acceptance-stale-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/acceptance-stale-1.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/acceptance-stale-1-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/acceptance-stale-2.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/acceptance-stale-2-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/acceptance-stale-3.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/acceptance-stale-4.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

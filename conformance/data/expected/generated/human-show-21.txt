@@ -1,0 +1,35 @@
+OK CASE_OK: Current dossier
+dossier ID: case-dossier-1
+title: Bounded human view 21
+objective: Resume with bounded criteria
+active writer: actor-a
+active run: case-run-1
+revision: 0
+state digest: sha256:388d4187cf73…
+criterion: criterion-01 = failed
+criterion: criterion-02 = failed
+criterion: criterion-03 = failed
+criterion: criterion-04 = failed
+criterion: criterion-05 = failed
+criterion: criterion-06 = failed
+criterion: criterion-07 = failed
+criterion: criterion-08 = failed
+criterion: criterion-09 = failed
+criterion: criterion-10 = failed
+criterion: criterion-11 = failed
+criterion: criterion-12 = failed
+criterion: criterion-13 = failed
+criterion: criterion-14 = failed
+criterion: criterion-15 = failed
+criterion: criterion-16 = failed
+criterion: criterion-17 = failed
+criterion: criterion-18 = failed
+criterion: criterion-19 = failed
+criterion: criterion-20 = failed
+evidence gaps: criterion-01, criterion-02, criterion-03, criterion-04, criterion-05, criterion-06, criterion-07, criterion-08, criterion-09, criterion-10, criterion-11, criterion-12, criterion-13, criterion-14, criterion-15, criterion-16, criterion-17, criterion-18, criterion-19, criterion-20
+current checks: failed
+review: working
+acceptance: pending
+handoff: none
+next: CASE_NEXT_ADD_EVIDENCE
+warnings: none

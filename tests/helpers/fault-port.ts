@@ -41,13 +41,14 @@ export function controlledAtomicFs(root: string, fault?: FaultPoint): AtomicFsPo
     async createOnce(path, bytes) {
       const target = absolute(path);
       const handle = await open(target, "wx");
+      if (fault === "after_temp_open" && path.includes(".tmp-")) {
+        await handle.close();
+        throw new InjectedPublicationFault(fault);
+      }
       try {
         await handle.writeFile(bytes);
       } finally {
         await handle.close();
-      }
-      if (fault === "after_temp_open" && path.includes(".tmp-")) {
-        throw new InjectedPublicationFault(fault);
       }
       if (fault === "after_envelope_create" && /\/(handoffs|submissions|decisions)\//u.test(path.replaceAll("\\", "/"))) {
         throw new InjectedPublicationFault(fault);

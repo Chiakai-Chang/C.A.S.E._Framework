@@ -1,0 +1,250 @@
+{
+  "fixture_version": "1",
+  "case_id": "decision-rejection",
+  "normative_rule_ids": [
+    "M0-STATUS-007"
+  ],
+  "applicable_platform_profiles": [
+    "controlled-test"
+  ],
+  "initial_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "content_file": "data/base-dossier.json",
+      "sha256": "sha256:95c75dce56bc78d3db8c532acba516a20b8b692085a5e1b1183be0f5214eb44e"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "content_file": "data/empty.bin",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "content_file": "data/manifest.json",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    },
+    {
+      "path": "artifact.txt",
+      "content_file": "data/artifact-v1.txt",
+      "sha256": "sha256:2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf"
+    }
+  ],
+  "invocations": [
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "evidence",
+        "add",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-evidence",
+        "--run",
+        "case-run-1",
+        "--evidence",
+        "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/interactive/decision-acceptance-0.json",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "submission",
+        "create",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-submit",
+        "--run",
+        "case-run-1"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/interactive/decision-acceptance-1.json",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "decision",
+        "reject",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-rejection",
+        "--submission",
+        "submission-op-submit",
+        "--submission-digest",
+        "sha256:161d38370434dbbfb48a693574c48cdc08849362f3132e91c56e001c80fba731",
+        "--reviewer",
+        "reviewer-a",
+        "--criteria",
+        "[\"criterion-a\"]",
+        "--comment",
+        "Changes required"
+      ],
+      "stdin_mode": "interactive_script",
+      "stdin_content_file": "data/interactive/decision-rejection-2.json",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "--json",
+        "dossier",
+        "show",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    }
+  ],
+  "expected": [
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/decision-acceptance-0.json",
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-acceptance-0-stderr.txt"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/decision-acceptance-1.json",
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-acceptance-1-stderr.txt"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/decision-rejection-2.txt",
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-rejection-2-stderr.txt"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/decision-rejection-3.json",
+      "stderr": "empty",
+      "stderr_file": null
+    }
+  ],
+  "expected_final_tree": [
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/decisions/decision-op-rejection.json",
+      "presence": "present",
+      "sha256": "sha256:1924bc2be29b2c64791c13630dd7706427464d5984f7c3ca8a40b4856aacb47f"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
+      "presence": "present",
+      "sha256": "sha256:87cb7aebab5189080c493a69eb9d728b9d29d356d2d543e9c4659a9f2fdfa436"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/submissions/submission-op-submit.json",
+      "presence": "present",
+      "sha256": "sha256:912c3ec250de7448e5cce87cd4a91aabc7fa5ac1a46c91fb5841df682bea7a8c"
+    },
+    {
+      "path": ".case-agent/locks/.keep",
+      "presence": "present",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/manifest.json",
+      "presence": "present",
+      "sha256": "sha256:66f56e2f32be3eca6721a2cc533045ba637151770bcecd84b938aef76f96ba45"
+    },
+    {
+      "path": "artifact.txt",
+      "presence": "present",
+      "sha256": "sha256:2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf"
+    }
+  ],
+  "expected_derived_view_file": null
+}

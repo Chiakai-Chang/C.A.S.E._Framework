@@ -8,7 +8,18 @@ import { EXIT_BY_CODE } from "../../src/protocol/errors.js";
 import { failure, success, type ResultEnvelope } from "../../src/protocol/result.js";
 import type { CurrentView } from "../../src/protocol/types.js";
 import { parseCliRequest } from "../../src/cli/args.js";
-import { decisionConfirmationText, exactConfirmation, recoveryConfirmationText, runCli, TtyTerminal, type CliDependencies, type CliTerminal } from "../../src/cli/main.js";
+import {
+  basisConfirmationPrompt,
+  decisionConfirmationPrompt,
+  decisionConfirmationText,
+  exactConfirmation,
+  recoveryConfirmationPrompt,
+  recoveryConfirmationText,
+  runCli,
+  TtyTerminal,
+  type CliDependencies,
+  type CliTerminal,
+} from "../../src/cli/main.js";
 import { SchemaRegistry } from "../../src/protocol/schema-registry.js";
 import { CaseStore } from "../../src/storage/store.js";
 import { nodePathInspection } from "../../src/storage/paths.js";
@@ -223,6 +234,45 @@ test("specialized confirmation formatters expose complete governed review and re
   for (const material of ["dossier-a", "guard-a", "created_at", "test", '"7"', "process_started_at"]) assert.match(recoveryText, new RegExp(material));
   assert.equal(exactConfirmation(DECISION_CONFIRMATION_PHRASE, DECISION_CONFIRMATION_PHRASE), true);
   assert.equal(exactConfirmation(`${DECISION_CONFIRMATION_PHRASE} `, DECISION_CONFIRMATION_PHRASE), false);
+});
+
+test("confirmation prompts render the exact basis, decision review, and recovery view", () => {
+  const smallView = {
+    dossier_id: "dossier-a",
+    title: "Title",
+    objective: "Objective",
+    scope: null,
+    constraints: null,
+    active_run: { run_id: "run-a", actor_id: "actor-a", started_by_handoff_id: null },
+    state_revision: "4",
+    state_digest: digest,
+    criterion_results: [],
+    evidence_gaps: [],
+    current_checks: "passed",
+    review: "working",
+    acceptance: "pending",
+    handoff: "none",
+    recommended_next_action: "CASE_NEXT_CREATE_SUBMISSION",
+    unresolved_warnings: [],
+  } as unknown as CurrentView;
+  assert.equal(
+    basisConfirmationPrompt(smallView, { command: "submission.create", operation_id: "op-submit" }),
+    `Current view: {"dossier_id":"dossier-a","title":"Title","objective":"Objective","scope":null,"constraints":null,"active_run":{"run_id":"run-a","actor_id":"actor-a","started_by_handoff_id":null},"state_revision":"4","state_digest":"${digest}","criterion_results":[],"evidence_gaps":[],"current_checks":"passed","review":"working","acceptance":"pending","handoff":"none","recommended_next_action":"CASE_NEXT_CREATE_SUBMISSION","unresolved_warnings":[]}\nProposed transition: {"command":"submission.create","operation_id":"op-submit"}\nConfirm this exact basis.\nType exactly: CONFIRM THIS BASIS\n> `,
+  );
+  const review = {
+    submission: { submission_id: "submission-a", submission_digest: digest },
+    acceptance_criteria: [{ criterion_id: "criterion-a", statement: "Inspect", verification: "mechanical" }],
+    decision_envelope: { decision_id: "decision-a", decision: "accepted", reviewer_id: "reviewer-a", comment: "Reviewed", submission_digest: digest },
+    identity_limitation: "Recorded interactive claim; not authentication or non-repudiation.",
+  } as never;
+  assert.equal(
+    decisionConfirmationPrompt(review, DECISION_CONFIRMATION_PHRASE),
+    `Submission: {"submission_id":"submission-a","submission_digest":"${digest}"}\nAcceptance criteria: [{"criterion_id":"criterion-a","statement":"Inspect","verification":"mechanical"}]\nDecision: {"decision_id":"decision-a","decision":"accepted","reviewer_id":"reviewer-a","comment":"Reviewed","submission_digest":"${digest}"}\nIdentity limitation: Recorded interactive claim; not authentication or non-repudiation.\nRecord this exact human decision.\nType exactly: RECORD THIS HUMAN DECISION\n> `,
+  );
+  assert.equal(
+    recoveryConfirmationPrompt({ dossier_id: "dossier-a", guard_id: "guard-a", created_at: "2026-09-04T00:00:00Z", process_identity: { profile: "test", pid: "7", process_started_at: "2026-09-03T00:00:00Z" } }),
+    "Recovery guard: {\"dossier_id\":\"dossier-a\",\"guard_id\":\"guard-a\",\"created_at\":\"2026-09-04T00:00:00Z\",\"process_identity\":{\"profile\":\"test\",\"pid\":\"7\",\"process_started_at\":\"2026-09-03T00:00:00Z\"}}\nRecover this writer guard.\nType exactly: RECOVER THIS WRITER GUARD\n> ",
+  );
 });
 
 test("injected runner completes init through acceptance and derives stale after artifact change", async (t) => {

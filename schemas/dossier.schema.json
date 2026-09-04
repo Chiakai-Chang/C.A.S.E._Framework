@@ -20,7 +20,7 @@
     "current_decision_id"
   ],
   "properties": {
-    "dossier_id": { "type": "string" },
+    "dossier_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
     "title": { "type": "string" },
     "objective": { "type": "string" },
     "scope": {
@@ -40,7 +40,7 @@
         "additionalProperties": false,
         "required": ["criterion_id", "statement", "verification"],
         "properties": {
-          "criterion_id": { "type": "string" },
+          "criterion_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
           "statement": { "type": "string" },
           "verification": { "enum": ["mechanical", "recorded_human_review"] }
         }
@@ -56,7 +56,7 @@
           "additionalProperties": false,
           "required": ["operation_id", "input_digest", "basis_revision", "resulting_revision"],
           "properties": {
-            "operation_id": { "type": "string" },
+            "operation_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
             "input_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
             "basis_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
             "resulting_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" }
@@ -69,9 +69,14 @@
       "additionalProperties": false,
       "required": ["run_id", "actor_id", "started_by_handoff_id"],
       "properties": {
-        "run_id": { "type": "string" },
-        "actor_id": { "type": "string" },
-        "started_by_handoff_id": { "type": ["string", "null"] }
+        "run_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+        "actor_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+        "started_by_handoff_id": {
+          "oneOf": [
+            { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+            { "type": "null" }
+          ]
+        }
       }
     },
     "evidence": {
@@ -83,8 +88,8 @@
             "additionalProperties": false,
             "required": ["evidence_id", "criterion_ids", "kind", "location", "captured_at", "artifact_digest", "artifact_size", "freshness", "limitations"],
             "properties": {
-              "evidence_id": { "type": "string" },
-              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/string_array" },
+              "evidence_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/opaque_id_array" },
               "kind": { "enum": ["file", "command_result"] },
               "location": {
                 "type": "object",
@@ -104,8 +109,8 @@
             "additionalProperties": false,
             "required": ["evidence_id", "criterion_ids", "kind", "location", "captured_at", "freshness", "limitations"],
             "properties": {
-              "evidence_id": { "type": "string" },
-              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/string_array" },
+              "evidence_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/opaque_id_array" },
               "kind": { "const": "external_reference" },
               "location": {
                 "type": "object",
@@ -123,8 +128,8 @@
             "additionalProperties": false,
             "required": ["evidence_id", "criterion_ids", "kind", "location", "captured_at", "freshness", "limitations"],
             "properties": {
-              "evidence_id": { "type": "string" },
-              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/string_array" },
+              "evidence_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+              "criterion_ids": { "$ref": "definitions.schema.json#/$defs/opaque_id_array" },
               "kind": { "const": "human_observation" },
               "location": {
                 "type": "object",
@@ -140,8 +145,8 @@
         ]
       }
     },
-    "current_handoff_id": { "type": ["string", "null"] },
-    "current_submission_id": { "type": ["string", "null"] },
-    "current_decision_id": { "type": ["string", "null"] }
+    "current_handoff_id": { "oneOf": [{ "$ref": "definitions.schema.json#/$defs/opaque_id" }, { "type": "null" }] },
+    "current_submission_id": { "oneOf": [{ "$ref": "definitions.schema.json#/$defs/opaque_id" }, { "type": "null" }] },
+    "current_decision_id": { "oneOf": [{ "$ref": "definitions.schema.json#/$defs/opaque_id" }, { "type": "null" }] }
   }
 }

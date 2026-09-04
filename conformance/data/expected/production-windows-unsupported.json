@@ -1,0 +1,1 @@
+{"ok":false,"command":"init","code":"CASE_E_UNSUPPORTED_PROFILE","message":"The initialization target is not a proven supported local filesystem profile","data":null,"remediation":null}

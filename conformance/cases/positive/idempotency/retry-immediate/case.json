@@ -2,10 +2,9 @@
   "fixture_version": "1",
   "case_id": "retry-immediate",
   "normative_rule_ids": [
-    "M0-MUTATION-002",
-    "M0-MUTATION-004",
+    "M0-CLI-007",
     "M0-MUTATION-005",
-    "M0-SCALAR-002"
+    "M0-SCALAR-009"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -49,7 +48,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -85,7 +84,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -126,13 +125,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/retry-immediate-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/retry-immediate-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

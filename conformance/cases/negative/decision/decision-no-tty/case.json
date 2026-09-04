@@ -2,8 +2,8 @@
   "fixture_version": "1",
   "case_id": "decision-no-tty",
   "normative_rule_ids": [
-    "M0-CLI-005",
-    "M0-DECISION-004"
+    "M0-DECISION-004",
+    "M0-DECISION-006"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -47,7 +47,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -61,7 +61,7 @@
         "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/decision-no-tty-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -78,7 +78,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "submission",
         "create",
@@ -90,7 +90,7 @@
         "case-run-1"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/decision-no-tty-1.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -107,7 +107,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "decision",
         "accept",
@@ -149,19 +149,22 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/decision-no-tty-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-no-tty-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/decision-no-tty-1.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-no-tty-1-stderr.txt"
     },
     {
       "process_exit": 40,
       "result_code": "CASE_E_HUMAN_CONFIRMATION",
       "stdout_json_file": "data/expected/generated/decision-no-tty-2.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

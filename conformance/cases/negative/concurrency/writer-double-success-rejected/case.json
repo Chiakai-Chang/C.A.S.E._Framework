@@ -3,8 +3,8 @@
   "case_id": "writer-double-success-rejected",
   "normative_rule_ids": [
     "M0-CORPUS-006",
-    "M0-MUTATION-001",
-    "M0-RELEASE-004"
+    "M0-CORPUS-013",
+    "M0-MUTATION-001"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -48,7 +48,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -84,7 +84,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -125,13 +125,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/writer-double-success-rejected-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 30,
       "result_code": "CASE_E_RECOVERY_REQUIRED",
       "stdout_json_file": "data/expected/generated/writer-double-success-rejected-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

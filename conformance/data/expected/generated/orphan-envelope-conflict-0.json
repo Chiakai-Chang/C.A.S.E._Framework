@@ -1,0 +1,1 @@
+{"ok":false,"command":"handoff.offer","code":"CASE_E_CONFLICT","message":"The existing immutable envelope conflicts with this operation","data":null,"remediation":null}

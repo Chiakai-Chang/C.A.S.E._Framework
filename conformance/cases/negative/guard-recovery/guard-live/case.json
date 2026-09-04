@@ -2,9 +2,10 @@
   "fixture_version": "1",
   "case_id": "guard-live",
   "normative_rule_ids": [
-    "M0-MUTATION-006",
-    "M0-MUTATION-007",
     "M0-MUTATION-008",
+    "M0-MUTATION-016",
+    "M0-MUTATION-018",
+    "M0-MUTATION-019",
     "M0-SOURCE-004"
   ],
   "applicable_platform_profiles": [
@@ -49,7 +50,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "guard",
         "recover",
@@ -59,7 +60,7 @@
         "op-recover"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-recovery.txt",
+      "stdin_content_file": "data/interactive/guard-live-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -81,7 +82,8 @@
       "process_exit": 30,
       "result_code": "CASE_E_RECOVERY_REQUIRED",
       "stdout_json_file": "data/expected/generated/guard-live-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/guard-live-0-stderr.txt"
     }
   ],
   "expected_final_tree": [

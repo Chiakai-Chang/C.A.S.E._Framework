@@ -5,7 +5,11 @@
     "M0-SCHEMA-001",
     "M0-SCHEMA-002",
     "M0-SCHEMA-003",
-    "M0-STATE-001"
+    "M0-SCHEMA-005",
+    "M0-SCHEMA-006",
+    "M0-SOURCE-001",
+    "M0-STATE-001",
+    "M0-STATE-002"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -13,7 +17,7 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
         "schema-contract-negative"
@@ -41,7 +45,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/schema-contract-negative-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

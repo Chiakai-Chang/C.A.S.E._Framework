@@ -3,8 +3,7 @@
   "case_id": "version-newer",
   "normative_rule_ids": [
     "M0-INIT-005",
-    "M0-SCHEMA-004",
-    "M0-SOURCE-001"
+    "M0-SCHEMA-007"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -28,7 +27,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "init",
@@ -58,7 +57,8 @@
       "process_exit": 10,
       "result_code": "CASE_E_UNSUPPORTED_VERSION",
       "stdout_json_file": "data/expected/generated/version-newer-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

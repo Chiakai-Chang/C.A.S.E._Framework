@@ -3,7 +3,8 @@
   "case_id": "submit-failed-check",
   "normative_rule_ids": [
     "M0-CHECK-002",
-    "M0-STATE-007"
+    "M0-ENVELOPE-011",
+    "M0-STATE-012"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -42,7 +43,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "submission",
@@ -81,7 +82,8 @@
       "process_exit": 20,
       "result_code": "CASE_E_EVIDENCE",
       "stdout_json_file": "data/expected/submit-failed-check.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

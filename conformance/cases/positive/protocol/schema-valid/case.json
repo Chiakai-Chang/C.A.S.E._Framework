@@ -7,7 +7,7 @@
     "M0-SCHEMA-003",
     "M0-SCHEMA-004",
     "M0-SCHEMA-005",
-    "M0-STATE-001"
+    "M0-SCHEMA-006"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -15,7 +15,7 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "probe",
+      "actor_label": "trace-probe",
       "argv": [
         "@probe",
         "schema-valid"
@@ -43,7 +43,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/probe-ok.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

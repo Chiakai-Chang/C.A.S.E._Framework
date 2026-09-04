@@ -2,9 +2,6 @@
   "fixture_version": "1",
   "case_id": "external",
   "normative_rule_ids": [
-    "M0-CHECK-001",
-    "M0-PROJECTION-005",
-    "M0-STATE-003",
     "M0-STATE-005"
   ],
   "applicable_platform_profiles": [
@@ -44,7 +41,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -58,7 +55,7 @@
         "{\"kind\":\"external_reference\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"human_review\",\"limitations\":[\"not-local\"],\"location\":{\"uri\":\"https://example.invalid/evidence\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/external-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -75,7 +72,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -106,13 +103,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/external-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/external-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/external-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

@@ -2,9 +2,11 @@
   "fixture_version": "1",
   "case_id": "guard-dead",
   "normative_rule_ids": [
-    "M0-MUTATION-006",
     "M0-MUTATION-007",
-    "M0-MUTATION-008"
+    "M0-MUTATION-018",
+    "M0-MUTATION-019",
+    "M0-MUTATION-020",
+    "M0-MUTATION-021"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -48,7 +50,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "guard",
         "recover",
@@ -58,7 +60,43 @@
         "op-recover"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-recovery.txt",
+      "stdin_content_file": "data/interactive/guard-dead-0.json",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "--json",
+        "evidence",
+        "add",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-after-recovery",
+        "--run",
+        "case-run-1",
+        "--expected-revision",
+        "1",
+        "--expected-state-digest",
+        "sha256:c59cbaa5148d1db3757eaf1263364f135379b6a39e70824b76c146b4bed0a92e",
+        "--evidence",
+        "{\"kind\":\"external_reference\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"human_review\",\"limitations\":[\"post-recovery-writer\"],\"location\":{\"uri\":\"https://example.invalid/post-recovery\"}}"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -80,7 +118,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/guard-dead-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/guard-dead-0-stderr.txt"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/guard-dead-1.json",
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [
@@ -92,7 +138,7 @@
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
       "presence": "present",
-      "sha256": "sha256:bee6eb5df1476f28f258c3dbeaadb0c5057c89bc4dbaabc02221820d27b87b06"
+      "sha256": "sha256:88b0a40d3dc9c85335a9430c00ae054775d78e0c86b8467d383b4c87938abea6"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
@@ -108,6 +154,11 @@
       "path": ".case-agent/locks/.keep",
       "presence": "present",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/case-dossier-1.lock",
+      "presence": "absent",
+      "sha256": null
     },
     {
       "path": ".case-agent/locks/case-dossier-1.lock.quarantine-op-recover",

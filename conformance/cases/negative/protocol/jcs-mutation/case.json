@@ -3,7 +3,9 @@
   "case_id": "jcs-mutation",
   "normative_rule_ids": [
     "M0-JCS-001",
-    "M0-JCS-002"
+    "M0-JCS-002",
+    "M0-JCS-003",
+    "M0-JCS-004"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -11,10 +13,10 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
-        "jcs-unicode"
+        "jcs-mutation"
       ],
       "stdin_mode": "none",
       "stdin_content_file": null,
@@ -39,7 +41,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/jcs-mutation-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

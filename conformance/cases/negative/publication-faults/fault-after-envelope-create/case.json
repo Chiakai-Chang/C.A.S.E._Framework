@@ -2,11 +2,12 @@
   "fixture_version": "1",
   "case_id": "fault-after-envelope-create",
   "normative_rule_ids": [
-    "M0-ENVELOPE-001",
     "M0-ENVELOPE-002",
-    "M0-ENVELOPE-003",
-    "M0-RELEASE-005",
-    "M0-SOURCE-003"
+    "M0-ENVELOPE-004",
+    "M0-ENVELOPE-006",
+    "M0-ENVELOPE-008",
+    "M0-SOURCE-006",
+    "M0-SOURCE-007"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -45,7 +46,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "handoff",
@@ -79,6 +80,32 @@
       },
       "concurrency_group": null,
       "fault_point": "after_envelope_create"
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "--json",
+        "dossier",
+        "check",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
     }
   ],
   "expected": [
@@ -86,7 +113,15 @@
       "process_exit": 70,
       "result_code": "CASE_E_INTERNAL",
       "stdout_json_file": "data/expected/generated/fault-after-envelope-create-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/fault-after-envelope-create-1.json",
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

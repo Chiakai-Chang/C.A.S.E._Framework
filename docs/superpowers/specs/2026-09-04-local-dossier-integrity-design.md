@@ -492,6 +492,7 @@ CASE_E_USAGE                 malformed invocation
 CASE_E_NOT_INITIALIZED       namespace absent
 CASE_E_NAMESPACE_COLLISION   incompatible or unsafe namespace
 CASE_E_UNSUPPORTED_VERSION   unsupported protocol/schema version
+CASE_E_UNSUPPORTED_PROFILE   target platform/filesystem profile is not proven supported
 CASE_E_PARSE                 invalid governed JSON bytes or syntax
 CASE_E_SCHEMA                schema invalid
 CASE_E_INVARIANT             cross-file or state invariant invalid
@@ -508,7 +509,7 @@ CASE_E_INTERNAL              unexpected implementation failure
 ```text
 0   success
 2   invocation or usage error
-10  initialization, namespace, environment, or version error
+10  initialization, namespace, environment, profile, or version error
 20  parse, schema, invariant, or evidence error
 30  conflict, busy, or recovery-required error
 40  transition, actor-label, or human-confirmation error

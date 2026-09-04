@@ -34,6 +34,22 @@ export function decisionConfirmationText(review: ExactSubmissionReview): string 
 export function recoveryConfirmationText(view: RecoveryConfirmationView): string {
   return `Recovery guard: ${JSON.stringify(view)}`;
 }
+function exactPrompt(display: string, question: string, phrase: string): string {
+  return `${display}\n${question}\nType exactly: ${phrase}\n> `;
+}
+export function basisConfirmationPrompt(view: CurrentView, proposed: ProposedTransition): string {
+  return exactPrompt(
+    `Current view: ${JSON.stringify(view)}\nProposed transition: ${JSON.stringify(proposed)}`,
+    "Confirm this exact basis.",
+    "CONFIRM THIS BASIS",
+  );
+}
+export function decisionConfirmationPrompt(review: ExactSubmissionReview, phrase: string): string {
+  return exactPrompt(decisionConfirmationText(review), "Record this exact human decision.", phrase);
+}
+export function recoveryConfirmationPrompt(view: RecoveryConfirmationView): string {
+  return exactPrompt(recoveryConfirmationText(view), "Recover this writer guard.", "RECOVER THIS WRITER GUARD");
+}
 type Workflow<T> = (request: T, terminal?: CliTerminal) => Promise<ResultEnvelope<unknown>>;
 export interface CliWorkflowDependencies {
   readonly init: Workflow<InitRequest>; readonly createDossier: Workflow<CreateDossierRequest>;
@@ -89,22 +105,19 @@ export class TtyTerminal implements CliTerminal {
   private async exact(prompt: string, phrase: string): Promise<boolean> {
     if (!this.interactive) return false;
     const reader = createInterface({ input: stdin, output: stderr });
-    try { return exactConfirmation(await reader.question(`${prompt}\nType exactly: ${phrase}\n> `), phrase); } finally { reader.close(); }
+    try { return exactConfirmation(await reader.question(prompt), phrase); } finally { reader.close(); }
   }
   async confirmBasis(view: CurrentView, proposed: ProposedTransition): Promise<boolean> {
     if (!this.interactive) return false;
-    stderr.write(`Basis revision: ${view.state_revision}\nBasis state digest: ${view.state_digest}\nProposed transition: ${proposed.command} (${proposed.operation_id})\n`);
-    return this.exact("Confirm this exact basis.", "CONFIRM THIS BASIS");
+    return this.exact(basisConfirmationPrompt(view, proposed), "CONFIRM THIS BASIS");
   }
   async confirmDecision(review: ExactSubmissionReview, phrase: string): Promise<boolean> {
     if (!this.interactive || phrase !== DECISION_CONFIRMATION_PHRASE) return false;
-    stderr.write(`${decisionConfirmationText(review)}\n`);
-    return this.exact("Record this exact human decision.", DECISION_CONFIRMATION_PHRASE);
+    return this.exact(decisionConfirmationPrompt(review, phrase), DECISION_CONFIRMATION_PHRASE);
   }
   async confirmRecovery(view: RecoveryConfirmationView): Promise<boolean> {
     if (!this.interactive) return false;
-    stderr.write(`${recoveryConfirmationText(view)}\n`);
-    return this.exact("Recover this writer guard.", "RECOVER THIS WRITER GUARD");
+    return this.exact(recoveryConfirmationPrompt(view), "RECOVER THIS WRITER GUARD");
   }
 }
 

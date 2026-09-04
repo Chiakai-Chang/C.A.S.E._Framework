@@ -2,8 +2,9 @@
   "fixture_version": "1",
   "case_id": "old-writer",
   "normative_rule_ids": [
+    "M0-HANDOFF-002",
     "M0-HANDOFF-005",
-    "M0-HANDOFF-008"
+    "M0-SCALAR-012"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -47,7 +48,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "handoff",
         "offer",
@@ -61,7 +62,7 @@
         "actor-b"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/old-writer-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -78,7 +79,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-b",
+      "actor_label": "trace-peer",
       "argv": [
         "handoff",
         "accept",
@@ -94,7 +95,7 @@
         "actor-b"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/old-writer-1.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -111,21 +112,26 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
-        "evidence",
-        "add",
+        "--json",
+        "handoff",
+        "offer",
         "--dossier",
         "case-dossier-1",
         "--operation",
         "op-old-writer",
-        "--run",
+        "--from-run",
         "case-run-1",
-        "--evidence",
-        "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
+        "--to-actor",
+        "actor-c",
+        "--expected-revision",
+        "2",
+        "--expected-state-digest",
+        "sha256:34fae24055634f778bbe8a8ed3a2425a18b4df4afff3f094172257543e239a26"
       ],
-      "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_mode": "none",
+      "stdin_content_file": null,
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -147,19 +153,22 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/old-writer-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/old-writer-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/old-writer-1.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/old-writer-1-stderr.txt"
     },
     {
       "process_exit": 40,
       "result_code": "CASE_E_ACTOR",
       "stdout_json_file": "data/expected/generated/old-writer-2.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

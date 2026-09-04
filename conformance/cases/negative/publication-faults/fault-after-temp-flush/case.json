@@ -2,9 +2,7 @@
   "fixture_version": "1",
   "case_id": "fault-after-temp-flush",
   "normative_rule_ids": [
-    "M0-MUTATION-003",
-    "M0-MUTATION-004",
-    "M0-RELEASE-005"
+    "M0-MUTATION-011"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -48,7 +46,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -89,7 +87,8 @@
       "process_exit": 70,
       "result_code": "CASE_E_INTERNAL",
       "stdout_json_file": "data/expected/generated/fault-after-temp-flush-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

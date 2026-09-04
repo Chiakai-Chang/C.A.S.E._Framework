@@ -1,1 +1,10 @@
-{"ok":true,"command":"handoff.accept","code":"CASE_OK","message":"Handoff accepted","data":{"dossier_id":"case-dossier-1","title":"Release integrity","objective":"Keep artifact current","scope":{"in":["artifact.txt"],"out":["deployment"]},"constraints":["local-only"],"acceptance_criteria":[{"criterion_id":"criterion-a","statement":"Artifact digest matches","verification":"mechanical"}],"state_revision":"2","state_digest":"sha256:34fae24055634f778bbe8a8ed3a2425a18b4df4afff3f094172257543e239a26","last_operation":{"operation_id":"op-accept","input_digest":"sha256:e2fcf0bb6be2a00ed9225d8663d93fb9d87b81156596a8236588657d1ca187d8","basis_revision":"1","resulting_revision":"2"},"active_run":{"run_id":"case-run-2","actor_id":"actor-b","started_by_handoff_id":"handoff-op-offer"},"evidence":[],"current_handoff_id":"handoff-op-offer","current_submission_id":null,"current_decision_id":null},"remediation":null}
+OK CASE_OK: Handoff accepted
+dossier ID: case-dossier-1
+title: Release integrity
+objective: Keep artifact current
+active writer: actor-b
+active run: case-run-2
+started by handoff: handoff-op-offer
+revision: 2
+state digest: sha256:34fae2405563…
+current handoff ID: handoff-op-offer

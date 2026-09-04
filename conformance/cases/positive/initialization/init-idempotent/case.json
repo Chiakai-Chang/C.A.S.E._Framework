@@ -3,7 +3,7 @@
   "case_id": "init-idempotent",
   "normative_rule_ids": [
     "M0-INIT-004",
-    "M0-SOURCE-001"
+    "M0-SCALAR-002"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -27,7 +27,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "init",
@@ -57,7 +57,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/init-idempotent-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

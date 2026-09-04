@@ -1,0 +1,15 @@
+{
+  "script_version": "1",
+  "steps": [
+    {
+      "kind": "basis",
+      "expected_prompt_file": "data/prompts/orphan-decision-reconfirm-3-0.txt",
+      "response": "CONFIRM THIS BASIS"
+    },
+    {
+      "kind": "decision",
+      "expected_prompt_file": "data/prompts/orphan-decision-reconfirm-3-1.txt",
+      "response": "RECORD THIS HUMAN DECISION"
+    }
+  ]
+}

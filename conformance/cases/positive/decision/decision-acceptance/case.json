@@ -2,11 +2,21 @@
   "fixture_version": "1",
   "case_id": "decision-acceptance",
   "normative_rule_ids": [
+    "M0-CHECK-012",
     "M0-DECISION-001",
     "M0-DECISION-002",
     "M0-DECISION-003",
     "M0-DECISION-004",
-    "M0-STATUS-003"
+    "M0-DECISION-005",
+    "M0-DECISION-006",
+    "M0-DECISION-008",
+    "M0-ENVELOPE-001",
+    "M0-SOURCE-003",
+    "M0-SOURCE-006",
+    "M0-STATE-014",
+    "M0-STATE-017",
+    "M0-STATUS-003",
+    "M0-STATUS-006"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -50,7 +60,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -64,7 +74,7 @@
         "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/decision-acceptance-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -81,7 +91,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "submission",
         "create",
@@ -93,7 +103,7 @@
         "case-run-1"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/decision-acceptance-1.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -110,7 +120,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "decision",
         "accept",
@@ -130,7 +140,69 @@
         "Reviewed exact submission"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-decision.txt",
+      "stdin_content_file": "data/interactive/decision-acceptance-2.json",
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "--json",
+        "handoff",
+        "offer",
+        "--dossier",
+        "case-dossier-1",
+        "--operation",
+        "op-preserve",
+        "--from-run",
+        "case-run-1",
+        "--to-actor",
+        "actor-b",
+        "--expected-revision",
+        "3",
+        "--expected-state-digest",
+        "sha256:cadf0d8c8802e3877ec24c3544b3db35a226c9caca5abb96f57efe9f8292159d"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
+      "fixed_environment": {
+        "CASE_CLOCK": "2026-09-04T03:02:01Z",
+        "CASE_ID_SEED": "case",
+        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PID": "1001",
+        "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
+        "CASE_PROCESS_STATUS": "terminated",
+        "CASE_NETWORK": "deny",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "TZ": "UTC"
+      },
+      "concurrency_group": null,
+      "fault_point": null
+    },
+    {
+      "actor_label": "trace-main",
+      "argv": [
+        "--json",
+        "dossier",
+        "show",
+        "--dossier",
+        "case-dossier-1"
+      ],
+      "stdin_mode": "none",
+      "stdin_content_file": null,
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -152,19 +224,36 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/decision-acceptance-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-acceptance-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/decision-acceptance-1.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-acceptance-1-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/decision-acceptance-2.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/decision-acceptance-2-stderr.txt"
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/decision-acceptance-3.json",
+      "stderr": "empty",
+      "stderr_file": null
+    },
+    {
+      "process_exit": 0,
+      "result_code": "CASE_OK",
+      "stdout_json_file": "data/expected/generated/decision-acceptance-4.json",
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [
@@ -181,12 +270,17 @@
     {
       "path": ".case-agent/dossiers/case-dossier-1/dossier.json",
       "presence": "present",
-      "sha256": "sha256:551af818a59e3659036f9ef5fa6ea0546c4ff4d2deec491217419bee2704ad6d"
+      "sha256": "sha256:a07a08c0b9f70c84efae10f751d04df4211684d5c560e84afb20fe0d9f5eee70"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/handoffs/.keep",
       "presence": "present",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/dossiers/case-dossier-1/handoffs/handoff-op-preserve.json",
+      "presence": "present",
+      "sha256": "sha256:2750096185f26defc9faf2e55123dcd89da040a7b44248877638dcb42fcd4e49"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/submissions/.keep",

@@ -2,11 +2,12 @@
   "fixture_version": "1",
   "case_id": "init-clean",
   "normative_rule_ids": [
-    "M0-INIT-001",
     "M0-INIT-002",
     "M0-INIT-006",
-    "M0-INIT-007",
-    "M0-SOURCE-001"
+    "M0-INIT-008",
+    "M0-SCHEMA-007",
+    "M0-SOURCE-001",
+    "M0-STATE-001"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -14,7 +15,7 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "init",
@@ -44,7 +45,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/init-clean-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

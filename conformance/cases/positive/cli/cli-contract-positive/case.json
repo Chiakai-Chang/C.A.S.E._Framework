@@ -2,7 +2,10 @@
   "fixture_version": "1",
   "case_id": "cli-contract-positive",
   "normative_rule_ids": [
-    "M0-CLI-001"
+    "M0-CLI-001",
+    "M0-HANDOFF-011",
+    "M0-STATUS-005",
+    "M0-STATUS-009"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -10,7 +13,7 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
         "cli-contract"
@@ -38,7 +41,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/cli-contract-positive-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

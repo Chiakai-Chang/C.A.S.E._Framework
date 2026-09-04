@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { join } from "node:path";
 import { digestProjection } from "../protocol/canonical.js";
 import { buildChecksProjection } from "../protocol/checks.js";
 import { parseGovernedJson, type JsonValue } from "../protocol/json.js";
@@ -58,6 +59,7 @@ export interface SnapshotCheckResult {
   readonly checks: ChecksProjection;
   readonly observed: ObservedEvidenceProjection;
   readonly envelopes: CurrentEnvelopeInspection;
+  readonly orphanEnvelope: boolean;
 }
 
 /** Distinguish structural/cross-file failures from ordinary current-evidence failures. */
@@ -433,10 +435,43 @@ export async function inspectCurrentEnvelopes(snapshot: DossierSnapshot, ports: 
   return { integrity, handoff, submission, decision };
 }
 
+async function hasUnreferencedEnvelope(snapshot: DossierSnapshot, ports: ReadPorts): Promise<boolean> {
+  const fs = ports.evidenceFs ?? nodePathInspection;
+  const dossierRoot = join(ports.repository_root, ".case-agent", "dossiers", snapshot.dossier_id);
+  const current = new Map<"handoff" | "submission" | "decision", string | null>([
+    ["handoff", snapshot.current_handoff_id],
+    ["submission", snapshot.current_submission_id],
+    ["decision", snapshot.current_decision_id],
+  ]);
+  try {
+    for (const [kind, currentId] of current) {
+      const entries = await fs.listDirectory(join(dossierRoot, `${kind}s`));
+      for (const { name } of entries) {
+        if (!/^[A-Za-z0-9._-]+\.json$/u.test(name) || name === `${currentId}.json`) continue;
+        const parsed = await readEnvelope(snapshot, kind, name.slice(0, -5), ports);
+        if (parsed === null) return true;
+        if (kind === "decision") {
+          const decision = parsed as unknown as DecisionEnvelope;
+          if (currentId === null && decision.submission_id === snapshot.current_submission_id) return true;
+          continue;
+        }
+        const envelope = parsed as unknown as HandoffEnvelope | SubmissionEnvelope;
+        if (BigInt(envelope.basis_revision) === BigInt(snapshot.state_revision)
+          && BigInt(envelope.published_revision) === BigInt(snapshot.state_revision) + 1n) return true;
+      }
+    }
+  } catch {
+    // Envelope-directory safety is reported by the existing integrity stages;
+    // a failed enumeration must not manufacture an orphan observation.
+  }
+  return false;
+}
+
 /** Recompute evidence, envelope, and criterion state from a validated in-memory snapshot. */
 export async function checkSnapshot(snapshot: DossierSnapshot, ports: ReadPorts): Promise<SnapshotCheckResult> {
   const observed = await observeEvidence(snapshot, ports);
   const envelopes = await inspectCurrentEnvelopes(snapshot, ports);
+  const orphanEnvelope = await hasUnreferencedEnvelope(snapshot, ports);
   const checks = buildChecksProjection(snapshot, observed, envelopes.integrity);
   checks.stable_warning_codes = [...new Set([
     ...checks.stable_warning_codes,
@@ -446,7 +481,7 @@ export async function checkSnapshot(snapshot: DossierSnapshot, ports: ReadPorts)
     || !ports.schemas.validate("checks", projectChecks(checks)).ok) {
     throw new Error("generated check projection validation failed");
   }
-  return { checks, observed, envelopes };
+  return { checks, observed, envelopes, orphanEnvelope };
 }
 
 function loadFailure(error: unknown): FailureResultEnvelope {
@@ -470,8 +505,15 @@ export async function checkDossier(
   }
   try {
     const snapshot = await ports.store.loadDossier(request.dossier_id);
-    const { checks } = await checkSnapshot(snapshot, ports);
-    const publicChecks = projectChecks(checks) as unknown as PublicChecksProjection;
+    const { checks, orphanEnvelope } = await checkSnapshot(snapshot, ports);
+    const projected = projectChecks(checks) as unknown as PublicChecksProjection;
+    const publicChecks: PublicChecksProjection = orphanEnvelope ? {
+      ...projected,
+      stable_warning_codes: [...new Set([
+        ...projected.stable_warning_codes,
+        "CASE_L_ORPHAN_ENVELOPE",
+      ])].sort(),
+    } : projected;
     if (!ports.schemas.validate("checks", publicChecks).ok) {
       return failure("dossier.check", "CASE_E_INTERNAL", "The public checks projection failed validation");
     }

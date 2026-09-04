@@ -2,8 +2,9 @@
   "fixture_version": "1",
   "case_id": "machine-missing-basis",
   "normative_rule_ids": [
-    "M0-CLI-004",
     "M0-CLI-006",
+    "M0-CLI-007",
+    "M0-CLI-010",
     "M0-ERROR-001"
   ],
   "applicable_platform_profiles": [
@@ -48,7 +49,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -85,7 +86,8 @@
       "process_exit": 2,
       "result_code": "CASE_E_USAGE",
       "stdout_json_file": "data/expected/generated/machine-missing-basis-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

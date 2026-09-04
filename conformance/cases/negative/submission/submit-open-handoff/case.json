@@ -2,8 +2,7 @@
   "fixture_version": "1",
   "case_id": "submit-open-handoff",
   "normative_rule_ids": [
-    "M0-HANDOFF-002",
-    "M0-STATE-007"
+    "M0-STATE-012"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -47,7 +46,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -61,7 +60,7 @@
         "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/submit-open-handoff-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -78,7 +77,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "handoff",
         "offer",
@@ -92,7 +91,7 @@
         "actor-b"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/submit-open-handoff-1.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -109,7 +108,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "submission",
         "create",
@@ -121,7 +120,7 @@
         "case-run-1"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/submit-open-handoff-2.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -143,19 +142,22 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/submit-open-handoff-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/submit-open-handoff-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/submit-open-handoff-1.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/submit-open-handoff-1-stderr.txt"
     },
     {
       "process_exit": 40,
       "result_code": "CASE_E_TRANSITION",
       "stdout_json_file": "data/expected/generated/submit-open-handoff-2.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/submit-open-handoff-2-stderr.txt"
     }
   ],
   "expected_final_tree": [

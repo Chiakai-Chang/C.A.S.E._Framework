@@ -2,7 +2,7 @@
   "fixture_version": "1",
   "case_id": "corpus-red-capability-positive",
   "normative_rule_ids": [
-    "M0-CORPUS-008"
+    "M0-CORPUS-014"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -10,10 +10,10 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
-        "corpus-red-capability"
+        "corpus-red-capability-positive"
       ],
       "stdin_mode": "none",
       "stdin_content_file": null,
@@ -38,7 +38,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/corpus-red-capability-positive-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

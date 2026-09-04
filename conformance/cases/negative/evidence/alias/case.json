@@ -2,25 +2,30 @@
   "fixture_version": "1",
   "case_id": "alias",
   "normative_rule_ids": [
-    "M0-CHECK-005",
-    "M0-STATE-004"
+    "M0-STATE-008"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
   ],
-  "initial_tree": [],
+  "initial_tree": [
+    {
+      "path": "artifacts/Evidence.txt",
+      "content_file": "data/proof.txt",
+      "sha256": "sha256:f6ed42a9d765eeb230a069bbc3d5dc346b2669594bb0b83cc6d14d5d967b8961"
+    }
+  ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-probe",
       "argv": [
         "@probe",
-        "case-alias"
+        "adapter-alias"
       ],
       "stdin_mode": "none",
       "stdin_content_file": null,
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
-        "CASE_ID_SEED": "case",
+        "CASE_ID_SEED": "probe",
         "CASE_PROCESS_PROFILE": "controlled-test",
         "CASE_PROCESS_PID": "1001",
         "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
@@ -38,10 +43,17 @@
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
-      "stdout_json_file": "data/expected/generated/alias-0.json",
-      "stderr": "empty"
+      "stdout_json_file": "data/expected/probe-ok.json",
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
-  "expected_final_tree": [],
+  "expected_final_tree": [
+    {
+      "path": "artifacts/Evidence.txt",
+      "presence": "present",
+      "sha256": "sha256:f6ed42a9d765eeb230a069bbc3d5dc346b2669594bb0b83cc6d14d5d967b8961"
+    }
+  ],
   "expected_derived_view_file": null
 }

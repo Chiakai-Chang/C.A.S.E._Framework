@@ -1,1 +1,1 @@
-{"ok":false,"command":"evidence.add","code":"CASE_E_ACTOR","message":"The active run does not authorize this evidence mutation","data":null,"remediation":null}
+{"ok":false,"command":"handoff.offer","code":"CASE_E_ACTOR","message":"Only the active run can offer a handoff","data":null,"remediation":null}

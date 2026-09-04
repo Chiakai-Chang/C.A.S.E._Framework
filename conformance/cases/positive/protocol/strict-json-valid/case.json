@@ -14,7 +14,7 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "probe",
+      "actor_label": "trace-probe",
       "argv": [
         "@probe",
         "strict-json-valid"
@@ -42,7 +42,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/probe-ok.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

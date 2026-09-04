@@ -247,6 +247,21 @@ test("check is read-only and reports a changed artifact with stable data", async
   assert.deepEqual(await readFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json")), before);
 });
 
+test("check reports an unreferenced immutable envelope without applying it", async (t) => {
+  const { root, ports } = await fixture(t);
+  const orphan = join(root, ".case-agent", "dossiers", "dossier-a", "handoffs", "handoff-orphan.json");
+  await writeFile(orphan, "{}\n", { flag: "wx" });
+  const before = await readFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json"));
+
+  const result = await checkDossier({ dossier_id: "dossier-a" }, ports);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.data.stable_warning_codes.includes("CASE_L_ORPHAN_ENVELOPE"), true);
+  assert.equal((await ports.store.loadDossier("dossier-a")).current_handoff_id, null);
+  assert.deepEqual(await readFile(join(root, ".case-agent", "dossiers", "dossier-a", "dossier.json")), before);
+});
+
 test("check fails the observation closed when the opened handle cannot be closed", async (t) => {
   const { root, ports, snapshot } = await fixture(t);
   await mkdir(join(root, "artifacts"));
@@ -347,6 +362,7 @@ test("check rejects injected linked local evidence without opening through it", 
   const directory = (device: bigint, inode: bigint): PathInfo => ({
     device,
     inode,
+    hardLinkCount: 1n,
     isDirectory: () => true,
     isFile: () => false,
     isSymbolicLink: () => false,
@@ -355,6 +371,7 @@ test("check rejects injected linked local evidence without opening through it", 
   const link: PathInfo = {
     device: 1n,
     inode: 3n,
+    hardLinkCount: 1n,
     isDirectory: () => false,
     isFile: () => true,
     isSymbolicLink: () => true,

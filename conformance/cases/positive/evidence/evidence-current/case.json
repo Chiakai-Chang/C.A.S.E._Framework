@@ -3,11 +3,28 @@
   "case_id": "evidence-current",
   "normative_rule_ids": [
     "M0-CHECK-001",
+    "M0-CHECK-003",
     "M0-CHECK-004",
     "M0-CHECK-005",
+    "M0-CHECK-006",
+    "M0-CLI-005",
+    "M0-CLI-008",
+    "M0-CLI-009",
+    "M0-MUTATION-001",
+    "M0-MUTATION-002",
+    "M0-MUTATION-003",
+    "M0-MUTATION-004",
+    "M0-MUTATION-006",
+    "M0-MUTATION-009",
+    "M0-MUTATION-010",
+    "M0-MUTATION-011",
+    "M0-MUTATION-012",
+    "M0-MUTATION-013",
+    "M0-SCALAR-017",
+    "M0-SOURCE-004",
     "M0-STATE-003",
     "M0-STATE-004",
-    "M0-STATE-006",
+    "M0-STATE-008",
     "M0-STATUS-002"
   ],
   "applicable_platform_profiles": [
@@ -52,7 +69,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "evidence",
         "add",
@@ -66,7 +83,7 @@
         "{\"kind\":\"file\",\"criterion_ids\":[\"criterion-a\"],\"freshness\":\"recompute_on_check\",\"limitations\":[],\"location\":{\"repository_relative_path\":\"artifact.txt\"}}"
       ],
       "stdin_mode": "interactive_script",
-      "stdin_content_file": "data/stdin/confirm-basis.txt",
+      "stdin_content_file": "data/interactive/evidence-current-0.json",
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "case",
@@ -83,7 +100,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -114,13 +131,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/evidence-current-0.json",
-      "stderr": "empty"
+      "stderr": "exact",
+      "stderr_file": "data/prompts/evidence-current-0-stderr.txt"
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/evidence-current-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [
@@ -148,6 +167,11 @@
       "path": ".case-agent/locks/.keep",
       "presence": "present",
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".case-agent/locks/case-dossier-1.lock",
+      "presence": "absent",
+      "sha256": null
     },
     {
       "path": ".case-agent/manifest.json",

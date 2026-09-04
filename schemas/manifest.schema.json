@@ -8,7 +8,7 @@
     "protocol": { "const": "case-agent" },
     "protocol_version": { "const": "0.1.0-preview" },
     "schema_dialect": { "const": "https://json-schema.org/draft/2020-12/schema" },
-    "repository_id": { "type": "string" },
+    "repository_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
     "created_at": { "$ref": "definitions.schema.json#/$defs/timestamp" }
   }
 }

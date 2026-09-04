@@ -1,0 +1,5 @@
+Current view: {"dossier_id":"case-dossier-1","title":"Release integrity","objective":"Keep artifact current","scope":null,"constraints":null,"active_run":{"run_id":"case-run-1","actor_id":"actor-a","started_by_handoff_id":null},"state_revision":"2","state_digest":"sha256:5acf617b1e2f1ce599d37b31fcac336cc02c7f3b477bc2c10c899a33f6b8d592","criterion_results":[{"criterion_id":"criterion-a","status":"mechanically_satisfied","supporting_evidence_ids":["evidence-op-evidence"]}],"evidence_gaps":[],"current_checks":"passed","review":"working","acceptance":"pending","handoff":"offered","recommended_next_action":"CASE_NEXT_ACCEPT_HANDOFF","unresolved_warnings":[]}
+Proposed transition: {"command":"submission.create","operation_id":"op-submit"}
+Confirm this exact basis.
+Type exactly: CONFIRM THIS BASIS
+> 

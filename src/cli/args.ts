@@ -3,6 +3,7 @@ import { parseGovernedJson, type JsonValue } from "../protocol/json.js";
 import { failure, success, type ResultEnvelope } from "../protocol/result.js";
 import { isDigest, isRevision, type Digest, type Revision } from "../protocol/types.js";
 import type { AcceptanceCriterion, Freshness } from "../protocol/types.js";
+import { validateLexicalEvidencePath } from "../storage/paths.js";
 
 interface CliBase { readonly json: boolean; readonly command: string }
 interface Basis { readonly expected_revision: Revision; readonly expected_state_digest: Digest }
@@ -121,8 +122,11 @@ function parseEvidence(source: string): EvidenceInput {
   if (criterion_ids.length === 0 || !criterion_ids.every(safeOpaqueValue) || new Set(criterion_ids).size !== criterion_ids.length) throw new Error("invalid criterion ID");
   if (locationKey === "repository_relative_path") {
     const path = location[locationKey]!;
-    const parts = path.split("/");
-    if (path.includes("\\") || path.startsWith("/") || /^[A-Za-z]:/u.test(path) || path.startsWith("//") || parts.some((part) => part === "" || part === "." || part === "..")) throw new Error("unsafe evidence path");
+    try {
+      validateLexicalEvidencePath(path);
+    } catch {
+      throw new Error("unsafe evidence path");
+    }
   }
   const limitations = stringArray(value.limitations);
   if (value.kind === "file" || value.kind === "command_result") {

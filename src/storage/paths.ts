@@ -12,6 +12,7 @@ import { promisify } from "node:util";
 export interface PathInfo {
   readonly device: bigint;
   readonly inode: bigint;
+  readonly hardLinkCount: bigint;
   isDirectory(): boolean;
   isFile(): boolean;
   isSymbolicLink(): boolean;
@@ -39,6 +40,7 @@ function pathInfo(stats: Awaited<ReturnType<typeof lstat>>): PathInfo {
   return {
     device: BigInt(stats.dev),
     inode: BigInt(stats.ino),
+    hardLinkCount: BigInt(stats.nlink),
     isDirectory: () => stats.isDirectory(),
     isFile: () => stats.isFile(),
     isSymbolicLink: () => stats.isSymbolicLink(),
@@ -179,7 +181,7 @@ function evidenceError(reason: string): Error {
   return new Error(`CASE_E_EVIDENCE: ${reason}`);
 }
 
-function validateLexicalEvidencePath(lexicalPath: string): readonly string[] {
+export function validateLexicalEvidencePath(lexicalPath: string): readonly string[] {
   if (lexicalPath.length === 0) throw evidenceError("path is empty");
   if (lexicalPath.includes("\0")) throw evidenceError("path contains NUL");
   if (lexicalPath.includes("\\")) throw evidenceError("backslashes are forbidden");
@@ -190,6 +192,15 @@ function validateLexicalEvidencePath(lexicalPath: string): readonly string[] {
   const segments = lexicalPath.split("/");
   if (segments.some((segment) => segment.length === 0 || segment === "." || segment === "..")) {
     throw evidenceError("path contains a forbidden segment");
+  }
+  if (segments.some((segment) => segment.includes(":"))) {
+    throw evidenceError("alternate data stream spellings are forbidden");
+  }
+  if (segments.some((segment) => /[ .]$/u.test(segment))) {
+    throw evidenceError("trailing dot or space aliases are forbidden");
+  }
+  if (segments.some((segment) => /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu.test(segment))) {
+    throw evidenceError("device aliases are forbidden");
   }
   return segments;
 }
@@ -240,7 +251,8 @@ export async function resolveEvidencePath(
     } catch {
       throw evidenceError("path parent is unavailable");
     }
-    if (!names.some((entry) => entry.name === segment)) {
+    const foldedMatches = names.filter((entry) => entry.name.toLowerCase() === segment.toLowerCase());
+    if (foldedMatches.length !== 1 || foldedMatches[0]!.name !== segment) {
       throw evidenceError("path spelling does not resolve exactly");
     }
 
@@ -260,18 +272,20 @@ export async function resolveEvidencePath(
       continue;
     }
     if (!candidateInfo.isFile()) throw evidenceError("final path is not a regular file");
+    if (candidateInfo.hardLinkCount !== 1n) throw evidenceError("hard-linked file aliases are forbidden");
 
     let handle: OpenedFile | undefined;
     try {
       handle = await fs.openRead(candidate);
       const openedInfo = await handle.stat();
-      if (!openedInfo.isFile() || isLinkOrReparse(openedInfo) || !sameIdentity(candidateInfo, openedInfo)) {
+      if (!openedInfo.isFile() || openedInfo.hardLinkCount !== 1n
+        || isLinkOrReparse(openedInfo) || !sameIdentity(candidateInfo, openedInfo)) {
         throw evidenceError("file identity changed while opening");
       }
       const canonicalFinal = await fs.realpath(candidate);
       if (!isContained(rootPath, canonicalFinal)) throw evidenceError("resolved path escapes the repository");
       const afterOpen = await fs.lstat(candidate);
-      if (isLinkOrReparse(afterOpen) || !sameIdentity(openedInfo, afterOpen)) {
+      if (afterOpen.hardLinkCount !== 1n || isLinkOrReparse(afterOpen) || !sameIdentity(openedInfo, afterOpen)) {
         throw evidenceError("file identity changed during validation");
       }
       return { handle, repository_relative_path: segments.join("/") };

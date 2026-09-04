@@ -3,8 +3,7 @@
   "case_id": "init-partial",
   "normative_rule_ids": [
     "M0-INIT-002",
-    "M0-INIT-003",
-    "M0-INIT-006"
+    "M0-INIT-003"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -18,7 +17,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "init",
@@ -48,7 +47,8 @@
       "process_exit": 10,
       "result_code": "CASE_E_NAMESPACE_COLLISION",
       "stdout_json_file": "data/expected/generated/init-partial-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

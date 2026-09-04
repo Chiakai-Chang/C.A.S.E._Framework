@@ -1,1 +1,1 @@
-{"ok":false,"command":"evidence.add","code":"CASE_E_HUMAN_CONFIRMATION","message":"Interactive basis confirmation was not recorded","data":null,"remediation":null}
+ERROR CASE_E_HUMAN_CONFIRMATION: Interactive basis confirmation was not recorded

@@ -178,6 +178,16 @@ test("fails closed at after_envelope_create and leaves the orphan without author
   assert.equal((await readFile(join(dossier, "handoffs", "handoff-op-envelope.json"), "utf8")).includes("actor-b"), true);
 });
 
+test("after_temp_open injects before the first byte is written", async (t) => {
+  const root = await mkdtemp(join(process.cwd(), ".tmp-open-timing-"));
+  t.after(async () => rm(root, { recursive: true, force: true }));
+  const fs = controlledAtomicFs(root, "after_temp_open");
+
+  await assert.rejects(fs.createOnce("snapshot.tmp-open", Buffer.from("must-not-be-written")));
+
+  assert.deepEqual(await readFile(join(root, "snapshot.tmp-open")), Buffer.alloc(0));
+});
+
 test("an orphan retry reuses persisted envelope values without regenerating volatile fields", async (t) => {
   const { root, store, ports, initial } = await fixture(t, "after_envelope_create");
   const governed = request(initial, "op-envelope", digestProjection({ to_actor_id: "actor-b" }));

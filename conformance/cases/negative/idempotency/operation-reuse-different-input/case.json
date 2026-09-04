@@ -3,7 +3,9 @@
   "case_id": "operation-reuse-different-input",
   "normative_rule_ids": [
     "M0-MUTATION-005",
-    "M0-SCALAR-002"
+    "M0-MUTATION-009",
+    "M0-MUTATION-015",
+    "M0-SCALAR-009"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -47,7 +49,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -83,7 +85,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -124,13 +126,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/operation-reuse-different-input-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 30,
       "result_code": "CASE_E_CONFLICT",
       "stdout_json_file": "data/expected/generated/operation-reuse-different-input-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

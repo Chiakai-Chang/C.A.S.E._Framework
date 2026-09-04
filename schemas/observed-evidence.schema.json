@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "required": ["dossier_id", "content_digest", "evidence_results"],
   "properties": {
-    "dossier_id": { "type": "string" },
+    "dossier_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
     "content_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
     "evidence_results": {
       "type": "array",
@@ -14,7 +14,7 @@
         "additionalProperties": false,
         "required": ["evidence_id", "status", "observed_artifact_digest", "observed_artifact_size", "stable_limitation_codes"],
         "properties": {
-          "evidence_id": { "type": "string" },
+          "evidence_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
           "status": { "enum": ["current", "missing", "empty", "changed", "unsafe", "human_review_required"] },
           "observed_artifact_digest": {
             "oneOf": [

@@ -2,9 +2,10 @@
   "fixture_version": "1",
   "case_id": "fault-after-snapshot-replace",
   "normative_rule_ids": [
-    "M0-MUTATION-003",
+    "M0-ENVELOPE-007",
     "M0-MUTATION-004",
-    "M0-RELEASE-005"
+    "M0-MUTATION-012",
+    "M0-MUTATION-013"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -48,7 +49,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -89,7 +90,8 @@
       "process_exit": 30,
       "result_code": "CASE_E_RECOVERY_REQUIRED",
       "stdout_json_file": "data/expected/generated/fault-after-snapshot-replace-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

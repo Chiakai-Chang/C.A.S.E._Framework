@@ -2,9 +2,7 @@
   "fixture_version": "1",
   "case_id": "production-windows-unsupported",
   "normative_rule_ids": [
-    "M0-INIT-007",
-    "M0-PLATFORM-002",
-    "M0-PLATFORM-004"
+    "M0-PLATFORM-005"
   ],
   "applicable_platform_profiles": [
     "production-windows-unsupported"
@@ -12,17 +10,19 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "probe",
+      "actor_label": "trace-probe",
       "argv": [
-        "@probe",
-        "platform-boundary"
+        "--json",
+        "init",
+        "--operation",
+        "op-init"
       ],
       "stdin_mode": "none",
       "stdin_content_file": null,
       "fixed_environment": {
         "CASE_CLOCK": "2026-09-04T03:02:01Z",
         "CASE_ID_SEED": "probe",
-        "CASE_PROCESS_PROFILE": "controlled-test",
+        "CASE_PROCESS_PROFILE": "production-windows-unsupported",
         "CASE_PROCESS_PID": "1001",
         "CASE_PROCESS_STARTED_AT": "2026-09-04T03:00:00Z",
         "CASE_PROCESS_STATUS": "terminated",
@@ -37,10 +37,11 @@
   ],
   "expected": [
     {
-      "process_exit": 0,
-      "result_code": "CASE_OK",
-      "stdout_json_file": "data/expected/probe-ok.json",
-      "stderr": "empty"
+      "process_exit": 10,
+      "result_code": "CASE_E_UNSUPPORTED_PROFILE",
+      "stdout_json_file": "data/expected/production-windows-unsupported.json",
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

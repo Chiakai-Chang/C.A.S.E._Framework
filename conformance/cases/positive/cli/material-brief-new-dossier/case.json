@@ -2,7 +2,8 @@
   "fixture_version": "1",
   "case_id": "material-brief-new-dossier",
   "normative_rule_ids": [
-    "M0-STATUS-005"
+    "M0-SCALAR-011",
+    "M0-STATUS-011"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -26,7 +27,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -60,7 +61,7 @@
       "fault_point": null
     },
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "dossier",
@@ -99,13 +100,15 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/material-brief-new-dossier-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     },
     {
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/material-brief-new-dossier-1.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

@@ -1,1 +1,11 @@
-{"ok":true,"command":"evidence.add","code":"CASE_OK","message":"Governed snapshot mutation committed","data":{"snapshot":{"dossier_id":"case-dossier-1","title":"Release integrity","objective":"Keep artifact current","scope":{"in":["artifact.txt"],"out":["deployment"]},"constraints":["local-only"],"acceptance_criteria":[{"criterion_id":"criterion-a","statement":"Artifact digest matches","verification":"mechanical"}],"state_revision":"4","state_digest":"sha256:fcbb32b8fd0111b8b4359f37c2c6c7c686d3f6b142c28720e507c866a39ae405","last_operation":{"operation_id":"op-later-work","input_digest":"sha256:c9b66458d4e7947446959638a79925aa9c71580da5b1d2696c5f20618857f95d","basis_revision":"3","resulting_revision":"4"},"active_run":{"run_id":"case-run-2","actor_id":"actor-b","started_by_handoff_id":"handoff-op-offer"},"evidence":[{"evidence_id":"evidence-op-evidence","criterion_ids":["criterion-a"],"captured_at":"2026-09-04T03:02:01Z","freshness":"recompute_on_check","limitations":[],"kind":"file","location":{"repository_relative_path":"artifact.txt"},"artifact_digest":"sha256:2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf","artifact_size":"3"},{"evidence_id":"evidence-op-later-work","criterion_ids":["criterion-a"],"captured_at":"2026-09-04T03:02:01Z","freshness":"human_review","limitations":["not-local"],"kind":"external_reference","location":{"uri":"https://example.invalid/evidence"}}],"current_handoff_id":"handoff-op-offer","current_submission_id":null,"current_decision_id":null},"evidence":{"evidence_id":"evidence-op-later-work","criterion_ids":["criterion-a"],"captured_at":"2026-09-04T03:02:01Z","freshness":"human_review","limitations":["not-local"],"kind":"external_reference","location":{"uri":"https://example.invalid/evidence"}}},"remediation":null}
+OK CASE_OK: Governed snapshot mutation committed
+dossier ID: case-dossier-1
+title: Release integrity
+objective: Keep artifact current
+active writer: actor-b
+active run: case-run-2
+started by handoff: handoff-op-offer
+revision: 4
+state digest: sha256:fcbb32b8fd01…
+evidence ID: evidence-op-later-work
+current handoff ID: handoff-op-offer

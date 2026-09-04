@@ -1,0 +1,9 @@
+OK CASE_OK: Recorded Human Rejection
+dossier ID: case-dossier-1
+submission ID: submission-op-submit
+submission digest: sha256:161d38370434dbbfb48a693574c48cdc08849362f3132e91c56e001c80fba731
+decision ID: decision-op-rejection
+reviewer: reviewer-a
+operation ID: op-rejection
+decision: rejected
+comment: Changes required

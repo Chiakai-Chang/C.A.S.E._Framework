@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -36,6 +36,11 @@ const unsafePaths = [
   "a/./b",
   "a/../b",
   "a/\0/b",
+  "artifacts/Evidence.txt:alternate",
+  "CON",
+  "artifacts/aux.txt",
+  "artifacts/Evidence.txt.",
+  "artifacts/Evidence.txt ",
 ] as const;
 
 for (const unsafePath of unsafePaths) {
@@ -68,6 +73,31 @@ test("rejects a case-insensitive filesystem alias", async (t) => {
     resolveEvidencePath(root, "artifacts/evidence.txt"),
     /CASE_E_EVIDENCE/,
   );
+});
+
+test("rejects an adapter-reported case-fold alias even when the requested spelling exists", async (t) => {
+  const root = await createTree(t);
+  const ambiguous: PathInspectionPort = {
+    ...nodePathInspection,
+    async listDirectory(path) {
+      const entries = await nodePathInspection.listDirectory(path);
+      return path.endsWith("artifacts")
+        ? [...entries, { name: "evidence.txt" }]
+        : entries;
+    },
+  };
+
+  await assert.rejects(
+    resolveEvidencePath(root, "artifacts/Evidence.txt", ambiguous),
+    /CASE_E_EVIDENCE/,
+  );
+});
+
+test("rejects a regular-file hardlink alias", async (t) => {
+  const root = await createTree(t);
+  await link(join(root, "artifacts", "Evidence.txt"), join(root, "artifacts", "Evidence-alias.txt"));
+
+  await assert.rejects(resolveEvidencePath(root, "artifacts/Evidence.txt"), /CASE_E_EVIDENCE/);
 });
 
 test("rejects a directory as final evidence", async (t) => {

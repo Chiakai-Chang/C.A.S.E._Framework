@@ -1,2 +1,4 @@
 conformance/** text eol=lf
 conformance/**/*.bin -text
+# Exact terminal prompt fixtures end with the intentional cursor bytes "> ".
+conformance/data/prompts/*.txt -whitespace

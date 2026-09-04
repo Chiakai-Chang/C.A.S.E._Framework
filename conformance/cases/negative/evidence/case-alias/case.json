@@ -2,8 +2,7 @@
   "fixture_version": "1",
   "case_id": "case-alias",
   "normative_rule_ids": [
-    "M0-CHECK-005",
-    "M0-STATE-004"
+    "M0-STATE-008"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -17,7 +16,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "probe",
+      "actor_label": "trace-probe",
       "argv": [
         "@probe",
         "case-alias"
@@ -45,7 +44,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/probe-ok.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

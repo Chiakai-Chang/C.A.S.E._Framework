@@ -5,14 +5,14 @@
   "additionalProperties": false,
   "required": ["handoff_id", "dossier_id", "from_run_id", "to_actor_id", "basis_revision", "basis_state_digest", "published_revision", "offered_content_digest", "created_operation_id"],
   "properties": {
-    "handoff_id": { "type": "string" },
-    "dossier_id": { "type": "string" },
-    "from_run_id": { "type": "string" },
-    "to_actor_id": { "type": "string" },
+    "handoff_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+    "dossier_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+    "from_run_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+    "to_actor_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
     "basis_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
     "basis_state_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
     "published_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
     "offered_content_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
-    "created_operation_id": { "type": "string" }
+    "created_operation_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" }
   }
 }

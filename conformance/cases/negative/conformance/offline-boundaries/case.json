@@ -2,13 +2,8 @@
   "fixture_version": "1",
   "case_id": "offline-boundaries",
   "normative_rule_ids": [
-    "M0-OFFLINE-001",
-    "M0-OFFLINE-002",
     "M0-OFFLINE-003",
-    "M0-OFFLINE-004",
-    "M0-OFFLINE-005",
-    "M0-OFFLINE-006",
-    "M0-OFFLINE-007"
+    "M0-OFFLINE-009"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -16,10 +11,10 @@
   "initial_tree": [],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "@probe",
-        "offline-boundaries"
+        "offline-boundaries-negative"
       ],
       "stdin_mode": "none",
       "stdin_content_file": null,
@@ -44,7 +39,8 @@
       "process_exit": 0,
       "result_code": "CASE_OK",
       "stdout_json_file": "data/expected/generated/offline-boundaries-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [],

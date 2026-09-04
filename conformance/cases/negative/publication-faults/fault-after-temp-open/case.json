@@ -2,9 +2,8 @@
   "fixture_version": "1",
   "case_id": "fault-after-temp-open",
   "normative_rule_ids": [
-    "M0-MUTATION-003",
-    "M0-MUTATION-004",
-    "M0-RELEASE-005"
+    "M0-CORPUS-008",
+    "M0-MUTATION-003"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -48,7 +47,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -89,14 +88,15 @@
       "process_exit": 70,
       "result_code": "CASE_E_INTERNAL",
       "stdout_json_file": "data/expected/generated/fault-after-temp-open-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [
     {
       "path": ".case-agent/dossiers/case-dossier-1/.dossier.json.tmp-temp-case-guard-1",
       "presence": "present",
-      "sha256": "sha256:22c50e072a7fb480107aac8514a7d9813bf15e1b14e6d43bfdf5499de59e68b1"
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "path": ".case-agent/dossiers/case-dossier-1/decisions/.keep",

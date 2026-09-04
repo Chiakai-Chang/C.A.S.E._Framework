@@ -2,8 +2,7 @@
   "fixture_version": "1",
   "case_id": "evidence-missing",
   "normative_rule_ids": [
-    "M0-CHECK-005",
-    "M0-STATE-004"
+    "M0-CHECK-016"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -42,7 +41,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -83,7 +82,8 @@
       "process_exit": 20,
       "result_code": "CASE_E_EVIDENCE",
       "stdout_json_file": "data/expected/generated/evidence-missing-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

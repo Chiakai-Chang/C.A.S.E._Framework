@@ -5,9 +5,9 @@
   "additionalProperties": false,
   "required": ["submission_id", "dossier_id", "submitting_run_id", "basis_revision", "basis_state_digest", "published_revision", "content_digest", "observed_evidence_digest", "checks_digest", "created_at", "created_operation_id", "submission_digest"],
   "properties": {
-    "submission_id": { "type": "string" },
-    "dossier_id": { "type": "string" },
-    "submitting_run_id": { "type": "string" },
+    "submission_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+    "dossier_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
+    "submitting_run_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
     "basis_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
     "basis_state_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
     "published_revision": { "$ref": "definitions.schema.json#/$defs/decimal_string" },
@@ -15,7 +15,7 @@
     "observed_evidence_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
     "checks_digest": { "$ref": "definitions.schema.json#/$defs/digest" },
     "created_at": { "$ref": "definitions.schema.json#/$defs/timestamp" },
-    "created_operation_id": { "type": "string" },
+    "created_operation_id": { "$ref": "definitions.schema.json#/$defs/opaque_id" },
     "submission_digest": { "$ref": "definitions.schema.json#/$defs/digest" }
   }
 }

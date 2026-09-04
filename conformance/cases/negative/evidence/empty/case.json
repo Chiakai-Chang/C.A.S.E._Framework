@@ -2,8 +2,7 @@
   "fixture_version": "1",
   "case_id": "empty",
   "normative_rule_ids": [
-    "M0-CHECK-005",
-    "M0-STATE-003"
+    "M0-CHECK-015"
   ],
   "applicable_platform_profiles": [
     "controlled-test"
@@ -47,7 +46,7 @@
   ],
   "invocations": [
     {
-      "actor_label": "actor-a",
+      "actor_label": "trace-main",
       "argv": [
         "--json",
         "evidence",
@@ -88,7 +87,8 @@
       "process_exit": 20,
       "result_code": "CASE_E_EVIDENCE",
       "stdout_json_file": "data/expected/generated/empty-0.json",
-      "stderr": "empty"
+      "stderr": "empty",
+      "stderr_file": null
     }
   ],
   "expected_final_tree": [

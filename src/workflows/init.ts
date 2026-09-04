@@ -22,7 +22,17 @@ export interface RepositoryFileSystemPort extends PathInspectionPort {
 
 export type InitializationTargetClassification =
   | { readonly supported: true; readonly profile: string }
-  | { readonly supported: false; readonly reason: "unclassified" | "unc" | "reparse-uncertain" | "non-local" };
+  | { readonly supported: false; readonly reason:
+      | "unclassified"
+      | "nested-repository"
+      | "submodule"
+      | "linked-worktree"
+      | "case-alias"
+      | "unc"
+      | "cloud-sync"
+      | "active-writer"
+      | "reparse-uncertain"
+      | "non-local" };
 
 export const nodeRepositoryFileSystem: RepositoryFileSystemPort = {
   ...nodePathInspection,
