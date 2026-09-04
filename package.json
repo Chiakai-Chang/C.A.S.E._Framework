@@ -1,0 +1,20 @@
+{
+  "name": "case-agent",
+  "version": "0.1.0-preview",
+  "private": true,
+  "type": "module",
+  "bin": { "case-agent": "dist/src/cli/main.js" },
+  "files": ["dist/src", "schemas", "README.md"],
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": { "ajv": "8.20.0" },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "typescript": "7.0.2"
+  }
+}
