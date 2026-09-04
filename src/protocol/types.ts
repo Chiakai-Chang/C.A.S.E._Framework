@@ -187,7 +187,18 @@ export interface ObservedEvidenceProjection {
   evidence_results: ObservedEvidenceResult[];
 }
 
+/** Closed protocol check stages used only to order invariant observations. */
+export type CheckStage =
+  | "parse"
+  | "schema"
+  | "cross_file"
+  | "evidence_safety"
+  | "evidence_integrity"
+  | "envelope_integrity"
+  | "derived_status";
+
 export interface InvariantResult {
+  stage: CheckStage;
   code: string;
   status: "passed" | "failed";
 }

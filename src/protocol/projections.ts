@@ -1,6 +1,7 @@
 import type { JsonValue } from "./json.js";
 import type {
   ChecksProjection,
+  CheckStage,
   DossierSnapshot,
   EvidenceRecord,
   ObservedEvidenceProjection,
@@ -15,6 +16,16 @@ function compareAscii(left: string, right: string): number {
   }
   return left.length - right.length;
 }
+
+const CHECK_STAGE_RANK: Readonly<Record<CheckStage, number>> = {
+  parse: 0,
+  schema: 1,
+  cross_file: 2,
+  evidence_safety: 3,
+  evidence_integrity: 4,
+  envelope_integrity: 5,
+  derived_status: 6,
+};
 
 function sortedCodes(codes: readonly string[]): string[] {
   return Array.from(codes).sort(compareAscii);
@@ -167,7 +178,7 @@ export function projectChecks(projection: ChecksProjection): JsonValue {
     content_digest: projection.content_digest,
     observed_evidence_digest: projection.observed_evidence_digest,
     invariant_results: Array.from(projection.invariant_results)
-      .sort((left, right) => compareAscii(left.code, right.code))
+      .sort((left, right) => CHECK_STAGE_RANK[left.stage] - CHECK_STAGE_RANK[right.stage] || compareAscii(left.code, right.code))
       .map((result) => ({ code: result.code, status: result.status } satisfies JsonValue)),
     criterion_results: projection.criterion_results.map((result) => ({
       criterion_id: result.criterion_id,
