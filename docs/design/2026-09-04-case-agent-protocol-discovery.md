@@ -516,3 +516,26 @@ The design is recorded in [M0 Local Dossier Integrity Design](../superpowers/spe
 This checkpoint also corrects an earlier assumption: atomic replacement plus expected revision and digest checks is not by itself compare-and-swap. Exactly-one-success among conforming competing writers additionally requires an exclusive dossier writer guard acquired before rereading and checking preconditions. The guarantee is limited to one machine, one supported local filesystem, and cooperating implementations.
 
 Skill packaging, host connection, adapters, MECE deliberation, operation receipts, Pi repair, MCP, hooks, telemetry, multi-machine coordination, and weak-model optimization remain outside M0. They cannot re-enter the core until the deterministic oracle demonstrates outcome-level value over the Markdown baseline.
+
+## 22. M0 specification review and closure — 2026-09-04
+
+The approved M0 design received separate standards, approved-scope, implementation, first-user, conformance, and Windows-path reviews. Review findings were treated as technical hypotheses and checked against the project goal before revision.
+
+The review changed the specification in these material ways:
+
+- reliability improvement is stated as a hypothesis to test, not an achieved result;
+- ambiguous `owner` language was removed in favor of recorded process-identity evidence;
+- non-essential abandonment, archive, reopen, purge, and handoff-cancellation behavior was removed from M0;
+- `content`, observed-evidence, checks, state, and submission digest projections now have separate canonical meanings;
+- acceptance criteria distinguish mechanical verification from recorded human review, with explicit evidence-combination rules;
+- file evidence uses canonical repository-relative paths without case folding or implicit path selection;
+- each dossier-scoped command requires an explicit dossier ID;
+- human-mode mutations bind confirmation to the exact displayed revision and digest rather than silently refreshing intent;
+- an accepted handoff is linked to the resulting run through `started_by_handoff_id`;
+- a decision may target only the current submission;
+- governed content changes retain prior submission and decision references so their status becomes stale rather than reverting to pending;
+- conformance cases use a closed fixture envelope with deterministic IDs, clocks, invocation data, expected results, and filesystem state.
+
+Two additional review rounds checked the revisions. The standards review, specification review, and stakeholder journey review reported no remaining known blocker within the approved M0 scope.
+
+This closure means the design is ready for implementation planning. It does not prove the protocol works, that the reference implementation will conform, or that C.A.S.E. improves outcomes over Markdown. Those claims remain gated by schemas, executable fixtures, fault injection, cross-profile results, and the preregistered baseline comparison.

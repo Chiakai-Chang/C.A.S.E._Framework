@@ -10,7 +10,7 @@ target_release: 0.1.0-preview
 
 ## 1. Goal
 
-M0 proves that a small, local, file-native protocol can detect stale handoffs, stale human acceptance, conflicting writers, and changed evidence more reliably than an ordinary Markdown handoff, without requiring a multi-agent runtime or a large always-on prompt.
+M0 tests whether a small, local, file-native protocol can detect stale handoffs, stale human acceptance, conflicting writers, and changed evidence more reliably than an ordinary Markdown handoff, without requiring a multi-agent runtime or a large always-on prompt.
 
 The user-visible promise is deliberately narrow:
 
@@ -22,7 +22,7 @@ M0 is a protocol and deterministic-tool milestone. It is not yet a claim that C.
 
 The project objective is to let human-directed coding agents preserve, validate, and hand off work across limited contexts and different hosts while minimizing unnecessary cognitive and decision burden.
 
-M0 advances that objective by proving four properties that plain chat and informal Markdown do not reliably provide:
+M0 advances that objective only if evidence shows improvement in four target properties whose baseline behavior is first measured in plain chat and informal Markdown:
 
 1. stale handoff detection;
 2. stale acceptance detection;
@@ -59,6 +59,8 @@ The smallest alternative is a Markdown template plus Git. That alternative remai
 - multi-machine coordination, separate-clone synchronization, semantic merge, or network-filesystem locking;
 - authenticated identity, signatures, tamper-proof history, or complete audit trails;
 - durable multi-file transactions or guarantees across physical power loss;
+- dossier abandonment, archival, reopening, deletion, or purge;
+- explicit handoff cancellation history;
 - claims of enterprise readiness, weak-model support, or general reliability improvement.
 
 ## 4. Operating boundary
@@ -154,6 +156,8 @@ All protocol counters and revisions use restricted decimal strings. Protocol JSO
 - Security- and state-critical objects are closed. Unknown critical fields and unknown major versions fail closed.
 - JSON Schema `format`, `default`, and `examples` are not relied on as the sole validity or authorization mechanism.
 
+The implementation plan creates pinned root schemas for `manifest`, `dossier`, `handoff`, `submission`, `decision`, CLI result envelopes, checks projections, observed-evidence projections, and conformance cases. Shared scalar definitions may be referenced from one bundled definitions schema, but each governed file validates from one named root without network resolution.
+
 ### 8.3 Canonicalization
 
 Canonical bytes are UTF-8 bytes produced by RFC 8785 JSON Canonicalization Scheme over an explicitly defined digest projection.
@@ -166,18 +170,56 @@ JCS does not normalize Unicode. NFC and NFD text therefore remain distinct value
 
 ### 8.4 Digest projections
 
-The protocol defines four separate concepts:
+The protocol defines six separate concepts:
 
 - `state_revision`: compare-and-swap precondition for any governed mutation;
 - `state_digest`: digest of the named `dossier_state_projection`, containing every canonical field stored in `dossier.json` except `state_digest` itself;
 - `content_digest`: a pure function of governed data stored in `dossier.json`: objective, scope, constraints, acceptance criteria, and registered evidence records including their declared artifact digests;
+- `observed_evidence_digest`: digest of the named `observed_evidence_projection`, representing current deterministic observations without changing stored state;
+- `checks_digest`: digest of the named `checks_projection`, representing invariant and criterion results using stable protocol codes;
 - `submission_digest`: submission envelope projection containing dossier ID, content digest, observed evidence digest, checks digest, submitting run, and creation operation ID.
 
-The `dossier_state_projection` contains exactly: dossier ID, title, objective, scope, constraints, acceptance criteria, state revision, last-operation record, lifecycle, active run, evidence records, and the three current envelope IDs. It excludes only the stored `state_digest`. Implementations may not invent additional exclusions.
+The `dossier_state_projection` contains exactly: dossier ID, title, objective, scope, constraints, acceptance criteria, state revision, last-operation record, active run, evidence records, and the three current envelope IDs. It excludes only the stored `state_digest`. Implementations may not invent additional exclusions.
 
-Assignment, lock metadata, display timestamps, and orphan records do not alter `content_digest`. Filesystem observations never silently alter it either. A governed change to objective, scope, constraints, criteria, or a registered evidence record does alter it.
+Assignment, lock metadata, display timestamps, and orphan records do not alter `content_digest`. Filesystem observations never silently alter it either. In M0, title, objective, scope, constraints, and criteria are fixed at dossier creation; changing any of them requires a new dossier. Adding a registered evidence record changes `content_digest`.
 
 `check` separately computes an `observed_evidence_digest` from the ordered evidence records, their current mechanically observed status, and current bytes where applicable. An external artifact change therefore makes an existing submission and decision stale without silently changing `state_revision` or the stored `content_digest`.
+
+The `content_projection` contains exactly: dossier ID, objective, scope, constraints, acceptance criteria in stored order, and evidence records in stored order. Display title, active run, revisions, envelope pointers, observation results, and `captured_at` are excluded. Evidence records retain their declared artifact digest, size, freshness, kind, location, criterion IDs, and limitations; only `captured_at` is excluded.
+
+The `observed_evidence_projection` contains exactly:
+
+```text
+dossier_id
+content_digest
+evidence_results[] in dossier evidence order:
+  evidence_id
+  status: current | missing | empty | changed | unsafe | human_review_required
+  observed_artifact_digest: digest | null
+  observed_artifact_size: decimal string | null
+  stable_limitation_codes[] in ASCII lexical order
+```
+
+For `external_reference` and `human_observation`, status is `human_review_required` and both observed artifact fields are null. Absolute paths, platform error numbers, timestamps, localized messages, retry counts, and filesystem enumeration order are excluded.
+
+The `checks_projection` contains exactly:
+
+```text
+dossier_id
+content_digest
+observed_evidence_digest
+invariant_results[] in protocol-defined check-stage order, then ASCII code order:
+  code
+  status: passed | failed
+criterion_results[] in acceptance-criteria order:
+  criterion_id
+  status: mechanically_satisfied | human_review_required | failed
+  supporting_evidence_ids[] in dossier evidence order
+stable_warning_codes[] in ASCII lexical order
+verdict: passed | failed
+```
+
+The checks verdict is `failed` when any invariant fails, any mechanical criterion lacks current mechanical evidence, or any recorded-human criterion lacks linked evidence. `human_review_required` is not itself a mechanical failure and never asserts that the criterion is substantively satisfied. Revision, full state digest, envelope pointers, last-operation data, OS error text, absolute paths, timing, timestamps, localized messages, and diagnostics are excluded so a valid human decision does not invalidate the submission it references.
 
 ## 9. Minimal canonical state
 
@@ -202,7 +244,11 @@ objective
 scope.in[]
 scope.out[]
 constraints[]
-acceptance_criteria[]: { criterion_id, statement }
+acceptance_criteria[]: {
+  criterion_id,
+  statement,
+  verification: mechanical | recorded_human_review
+}
 state_revision
 state_digest
 last_operation: null | {
@@ -211,21 +257,23 @@ last_operation: null | {
   basis_revision,
   resulting_revision
 }
-lifecycle: open | abandoned | archived
-active_run: null | { run_id, actor_id }
+active_run: { run_id, actor_id, started_by_handoff_id: null | handoff ID }
 evidence[]: evidence record
 current_handoff_id: null | handoff ID
 current_submission_id: null | submission ID
 current_decision_id: null | decision ID
 ```
 
-An evidence record contains:
+An evidence record is a tagged shape containing:
 
 ```text
 evidence_id
 criterion_ids[]
 kind: file | command_result | external_reference | human_observation
-locator
+location:
+  file | command_result: { repository_relative_path }
+  external_reference: { uri }
+  human_observation: { statement }
 captured_at
 artifact_digest: required for file and captured command-result artifacts
 artifact_size: required when artifact_digest is present
@@ -233,7 +281,32 @@ freshness: immutable | recompute_on_check | human_review
 limitations[]
 ```
 
-M0 mechanically validates local file evidence. External references and human observations can be recorded but remain `human_review` and cannot alone satisfy a mechanically verifiable criterion.
+For `file` and `command_result`, `repository_relative_path` is a `/`-separated lexical path relative to the repository root bound by `manifest.json`. It rejects absolute paths, drive or UNC prefixes, backslashes, empty segments, `.` and `..`, NUL, symlinks, junctions, reparse-point escapes, and filesystem aliases. Lexical normalization never lowercases a path. The filesystem check separately proves root containment and exact segment resolution; ambiguity fails closed.
+
+M0 mechanically validates local `file` and captured `command_result` evidence. `external_reference` and `human_observation` remain human-review data and cannot satisfy a mechanical criterion.
+
+All acceptance criteria are conjunctive. A `mechanical` criterion is mechanically satisfied when at least one linked `file` or `command_result` evidence record is currently valid; multiple linked evidence records are alternatives, not an implicit AND expression. A `recorded_human_review` criterion requires at least one linked evidence record of any kind, is shown as `human_review_required`, and is never declared substantively true by mechanical checks.
+
+### 9.3 Submission envelope
+
+```text
+submission_id
+dossier_id
+submitting_run_id
+basis_revision
+basis_state_digest
+published_revision
+content_digest
+observed_evidence_digest
+checks_digest
+created_at
+created_operation_id
+submission_digest
+```
+
+`submission_digest` excludes only itself. `submission create` is legal only when checks verdict is `passed`, no unaccepted handoff is current, and the submitting run is active. The snapshot transition sets `current_submission_id` to this envelope, clears `current_decision_id`, and advances to `published_revision`.
+
+A submission remains current across its own later human decision because decision recording changes state but not submitted content, evidence observations, or checks. A governed content change retains the current submission and decision references so their derived status becomes stale instead of losing the fact that the earlier result was reviewed. A new submission replaces `current_submission_id` and clears `current_decision_id`. Beginning a handoff does not erase an existing submission or decision unless that operation also changes covered content. Historical envelopes remain immutable but are not current truth.
 
 ## 10. Derived status, not duplicated truth
 
@@ -249,13 +322,11 @@ handoff: none | offered | accepted | stale
 Invalid combinations are avoided by derivation:
 
 - `current_checks` is recomputed from canonical state and present evidence observations whenever `check`, `show`, or `submission create` needs it.
-- `ready_for_review` requires a current submission whose embedded checks, observed evidence, and covered content still match.
+- `ready_for_review` requires a referenced submission whose embedded checks, observed evidence, and covered content still match.
 - `accepted` requires a referenced acceptance decision whose submission digest is still current.
 - any covered-content change makes a referenced submission's embedded checks, an unaccepted handoff offer, and dependent decisions stale where their projections no longer match.
 - rejection returns the review view to `changes_requested`; a later submission is a new immutable envelope.
-- abandoning or archiving a dossier removes the active writer and prohibits ordinary work mutations.
-- reopening is not part of M0. A new dossier is created instead.
-- deletion and purge are not part of M0.
+- dossier abandonment, archival, reopening, deletion, and purge are not part of M0. A materially changed objective, scope, constraint, or criterion starts a new dossier.
 
 ## 11. Writer guard and governed mutation
 
@@ -275,7 +346,7 @@ Idempotency is scoped to `(dossier_id, basis_revision, operation_id)`. Before no
 
 A dossier lock records a random guard ID, the basis revision and digest, creation time, and the process-identity evidence defined by its declared platform profile. A lock older than a threshold is only `possibly_stale`; it is never automatically taken over.
 
-`guard recover` first obtains a separate create-exclusive recovery guard. While it exists, ordinary writer acquisition and any second recovery attempt fail visibly. The command then requires an interactive human to confirm recovery and uses the platform profile's declared process mechanism to establish that the recorded owner has terminated. If that mechanism is unavailable or inconclusive, recovery stops. Otherwise it quarantines the old lock, revalidates the snapshot, advances the snapshot revision through a guarded no-op mutation, and releases the recovery guard only after verification.
+`guard recover` first obtains a separate create-exclusive recovery guard. While it exists, ordinary writer acquisition and any second recovery attempt fail visibly. The command then requires an interactive human to confirm recovery and uses the platform profile's declared process mechanism to establish that the process identified by the recorded process-identity evidence has terminated. If that mechanism is unavailable or inconclusive, recovery stops. Otherwise it quarantines the old lock, revalidates the snapshot, advances the snapshot revision through a guarded no-op mutation, and releases the recovery guard only after verification.
 
 M0 does not claim safe recovery while the old writer may still be live: deleting or renaming a lock pathname cannot revoke a process that still holds an earlier handle. If termination cannot be established operationally, recovery stops with `CASE_E_RECOVERY_REQUIRED`. The exactly-one-writer guarantee resumes only after the old process is terminated and recovery completes.
 
@@ -317,12 +388,14 @@ status_basis: immutable offer data
 - `published_revision` is the deterministic next revision of the post-offer snapshot; the envelope never embeds a digest of a snapshot that references the same envelope;
 - creating the offer is the transition from the basis revision to the published revision and does not make the offer stale;
 - acceptance must name the intended actor, find the exact `published_revision`, match the offered content digest, active run, and `current_handoff_id`, and independently validate the current stored `state_digest` supplied as the command precondition;
-- successful acceptance creates a new run for the recipient and atomically changes `active_run` under the writer guard;
+- successful acceptance creates a new run for the recipient and atomically writes `active_run.actor_id`, the new `run_id`, and `started_by_handoff_id` under the writer guard;
 - the previous run loses write authority immediately after the snapshot update;
-- any governed mutation that invalidates the offer's state projection makes it stale;
+- before acceptance, any governed mutation other than publication of that offer which changes a required acceptance precondition makes the offer stale;
 - actor labels are recorded claims, not authenticated identities;
-- offer cancellation is permitted only by the active writer before acceptance; it clears `current_handoff_id`, after which the current handoff view is `none`. M0 preserves no canonical cancelled-handoff history.
-- after acceptance, the current handoff view remains `accepted` while the snapshot references that handoff and its resulting active run. Later ordinary work mutations do not retroactively make an accepted handoff stale; a later handoff replaces the current reference.
+- an unaccepted offer becomes stale when a later governed work mutation advances the snapshot; M0 has no explicit cancellation operation or cancellation history;
+- `accepted` is derived only when `current_handoff_id` matches `active_run.started_by_handoff_id`, the active actor equals the offer recipient, and the immutable offer remains valid;
+- successful acceptance is the terminal transition for that handoff and is thereafter evaluated only by the accepted-handoff derivation rule;
+- after acceptance, later ordinary work mutations do not retroactively make an accepted handoff stale; a later handoff replaces the current reference.
 
 ## 14. Checks and evidence semantics
 
@@ -362,6 +435,10 @@ created_operation_id
 identity_assurance: "recorded-interactive-claim"
 ```
 
+`criteria_reviewed` must equal the submitted dossier's complete criterion-ID list in canonical criterion order. Partial acceptance is not part of M0.
+
+A decision operation is legal only when its `submission_id` equals the snapshot's `current_submission_id` and its supplied submission digest matches that exact envelope. Attempting to decide an older or non-current submission fails with `CASE_E_CONFLICT` or `CASE_E_TRANSITION`, even if its content and evidence digests happen to equal the current submission.
+
 The reference CLI requires an interactive terminal, displays the exact submission digest and criteria, and asks for an explicit confirmation phrase. M0 provides no `--yes` or non-interactive acceptance path. Every decision invocation requires this flow, including recovery of an orphan decision envelope after interruption. In that case the CLI displays the recovered envelope and exact submission digest before it may update the snapshot pointer; the orphan's existence is never sufficient authorization.
 
 This is friction against accidental or casual agent self-approval, not strong authentication. A program controlling the terminal can still impersonate a reviewer. Output and documentation must consistently say **Recorded Human Acceptance**, never authenticated approval, attestation, or non-repudiation.
@@ -373,25 +450,26 @@ The initial command surface is:
 ```text
 case-agent init
 case-agent dossier create
-case-agent dossier show
-case-agent dossier check
-case-agent dossier abandon
-case-agent dossier archive
-case-agent evidence add
-case-agent submission create
-case-agent decision accept
-case-agent decision reject
-case-agent handoff offer
-case-agent handoff accept
-case-agent handoff cancel
-case-agent guard recover
+case-agent dossier show --dossier <dossier-id>
+case-agent dossier check --dossier <dossier-id>
+case-agent evidence add --dossier <dossier-id>
+case-agent submission create --dossier <dossier-id>
+case-agent decision accept --dossier <dossier-id>
+case-agent decision reject --dossier <dossier-id>
+case-agent handoff offer --dossier <dossier-id>
+case-agent handoff accept --dossier <dossier-id>
+case-agent guard recover --dossier <dossier-id>
 ```
 
-`dossier create` creates the initial active run for the recorded actor supplied by the human. `dossier abandon` is allowed only while open and clears the active run and current handoff. `dossier archive` is allowed only after a current acceptance or abandonment and makes the dossier read-only. M0 has no reopen transition.
+`dossier create` creates the initial active run for the recorded actor supplied by the human, with `started_by_handoff_id: null`.
 
-All mutating commands require an operation ID. All mutations to an existing dossier require expected revision and expected state digest. Human mode may obtain these from a just-displayed current view, but machine mode must provide them explicitly.
+Every dossier-scoped command requires `--dossier <dossier-id>`. Only repository-level initialization and dossier creation omit it. M0 has no implicit current, recent, or sole-dossier selection state.
 
-Human mode is the default. `--json` selects machine mode. With `--json`, every failure after process startup and argument decoding, including `CASE_E_INTERNAL`, writes exactly one valid result envelope to stdout. Human output is a rendering of the same structured result.
+All mutating commands require an operation ID. All mutations to an existing dossier require expected revision and expected state digest. Machine mode supplies the complete values explicitly.
+
+Human mode may omit them only when the same invocation first displays the complete basis revision, complete state digest, and intended transition and then obtains confirmation. After confirmation, the command acquires the writer guard and compares against that exact displayed basis. It never silently rebinds the user's intent to a newer snapshot; an intervening mutation returns `CASE_E_CONFLICT`.
+
+Human mode is the default. `--json` selects machine mode. Once the executable starts and detects `--json`, every result—including argument and usage errors and `CASE_E_INTERNAL`—writes exactly one valid result envelope to stdout. Human output is a rendering of the same structured result.
 
 ```text
 ok: boolean
@@ -420,7 +498,7 @@ CASE_E_CONFLICT              expected revision/digest is stale
 CASE_E_BUSY                  writer guard currently held
 CASE_E_RECOVERY_REQUIRED     possibly stale guard or interrupted mutation
 CASE_E_EVIDENCE              evidence missing, unsafe, changed, or stale
-CASE_E_TRANSITION            requested lifecycle transition is illegal
+CASE_E_TRANSITION            requested protocol transition is illegal
 CASE_E_ACTOR                 recorded actor does not match required actor label
 CASE_E_HUMAN_CONFIRMATION    interactive recorded-human flow unavailable
 CASE_E_INTERNAL              unexpected implementation failure
@@ -507,6 +585,41 @@ The public support matrix lists only profiles that pass the frozen corpus.
 
 Every normative MUST in the future L0 specification receives at least one positive and one negative vector. M0 includes journey tests as well as isolated schema tests.
 
+### 22.1 Frozen fixture contract
+
+Every conformance case is a closed, versioned JSON object with this shape:
+
+```text
+fixture_version
+case_id
+normative_rule_ids[]
+applicable_platform_profiles[]
+initial_tree[] in repository-relative path order:
+  path
+  content_file
+  sha256
+invocations[] in execution order:
+  actor_label
+  argv[]
+  stdin_mode: none | fixed_text | interactive_script
+  stdin_content_file: path | null
+  fixed_environment: object
+  concurrency_group: string | null
+  fault_point: stable fault code | null
+expected[] corresponding to invocations:
+  process_exit
+  result_code
+  stdout_json_file: path | null
+  stderr: empty | startup_failure_only
+expected_final_tree[] in repository-relative path order:
+  path
+  presence: present | absent
+  sha256: digest | null
+expected_derived_view_file
+```
+
+`content_file`, scripted input, expected JSON, and expected view paths resolve inside the frozen corpus, never inside the repository under test. Random IDs, clocks, retry timing, locale, and platform error text are injected or fixed by the case and cannot affect expected canonical output. Concurrent invocations share one `concurrency_group`; their allowed result set and exactly-one-success constraint are encoded in the expected JSON. A case is invalid if it leaves an expected field implicit.
+
 Blocking families are:
 
 1. initialization confinement and namespace collision;
@@ -516,7 +629,7 @@ Blocking families are:
 5. interruption at every immutable-envelope and snapshot publication boundary;
 6. stale and live writer guards, recovery after confirmed process termination, and refusal when termination is uncertain;
 7. missing, empty, changed, external, symlinked, junctioned, or aliased evidence;
-8. stale handoff, wrong recipient, double accept, cancellation, and old-writer mutation;
+8. stale handoff, wrong recipient, double accept, replacement by a later offer, and old-writer mutation;
 9. submission without current checks and evidence;
 10. interactive decision requirement and stale acceptance after artifact mutation;
 11. unsupported versions, unknown states, unknown critical fields, and validator exceptions;
