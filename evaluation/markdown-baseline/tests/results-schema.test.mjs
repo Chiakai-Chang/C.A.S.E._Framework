@@ -72,10 +72,12 @@ test("all retained v1 records remain schema and semantically readable", async ()
   const directory = new URL("../results/", import.meta.url);
   const { readdir } = await import("node:fs/promises");
   const files = (await readdir(directory)).filter((file) => file.endsWith(".json"));
-  assert.equal(files.length, 18);
+  let v1Count = 0;
   for (const file of files) {
     const record = JSON.parse(await readFile(new URL(file, directory), "utf8"));
     assert.equal(validate(record), true, `${file}: ${JSON.stringify(validate.errors)}`);
     assert.deepEqual(validateRecordSemantics(record), [], file);
+    if (record.schema_version === "1") v1Count += 1;
   }
+  assert.equal(v1Count, 18);
 });

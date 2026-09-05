@@ -1,0 +1,240 @@
+{
+  "schema_version": "1",
+  "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+  "records": [
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-001-r1.json",
+      "sha256": "3ce45084055787c0f2a572888c105a154a108eb9c2eb258afdb4774d855702d2",
+      "git_blob": "cde30495606eebdf92ac949a71e4dda3a375a373",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-001-r2.json",
+      "sha256": "472edd6f22a08253e6874e30be5d756e364f0e3bc313bc7080d752743a1a1fa7",
+      "git_blob": "3f162015faac3fec883b7a09a16822fe15ea5449",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "invalid-method",
+      "status_reason": "One post-hoc evaluator was not two independent writer actors."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-001-r3.json",
+      "sha256": "d53c0360240060eb5d002f9c80d2bdbda5fff03957885f252a0e41e94988950a",
+      "git_blob": "3dc90201815ad29fd674172be0f011bf1c3aff16",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-concurrent-writer-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; runner-change-uncommitted-at-execution",
+      "status": "invalid-method",
+      "status_reason": "Evaluator prewrote disconnected commits; raw actor transcript was omitted, so the manual override is not reproducible."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-001-r4.json",
+      "sha256": "049c2cfa4fe265585664eada769a2ae1f364c5b91d7e4dd02637d91bf96580ed",
+      "git_blob": "a368ea5c5da183cd67998b0ec1a8e61557e719e8",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "eligible-post-pilot-r4",
+      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-002-r1.json",
+      "sha256": "7b92b4787d1101ff5af2d555e0f80fa2b9069188960b3943bd41df451a958bd4",
+      "git_blob": "526e6954a4f0b0ff5897a8df181e233f1f572716",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-002-r2.json",
+      "sha256": "f181bc096f158ebd0c4733d27551c0584ec61a76e56063cf364d083905342306",
+      "git_blob": "7db58949caf30c2fc3422ceb9079b2f97ba3b533",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "eligible-post-pilot",
+      "status_reason": "Post-pilot amended observation; not preregistered comparative evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-002-r4.json",
+      "sha256": "0aa6e341bc1b241aa9712246179d09dfb4a64901fc9307285a2e70c7e0c9ba5f",
+      "git_blob": "ab8e10ef8a4e37aa14c2fdf003560954b7cf3402",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "eligible-post-pilot-r4",
+      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-003-r1.json",
+      "sha256": "04439a0d86d7ae599ba0567ed3801384a4a456b0cc97914c6d4901c7d3326439",
+      "git_blob": "86547fb950c79519f4a21d921d482e7afec0bf4c",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-003-r2.json",
+      "sha256": "ec12662b0f2a8e41652d00f5321ad3ebe5ea8c7081afe7090f90b12c0541b469",
+      "git_blob": "46c0b9c779511035de5b4f1a24624db8a63b59e0",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "eligible-post-pilot",
+      "status_reason": "Post-pilot amended observation; not preregistered comparative evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-003-r4.json",
+      "sha256": "338c71f36d04e441139099c4d03175499f165a121d31128b756ddf155b5e862d",
+      "git_blob": "983210366f497585c9ad3a4c83a3efc67383e647",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "eligible-post-pilot-r4",
+      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-004-r1.json",
+      "sha256": "d637fe19785a1b70f5abc5ee721a903958b6f99d027c99123633a91c7cbca4e6",
+      "git_blob": "14f80847d99a9e3f8dadd04200692f344a4c437a",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-004-r2.json",
+      "sha256": "377ae0eae593ea24fbc7065a61dacb492ca229c5abe6866296ba6afadcc423aa",
+      "git_blob": "39da9e3e873851c06e0728e7c24d70d16cdf08b2",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "eligible-post-pilot",
+      "status_reason": "Post-pilot amended observation; not preregistered comparative evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-004-r4.json",
+      "sha256": "689e89e35b625f122e28cbab913c5f0d08d3c967b07b81c44facf52ebc15d79d",
+      "git_blob": "791da5adc561f53f62163ded901186acb7226b6a",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "eligible-post-pilot-r4",
+      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-001-r1.json",
+      "sha256": "c23c9ab5f8ab09fa7bee97cc7107064a404cb0e1cc57a24480b31b63f99304cb",
+      "git_blob": "df949d86181527b3efc08abb51cf2c9d92f1eeaf",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-001-r2.json",
+      "sha256": "04ce33863155a359d7666103721842bb064b4224557ddd30ff612305dbfc32d0",
+      "git_blob": "125736c59b1da6f83ec83bdeb3c9fa5aa4f445b7",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-001-r3.json",
+      "sha256": "f9867ef0a378a6f68fbdbd575b59d78907eefee90606ae5d14f79b60d4f97c72",
+      "git_blob": "06e7ec1a03efc4bd637c7aa9aa8751602af15039",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-concurrent-writer-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; runner-change-uncommitted-at-execution",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-001-r4.json",
+      "sha256": "c84799496ac189360aa55021beab2215135db6edd21f59409b10030e0714cddb",
+      "git_blob": "5e35bc9d515e976b2128eedab784acf3d4d61e79",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-002-r1.json",
+      "sha256": "1cd90ac4e5cd94d79da4e86144af76ecc9b417e69215c96f93a63aebe2bfa2f9",
+      "git_blob": "3f4769c4a2ae8ec165a679df124a513a8a1b4a13",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-002-r2.json",
+      "sha256": "bfd52dbd36a0e82b7001a454a581b6b4391578fe63e155839a4b1fc01ebc6003",
+      "git_blob": "472ff350ed8cfca314243818cf57b1d6879f167c",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-002-r4.json",
+      "sha256": "70e93a136ffd3f9391bf0a2f1f847b3343404ea31c797940676f74a6d0ec8b56",
+      "git_blob": "2b5ca7174a971ed1c2c2e0cb20edd1fa51c31272",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-003-r1.json",
+      "sha256": "71bb532900bbed642bb92dca820030711b95ba90bd73069a45f66546d180b289",
+      "git_blob": "9d4102be0d3114c5bf813d428a22979d754ac38e",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-003-r2.json",
+      "sha256": "682fab9991928105e2e716e8e27dc4f36932ee5aa5edf95ff0e13a95e380a7dc",
+      "git_blob": "6dc749787bad8f3a5495500418d66c956d681b78",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-003-r4.json",
+      "sha256": "64d1c9f61706d7aaad67a48bc8939f27f633fe35f39f8f10a7d8088dd5770236",
+      "git_blob": "b8436e44de96258c381d9043501f395a7fe75a90",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-004-r1.json",
+      "sha256": "05dbc7fe30f8a5bc608079af3ffb554689dc389ab4608316d3688da5f2edeec4",
+      "git_blob": "b03faa57676fdc9057e39f4ae23c8a3a3d2e985c",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+      "status": "invalid-preregistered-pilot",
+      "status_reason": "Retained pilot record is invalid under the recorded r1 limitations."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-004-r2.json",
+      "sha256": "57980038b56833917fdc7de174b5e36d65038b54f397d5b1d2bb31e1bebfb9ef",
+      "git_blob": "e153411d7449acda7c20958bd7c1388d4de6799d",
+      "record_git_commit": "b7a08005f4c0ee571141eae75e075ce7d4f0f4ac",
+      "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-004-r4.json",
+      "sha256": "7b2a5a6b79d2044c1402c259273635e184635332db84f4a9e20c6d1668c8c861",
+      "git_blob": "81a8bb1971384c6857da0d9ec0c9bd8bca9465ca",
+      "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
+      "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-production",
+      "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
+    }
+  ]
+}

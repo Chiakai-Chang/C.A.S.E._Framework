@@ -10,7 +10,7 @@ evaluated_at: 2026-09-05
 
 **Narrow. Stop feature and packaging expansion until one real production filesystem adapter passes the frozen corpus, then rerun the preregistered comparison.**
 
-M0 does not satisfy its advance gate on this host. The public Windows CLI correctly fails closed, but that makes all four production M0 runs invalid before their target failure can be exercised. Controlled-test corpus success is not substituted for production evidence. Independent review invalidated the r3 same-version double-writer method, so no four-case B0 aggregate or false-success rate is currently selected. The method-frozen r4 rerun must complete before any replacement B0 observation is reported.
+M0 does not satisfy its advance gate on this host. The public Windows CLI correctly fails closed, but that makes all four production M0 runs invalid before their target failure can be exercised. Controlled-test corpus success is not substituted for production evidence. Independent review invalidated the r3 same-version double-writer method. The method-frozen post-pilot r4 B0 rerun detected all four injected failures without false success, but its four paired M0 runs remain invalid, so no valid comparative result or advance claim exists.
 
 This report does not support claims that C.A.S.E. is reliable, cross-platform, weak-model ready, enterprise ready, or better than Markdown plus Git.
 
@@ -25,7 +25,7 @@ This report does not support claims that C.A.S.E. is reliable, cross-platform, w
 ## Runtime
 
 - OS/runtime: Windows x64, Node.js `v24.19.0` (`Microsoft Windows NT 10.0.26200.0`).
-- Model endpoint: llama.cpp at `127.0.0.1:8080`, started twice from the user-authorized unmodified launcher and stopped after each evaluation window.
+- Model endpoint: llama.cpp at `127.0.0.1:8080`, started three times from the user-authorized unmodified launcher (r1/r2, r3, and r4 windows) and stopped after each evaluation window.
 - Model: `C:\models\Qwen3.8\orcarouter-F16\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf`.
 - Server executable: `D:\MyProject\ROCmFPX\build-win-hip-ninja\bin\llama-server.exe`.
 - Server configuration: context `262144`, parallel `1`, flash attention on, batch `2048`, ubatch `1024`, draft-MTP strict Qwen, `n=3`, `p-min=0.60`, froggeric v22.4 chat template, reasoning format `deepseek` with preservation.
@@ -54,15 +54,28 @@ The r2 B0 records for EVAL-M0-002 through 004 remain post-pilot observations. r2
 | EVAL-M0-003 accepted artifact changed | complete | yes | no | 5 commands; 27,464 ms; 706 in / 791 out tokens | invalid | init exit 10, `CASE_E_UNSUPPORTED_PROFILE` |
 | EVAL-M0-004 evidence digest mismatch | complete | yes | no | 5 commands; 26,385 ms; 708 in / 731 out tokens | invalid | init exit 10, `CASE_E_UNSUPPORTED_PROFILE` |
 
-No selected four-case B0 aggregate exists pending r4. The earlier 3/4 detection and 1/4 false-success figures are withdrawn because they depended on invalid r3 evidence.
+The earlier 3/4 detection and 1/4 false-success figures are withdrawn because they depended on invalid r3 evidence.
 
 Selected M0 aggregate: 0/4 target failures exercised; four invalid outcomes; four initialization commands; 2,325 ms; token counts unavailable; 0 user decisions; 0 corrections; 0 recovery steps. These timing/command figures measure early rejection only and are not comparable M0 task burden.
 
 r3 did not correct the actor topology: blocking evaluator commits in disconnected clones are not concurrent model-directed writes against one shared authority. Its reason field contains only a manual summary, not the exact response needed to reproduce the override of the phrase “DETECTED — not applicable.” r4 therefore uses two independent command-loop actors and an asynchronous shared Git compare-and-swap publication gate, and version 2 records retain exact privacy-safe outputs plus explicit versioned adjudication.
 
+### r4 — method-frozen post-pilot observations
+
+The r4 method was committed as `3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d` before execution. All eight immutable version 2 records were then committed separately. In EVAL-M0-001, both model actors received basis `a4fbf1245e52890b82e7723f630153d831dcbe33` before editing, selected their own read/edit/add/commit commands, and waited at one shared publication gate. Two asynchronous pushes raced the same `published` ref: actor B won, actor A received Git's compare-and-swap rejection, actor A reported `DETECTED`, and actor B fetched and verified the published result before reporting `SUCCESS`.
+
+| Case | r4 B0 outcome | B0 detected | B0 false success | B0 burden | paired r4 M0 |
+|---|---|---:|---:|---|---|
+| EVAL-M0-001 same-version double writer | complete | yes | no | 19 commands; 82,346 ms; 21,691 in / 1,568 out tokens | invalid: init exit 10 |
+| EVAL-M0-002 stale handoff | complete | yes | no | 4 commands; 33,466 ms; 597 in / 876 out tokens | invalid: init exit 10 |
+| EVAL-M0-003 accepted artifact changed | complete | yes | no | 5 commands; 32,030 ms; 695 in / 829 out tokens | invalid: init exit 10 |
+| EVAL-M0-004 evidence digest mismatch | complete | yes | no | 5 commands; 27,979 ms; 697 in / 695 out tokens | invalid: init exit 10 |
+
+r4 B0 aggregate: 4/4 detected; 0/4 false success; 33 commands; 175,821 ms; 23,680 input tokens; 3,968 output tokens; 0 user decisions, corrections, or recovery steps. Paired r4 M0 aggregate: four invalid outcomes, four init commands, 2,827 ms, and unavailable token counts. r4 is method-frozen post-pilot evidence, not a preregistered comparative sample.
+
 ## Interpretation
 
-The retained r2 B0 observations support only a narrow provisional conclusion: explicit recorded versions/digests made three stale-artifact or stale-handoff situations discoverable to this model. They do not establish the same-version concurrent-writer outcome, do not form a complete comparative aggregate, and are not model-general evidence.
+The r4 B0 observations support only a narrow provisional conclusion: this model detected all four injected failures under the amended method, including the real shared-publication conflict. The sample is one post-pilot run per case and is not model-general evidence. Because all paired production M0 runs are invalid, it cannot establish that M0 outperforms Markdown plus Git.
 
 The deterministic controlled-test corpus now passes 140 cases and includes the complete semantic double-writer, stale-handoff, stale-acceptance, and changed-evidence behaviors. That is implementation/conformance evidence under injected capabilities. It cannot answer whether a public production M0 adapter works on Windows or POSIX.
 
@@ -89,6 +102,7 @@ No tests, evaluation records, caches, secrets, local dossiers, conformance fixtu
 - Conformance: 140 total, 140 passed, 0 failed, no uncovered positive or negative direction.
 - The first full test run after adding the 140th case exposed one stale hard-coded expected corpus count (`139`). It produced 310 tests, 308 passed, 2 failure entries (the leaf assertion and its parent suite). After correcting the count to 140, a fresh exact `npm run check` passed typecheck, all 310 tests, and all 140 conformance cases with zero skipped/todo and no uncovered direction.
 - Package dry-run: 86 allowlisted files; prohibited categories absent.
+- Evaluation validation after r4: 26/26 records pass the closed schema and semantic validator; the external integrity manifest has 26/26 SHA-256/Git-blob/first-containing-commit mappings with no mismatch.
 
 Remaining release blockers:
 
