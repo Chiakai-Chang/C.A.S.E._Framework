@@ -1,104 +1,54 @@
 # C.A.S.E. Framework
 
-讓人與 AI 在有限 context 下，透過可追溯的工作卷宗交接、檢查證據與驗收成果。目標是在減輕認知與抉擇負擔的同時提升品質。
+讓 AI agent 在有限 context、跨 session 與分工後，仍能清楚知道目標、目前做到哪裡、證據在哪裡，以及下一步該做什麼。
 
-**目前階段：M0 研究原型。核心協定與受控測試已完成，尚未提供可供日常工作使用的 production adapter。** Windows 的初始化會回傳 `CASE_E_UNSUPPORTED_PROFILE`；Linux/macOS 尚未驗證。Codex、Claude Code、Pi 共用協定是設計方向，目前沒有可安裝的宿主整合或自動協作功能。
+**現在可使用：C.A.S.E. Workflow Kit 1.0。** 包含可攜技能、任務工具、完整流程、範本、實例，以及 pi／Codex／Claude Code 的專案安裝入口。本地工具不需 API key 或伺服器；模型由原有 agent 提供。
 
-The M0 research prototype is implemented and tested under controlled capabilities. Production dossier workflows and host integrations are not yet supported.
+Portable workflow skill and dependency-free local task tools for Pi, Codex and Claude Code. Supports task setup, bounded context, session recovery, delegation guidance, evidence tracking and delivery. Model quality and cost improvements remain empirical questions.
 
-- 第一次來：[文件地圖](MAP.md)，依目的選擇閱讀路徑。
-- 想知道完成了嗎、能用嗎：[目前狀態與路線](docs/STATUS.md)。
-- 想參與開發：[貢獻與驗證指引](CONTRIBUTING.md)。
-- 想了解這一輪的取捨：[M0 復盤](docs/evaluation/m0-retrospective.md)。
+## 開始使用
 
-這些是本框架原始碼倉庫的導覽檔案；未來在使用者專案執行 `init` 時，只能建立 `.case-agent/` 命名空間，不會散落或覆寫 README、MAP、AGENTS 等通用檔案。
-
-## Local dossier integrity preview
-
-This repository contains the private `0.1.0-preview` reference implementation for one deliberately narrow experiment: can a file-native dossier protocol catch stale handoffs, competing writers, changed evidence, and stale recorded acceptance more explicitly than Markdown plus Git?
-
-It is not a general reliability claim, a multi-agent runtime, or a supported cross-platform release. The package remains private and no public license or npm publication is selected.
-
-## Current support boundary
-
-The frozen protocol corpus exercises a deterministic `controlled-test` adapter. That proves protocol and oracle behavior under injected capabilities; it is not a production filesystem profile.
-
-- Production Windows mutation is unsupported and fails closed with `CASE_E_UNSUPPORTED_PROFILE` (exit 10).
-- No production POSIX filesystem profile is claimed.
-- Network shares, cloud-sync folders, separate clones, multi-machine coordination, non-conforming writers, and physical power loss are outside M0 guarantees.
-
-Until a real platform adapter passes the same corpus, this preview is for inspection, conformance development, and evaluation—not production dossier mutation.
-
-## Build and inspect a local package artifact
-
-Use Node.js 24 and the lockfile:
-
-```powershell
-npm ci
-npm run build
-node dist/src/cli/main.js --help
-```
-
-以上可在此 repository 內查看 CLI 說明，不需要全域安裝，也不代表初始化已受支援。維護者完整驗證使用 `npm run check`，在目前量測的 Windows 環境約需 9–10 分鐘。只有 Node 24.19.0 已量測；其他 Node 24 版本仍須通過能力檢查。
-
-For local package inspection, build first and run `npm pack --dry-run`. The package allowlist contains the compiled runtime under `dist/src`, bundled schemas, this README, and npm package metadata. It excludes tests, evaluation records, caches, secrets, and repository-local `.case-agent/` dossiers. Repository documentation linked above is available in the source checkout, not bundled in the tarball.
-
-Uninstalling the CLI does not remove `.case-agent/` data.
-
-## Command surface
-
-Human mode is the default. `--json` selects one newline-terminated result envelope on stdout; machine consumers branch on `code` and process exit status, not localized message text.
+取得本 repository，使用 Node.js 20+。在 repository 根目錄執行，將 project 換成實際要工作的專案：
 
 ```text
-case-agent init --operation <id>
-case-agent dossier create --operation <id> --actor <label> --title <text> --objective <text> --brief <json>
-case-agent dossier show --dossier <id>
-case-agent dossier check --dossier <id>
-case-agent evidence add --dossier <id> --operation <id> --run <id> --evidence <json>
-case-agent submission create --dossier <id> --operation <id> --run <id>
-case-agent decision accept --dossier <id> --operation <id> --submission <id> --submission-digest <digest> --reviewer <label> --criteria <json-array> --comment <text>
-case-agent decision reject --dossier <id> --operation <id> --submission <id> --submission-digest <digest> --reviewer <label> --criteria <json-array> --comment <text>
-case-agent handoff offer --dossier <id> --operation <id> --from-run <id> --to-actor <label>
-case-agent handoff accept --dossier <id> --operation <id> --handoff <id> --offered-content-digest <digest> --actor <label>
-case-agent guard recover --dossier <id> --operation <id>
+node workflow-kit/install.mjs --project "D:/Projects/MyProject" --host pi
 ```
 
-Every existing-dossier mutation needs an operation ID and an exact revision/state-digest basis. In `--json` mode, provide both:
+pi／Codex 共用 `.agents/skills/case-workflow/`；Claude 使用 `.claude/skills/case-workflow/`。可選 `--host codex`、`claude` 或 `all`。不修改原有 AGENTS.md、CLAUDE.md、全域設定或憑證。
 
-```text
---expected-revision <decimal-string> --expected-state-digest sha256:<64-lowercase-hex>
-```
+在目標專案啟動或重新載入 agent：
 
-Human mode may omit those two values only when the same invocation displays the complete basis and receives confirmation. An intervening mutation returns a conflict; the command does not silently bind intent to newer state.
+| Agent | 使用方式 |
+|---|---|
+| pi | `/skill:case-workflow 請完成……，驗收條件是……` |
+| Codex | `$case-workflow 請完成……，驗收條件是……` |
+| Claude Code | `/case-workflow 請完成……，驗收條件是……` |
 
-`dossier create --brief` accepts a closed, number-free JSON object containing `scope`, `constraints`, and at least one acceptance criterion. `evidence add --evidence` accepts a closed tagged JSON object. Consult the bundled schemas and `case-agent --help`; no network fetch is required.
+若技能未載入，明確請 agent 讀取安裝位置的 SKILL.md。宿主信任、權限及設定仍由宿主控制，見 [宿主說明](workflow-kit/docs/HOSTS.md)。
 
-## Offline and data footprint
+## 完整工作流程
 
-Core commands have no network calls, telemetry, update checks, host discovery, hooks, or global host-configuration writes. Schemas and human help are bundled. Initialization changes bytes only under the owning repository's `.case-agent/` namespace.
+- 目標、約束、驗收 → 規劃與執行 → 紀錄與檢查 → 交付 → 必要時重新開啟。
+- 按需讀取當前狀態及來源，提供精簡接續內容；重要內容截斷時要求補讀。
+- 同一專案與 task ID 可跨 session／宿主接續，無需複製完整對話。
+- 提供工作包、責任、回報和整合範本；分工使用宿主既有能力，沒有時依序處理。
+- 在實際決策時判斷目標是否偏移，不設排程或強制多輪討論。
+- 初始化、列出、查閱、checkpoint、context、證據、交接、完成、reopen、doctor，以及技能更新／移除。
 
-The dossier can contain sensitive repository information. Evidence registration stores references, metadata, and digests by default; it does not copy the referenced artifact bytes. This preview does not detect every secret, provide privacy certification, or protect files from other local processes.
+短問答與小修改可直接做，不強制建卷宗。CLI 不自行執行模型、驗真證據或保證所有並行／外部修改安全。
 
-## What checks and decisions mean
+## 文件入口
 
-Passing checks means only that declared machine-checkable invariants currently hold. It does not establish usefulness, factual correctness, code quality, or human approval.
+- [套件使用與手動指令](workflow-kit/README.md)
+- [完整操作實例](workflow-kit/docs/WORKFLOW.md)
+- [安裝、更新、移除及疑難排解](workflow-kit/docs/HOSTS.md)
+- [功能覆蓋與驗證範圍](workflow-kit/docs/READINESS.md)
+- [目標](docs/GOALS.md) · [現況](docs/STATUS.md) · [貢獻方式](CONTRIBUTING.md) · [全域地圖](MAP.md)
 
-The CLI calls acceptance **Recorded Human Acceptance**. It records an interactive reviewer label and exact submission digest, but does not authenticate identity, sign data, attest authorship, or provide non-repudiation. A program controlling the terminal can impersonate a reviewer. There is no `--yes` or non-interactive decision path.
+## 舊 M0 與發布
 
-## Recovery, audit, and sandbox limits
+`workflow-kit/` 是目前產品；根目錄 `src/`、`conformance/` 與 `evaluation/markdown-baseline/` 保留 M0 完整性研究。格式不同，既有 `.case-agent/` 的衝突會被拒絕，不自動遷移或覆蓋。
 
-Writer recovery is explicit and interactive. It stops with `CASE_E_RECOVERY_REQUIRED` unless the platform adapter can establish that the recorded process has terminated. The preview does not claim that renaming a lock revokes a live process, or that multi-file publication survives physical power loss.
+舊 M0 production adapter 仍未支援；不要用根目錄的 `case-agent init` 作為 Workflow Kit 入口。見 [M0 參考](docs/M0-REFERENCE.md)。
 
-Immutable envelopes and current snapshot links improve inspectability, but M0 is not a tamper-proof or complete audit log. It provides no sandbox, supply-chain verification, authenticated identity, automatic retention, purge, archive, or protection from direct local edits. Independent review remains part of the release gate.
-
-## Verification
-
-```powershell
-npm run typecheck
-npm test
-npm run conformance
-npm run check
-npm pack --dry-run
-```
-
-The B0/M0 comparison protocol is preregistered under `evaluation/markdown-baseline/`. Invalid, failed, partial, and timed-out results are retained; controlled-test success is never substituted for a production-platform result.
+公開授權尚未選定，npm package 保持 private，未發布 registry。程式可本地使用與驗證；授權與正式發布由擁有者決定。

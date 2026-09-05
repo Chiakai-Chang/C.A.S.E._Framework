@@ -1,0 +1,11 @@
+# C.A.S.E. repository instructions
+
+目標與交付見 `docs/GOALS.md`，按 `MAP.md` 讀必要文件。產品入口是 `workflow-kit/`；根目錄 `src/` 與 conformance 是 M0 研究。不要把舊 adapter 或 P1 pilot 路線當成交付前置條件。
+
+完成使用者要求的完整成果。一般、已授權工作直接執行；僅新權限或重要取捨才提問。分工用於能獨立完成的具體工作，不加儀式性角色或固定審閱輪數。
+
+擴大工作、反覆修補或交付時，檢查是否仍改善成果品質、必要脈絡、接續或使用者負擔。用判斷調整下一步；只有決策改變才簡記。不建立排程。
+
+修改 kit 跑 `node --test workflow-kit/tests/*.test.mjs`；文件小修核對来源與連結。只有觸及 M0 才跑其完整套件。保留失敗與未知成本，不宣稱未驗證的宿主／模型效果。
+
+此檔只指導本 repository，不由 init 或 installer 複製到採用者專案。

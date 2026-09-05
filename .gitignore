@@ -2,3 +2,4 @@
 .npm-cache/
 /dist/
 /node_modules/
+/workflow-kit/*.tgz

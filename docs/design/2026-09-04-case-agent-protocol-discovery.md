@@ -7,6 +7,8 @@ authority: non-normative
 
 # C.A.S.E. Agent Protocol — Discovery and Living Design Record
 
+Current product direction: this record preserves the M0 integrity investigation. For the delivered Workflow Kit and current priorities, read [GOALS](../GOALS.md) and [STATUS](../STATUS.md); historical adapter-first checkpoints below are not prerequisites for using the kit.
+
 This document preserves why the redesign exists, what evidence has been examined, which decisions have been accepted, which remain proposed, and which ideas were rejected or deferred. It is intentionally revisable. The future normative protocol specification, schemas, and conformance tests will be separate artifacts.
 
 ## 1. Original intent
