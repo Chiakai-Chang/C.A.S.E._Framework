@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+  "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
   "records": [
     {
       "record_path": "results/20260905-qwen-b0-eval-m0-001-r1.json",
@@ -35,8 +35,17 @@
       "git_blob": "a368ea5c5da183cd67998b0ec1a8e61557e719e8",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
-      "status": "eligible-post-pilot-r4",
-      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-001-r6.json",
+      "sha256": "9a95378725505cf014cce967bd19955bcdf22a41fde5904cc9ed0e037c9682ab",
+      "git_blob": "84fd94414cf8303c1d0ad5554718e88e269bb08a",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+      "status": "eligible-post-pilot-r6",
+      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-b0-eval-m0-002-r1.json",
@@ -62,8 +71,17 @@
       "git_blob": "ab8e10ef8a4e37aa14c2fdf003560954b7cf3402",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
-      "status": "eligible-post-pilot-r4",
-      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-002-r6.json",
+      "sha256": "84f62bd57f74d5c22a97a3f6e4abc8145c870fb2345e60008725bbb38f449f9e",
+      "git_blob": "3b0ea70f472f6ad8af4d24738394a1a2a84da743",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+      "status": "eligible-post-pilot-r6",
+      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-b0-eval-m0-003-r1.json",
@@ -89,8 +107,17 @@
       "git_blob": "983210366f497585c9ad3a4c83a3efc67383e647",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
-      "status": "eligible-post-pilot-r4",
-      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-003-r6.json",
+      "sha256": "9ecb1c64b5cfe61c93c2045ffb1b8dcee7cd407f1ebcc4ba9b9e281874ae249d",
+      "git_blob": "0dcbab36499408264a51923a291e82d3ebed5ad2",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+      "status": "eligible-post-pilot-r6",
+      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-b0-eval-m0-004-r1.json",
@@ -116,8 +143,17 @@
       "git_blob": "791da5adc561f53f62163ded901186acb7226b6a",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
-      "status": "eligible-post-pilot-r4",
-      "status_reason": "Method-frozen r4 observation; still not preregistered comparative evidence."
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-b0-eval-m0-004-r6.json",
+      "sha256": "ec4facad5db10453068cb6a40fd063c52774822d8509027e631ffe3d5cbbf087",
+      "git_blob": "41bf606ce606ad989b352bbd871057288a74b8b0",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+      "status": "eligible-post-pilot-r6",
+      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-m0-eval-m0-001-r1.json",
@@ -152,6 +188,15 @@
       "git_blob": "5e35bc9d515e976b2128eedab784acf3d4d61e79",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-001-r6.json",
+      "sha256": "bf6ed57f793243394eaa901ebc6d69a12af426f938a9e45a70d4e59a78aa8e5d",
+      "git_blob": "98d4f543dec4c03cf9c60cbd3da6d8fa76225ce7",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "invalid-production",
       "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
     },
@@ -179,6 +224,15 @@
       "git_blob": "2b5ca7174a971ed1c2c2e0cb20edd1fa51c31272",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-002-r6.json",
+      "sha256": "ba2f85065a7829341f0805df1d40dda3078386fa9ff007cb9c0d7108cd4cf086",
+      "git_blob": "9970dd21e03558772da216f02588eef88e4ebb7a",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "invalid-production",
       "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
     },
@@ -206,6 +260,15 @@
       "git_blob": "b8436e44de96258c381d9043501f395a7fe75a90",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-003-r6.json",
+      "sha256": "7a80c7373a1df68cabbd6b37b7a99fa484e4ee542f8c24423fc8e270d17091a9",
+      "git_blob": "b68c84fb808b34e1aee9ed262344e708ffb9a6d8",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "invalid-production",
       "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
     },
@@ -233,6 +296,15 @@
       "git_blob": "81a8bb1971384c6857da0d9ec0c9bd8bca9465ca",
       "record_git_commit": "bdafa3f4456578cd0bf5a64fdf1f111088586491",
       "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+      "status": "invalid-provenance-runner-boundary",
+      "status_reason": "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."
+    },
+    {
+      "record_path": "results/20260905-qwen-m0-eval-m0-004-r6.json",
+      "sha256": "946f399ef6ecae3b1d843165dc54bb50717f241f068b85cee16d2755b96052d8",
+      "git_blob": "abe574d3b9c6590d70ac5406779e497edec96749",
+      "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
+      "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "invalid-production",
       "status_reason": "Public Windows initialization is unsupported and target failure was not exercised."
     }
