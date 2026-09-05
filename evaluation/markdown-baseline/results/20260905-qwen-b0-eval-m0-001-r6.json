@@ -1,0 +1,298 @@
+{
+  "schema_version": "3",
+  "record_id": "20260905-qwen-b0-eval-m0-001-r6",
+  "arm": "B0",
+  "case_id": "EVAL-M0-001",
+  "detected": true,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 19,
+  "elapsed_ms": 78859,
+  "input_tokens": 20842,
+  "output_tokens": 1683,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "complete",
+  "reason": "Exactly one shared publication succeeded and the losing model actor explicitly detected that conflict.",
+  "started_at": "2026-09-05T04:04:00.289Z",
+  "ended_at": "2026-09-05T04:05:19.148Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+    "fixture_revision": "a4fbf1245e52890b82e7723f630153d831dcbe33",
+    "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+    "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable",
+    "token_accounting": "reported",
+    "provenance_status": "verified",
+    "model_artifact": {
+      "basename": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "sha256": "2362c12d0783b0e92e49e129c7bb2c47898ffc6c116935974582827d93fb482b",
+      "size_bytes": 14845105536
+    },
+    "server_build": {
+      "basename": "llama-server.exe",
+      "sha256": "b7b0f8d5a0c43f2e69dc6c78a90449b6fb7f0e1f1a57882573a67a1c45dea59e",
+      "size_bytes": 9216,
+      "config_id": "llama.cpp-rocmfp4-strix-ctx262144-p1-fa-b2048-ub1024-mtp-strict-n3-pmin060-froggeric-v22.4-deepseek-preserve"
+    }
+  },
+  "command_trace": [
+    {
+      "sequence": 1,
+      "actor": "actor-a",
+      "command": "read CASE.md",
+      "exit_code": 0,
+      "result": "# EVAL-M0-001\r\n\r\nstatus: prepared",
+      "timed_out": false
+    },
+    {
+      "sequence": 2,
+      "actor": "actor-b",
+      "command": "read CASE.md",
+      "exit_code": 0,
+      "result": "# EVAL-M0-001\r\n\r\nstatus: prepared",
+      "timed_out": false
+    },
+    {
+      "sequence": 3,
+      "actor": "actor-a",
+      "command": "read artifact.txt",
+      "exit_code": 0,
+      "result": "v1",
+      "timed_out": false
+    },
+    {
+      "sequence": 4,
+      "actor": "actor-b",
+      "command": "read artifact.txt",
+      "exit_code": 0,
+      "result": "v1",
+      "timed_out": false
+    },
+    {
+      "sequence": 5,
+      "actor": "actor-a",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "a4fbf1245e52890b82e7723f630153d831dcbe33",
+      "timed_out": false
+    },
+    {
+      "sequence": 6,
+      "actor": "actor-b",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "a4fbf1245e52890b82e7723f630153d831dcbe33",
+      "timed_out": false
+    },
+    {
+      "sequence": 7,
+      "actor": "actor-a",
+      "command": "edit artifact.txt",
+      "exit_code": 0,
+      "result": "appended actor-a",
+      "timed_out": false
+    },
+    {
+      "sequence": 8,
+      "actor": "actor-b",
+      "command": "edit artifact.txt",
+      "exit_code": 0,
+      "result": "appended actor-b",
+      "timed_out": false
+    },
+    {
+      "sequence": 9,
+      "actor": "actor-a",
+      "command": "git add artifact.txt",
+      "exit_code": 0,
+      "result": "warning: in the working copy of 'artifact.txt', LF will be replaced by CRLF the next time Git touches it",
+      "timed_out": false
+    },
+    {
+      "sequence": 10,
+      "actor": "actor-b",
+      "command": "git add artifact.txt",
+      "exit_code": 0,
+      "result": "warning: in the working copy of 'artifact.txt', LF will be replaced by CRLF the next time Git touches it",
+      "timed_out": false
+    },
+    {
+      "sequence": 11,
+      "actor": "actor-a",
+      "command": "git commit",
+      "exit_code": 0,
+      "result": "(no output)",
+      "timed_out": false
+    },
+    {
+      "sequence": 12,
+      "actor": "actor-b",
+      "command": "git commit",
+      "exit_code": 0,
+      "result": "(no output)",
+      "timed_out": false
+    },
+    {
+      "sequence": 13,
+      "actor": "actor-a",
+      "command": "git publish origin HEAD:refs/heads/published",
+      "exit_code": 1,
+      "result": "To <user-profile>\\AppData\\Local\\Temp\\case-eval-r4-writers-AxKncZ\\origin.git\n!\tHEAD:refs/heads/published\t[remote rejected] (incorrect old value provided)\nDone\nremote: error: cannot lock ref 'refs/heads/published': is at 9ec84536b41e13acd4ebe847b8a240bc9107b497 but expected a4fbf1245e52890b82e7723f630153d831dcbe33        \nerror: failed to push some refs to '<user-profile>\\AppData\\Local\\Temp\\case-eval-r4-writers-AxKncZ\\origin.git'",
+      "timed_out": false
+    },
+    {
+      "sequence": 14,
+      "actor": "actor-b",
+      "command": "git publish origin HEAD:refs/heads/published",
+      "exit_code": 0,
+      "result": "To <user-profile>\\AppData\\Local\\Temp\\case-eval-r4-writers-AxKncZ\\origin.git\n \tHEAD:refs/heads/published\ta4fbf12..9ec8453\nDone",
+      "timed_out": false
+    },
+    {
+      "sequence": 15,
+      "actor": "actor-b",
+      "command": "git fetch origin",
+      "exit_code": 0,
+      "result": "(no output)",
+      "timed_out": false
+    },
+    {
+      "sequence": 16,
+      "actor": "actor-a",
+      "command": "git fetch origin",
+      "exit_code": 0,
+      "result": "(no output)",
+      "timed_out": false
+    },
+    {
+      "sequence": 17,
+      "actor": "actor-b",
+      "command": "git rev-parse origin/published",
+      "exit_code": 0,
+      "result": "9ec84536b41e13acd4ebe847b8a240bc9107b497",
+      "timed_out": false
+    },
+    {
+      "sequence": 18,
+      "actor": "actor-a",
+      "command": "git rev-parse origin/published",
+      "exit_code": 0,
+      "result": "9ec84536b41e13acd4ebe847b8a240bc9107b497",
+      "timed_out": false
+    },
+    {
+      "sequence": 19,
+      "actor": "actor-b",
+      "command": "git show origin/published:artifact.txt",
+      "exit_code": 0,
+      "result": "v1\nactor-b",
+      "timed_out": false
+    }
+  ],
+  "actor_outputs": [
+    {
+      "actor": "actor-a",
+      "content": "turn 1: {\"action\":\"command\",\"command\":\"read CASE.md\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 1: {\"action\":\"command\",\"command\":\"read CASE.md\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 2: {\"action\":\"command\",\"command\":\"read artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 2: {\"action\":\"command\",\"command\":\"read artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 3: {\"action\":\"command\",\"command\":\"git rev-parse HEAD\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 3: {\"action\":\"command\",\"command\":\"git rev-parse HEAD\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 4: {\"action\":\"command\",\"command\":\"edit artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 4: {\"action\":\"command\",\"command\":\"edit artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 5: {\"action\":\"command\",\"command\":\"git add artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 5: {\"action\":\"command\",\"command\":\"git add artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 6: {\"action\":\"command\",\"command\":\"git commit\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 6: {\"action\":\"command\",\"command\":\"git commit\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 7: {\"action\":\"command\",\"command\":\"git publish\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 7: {\"action\":\"command\",\"command\":\"git publish\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 8: {\"action\":\"command\",\"command\":\"git fetch origin\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 8: {\"action\":\"command\",\"command\":\"git fetch origin\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 9: {\"action\":\"command\",\"command\":\"git rev-parse origin/published\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 9: {\"action\":\"command\",\"command\":\"git rev-parse origin/published\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 10: {\"action\":\"command\",\"command\":\"git show origin/published:artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 10: {\"action\":\"final\",\"verdict\":\"DETECTED\",\"evidence\":\"git publish rejected: remote error 'cannot lock ref refs/heads/published: is at 9ec84536b41e13acd4ebe847b8a240bc9107b497 but expected a4fbf1245e52890b82e7723f630153d831dcbe33'. Confirmed via git rev-parse origin/published returning 9ec84536b41e13acd4ebe847b8a240bc9107b497, not my basis a4fbf1245e52890b82e7723f630153d831dcbe33. Actor-b's write invalidated my basis.\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 11: {\"action\":\"final\",\"verdict\":\"SUCCESS\",\"evidence\":\"git publish moved origin/published from a4fbf12 to 9ec8453; git show origin/published:artifact.txt confirms content is 'v1\\\\nactor-b' — my write is current on the shared published ref.\"}"
+    }
+  ],
+  "scoring": {
+    "scorer_version": "case-eval-v3.0.0",
+    "verdict_transcript": [
+      {
+        "actor": "actor-a",
+        "verdict": "DETECTED",
+        "evidence": "git publish rejected: remote error 'cannot lock ref refs/heads/published: is at 9ec84536b41e13acd4ebe847b8a240bc9107b497 but expected a4fbf1245e52890b82e7723f630153d831dcbe33'. Confirmed via git rev-parse origin/published returning 9ec84536b41e13acd4ebe847b8a240bc9107b497, not my basis a4fbf1245e52890b82e7723f630153d831dcbe33. Actor-b's write invalidated my basis."
+      },
+      {
+        "actor": "actor-b",
+        "verdict": "SUCCESS",
+        "evidence": "git publish moved origin/published from a4fbf12 to 9ec8453; git show origin/published:artifact.txt confirms content is 'v1\\nactor-b' — my write is current on the shared published ref."
+      }
+    ],
+    "adjudication": "Shared publish winners=[actor-b], losers=[actor-a]. Detection requires exactly one winner and an explicit DETECTED verdict from the loser; a loser SUCCESS is false success."
+  }
+}

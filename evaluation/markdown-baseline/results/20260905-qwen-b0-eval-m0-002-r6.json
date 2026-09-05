@@ -1,0 +1,157 @@
+{
+  "schema_version": "3",
+  "record_id": "20260905-qwen-b0-eval-m0-002-r6",
+  "arm": "B0",
+  "case_id": "EVAL-M0-002",
+  "detected": true,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 8,
+  "elapsed_ms": 87045,
+  "input_tokens": 7499,
+  "output_tokens": 2276,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "complete",
+  "reason": "Actor explicitly detected the injected stale relation.",
+  "started_at": "2026-09-05T04:05:19.234Z",
+  "ended_at": "2026-09-05T04:06:46.279Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+    "fixture_revision": "4594c39edf5bce7047a9fe9f23138e11cddc72a8",
+    "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+    "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable",
+    "token_accounting": "reported",
+    "provenance_status": "verified",
+    "model_artifact": {
+      "basename": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "sha256": "2362c12d0783b0e92e49e129c7bb2c47898ffc6c116935974582827d93fb482b",
+      "size_bytes": 14845105536
+    },
+    "server_build": {
+      "basename": "llama-server.exe",
+      "sha256": "b7b0f8d5a0c43f2e69dc6c78a90449b6fb7f0e1f1a57882573a67a1c45dea59e",
+      "size_bytes": 9216,
+      "config_id": "llama.cpp-rocmfp4-strix-ctx262144-p1-fa-b2048-ub1024-mtp-strict-n3-pmin060-froggeric-v22.4-deepseek-preserve"
+    }
+  },
+  "command_trace": [
+    {
+      "sequence": 1,
+      "actor": "actor-b",
+      "command": "read CASE.md",
+      "exit_code": 0,
+      "result": "# EVAL-M0-002\n\nhandoff_from: actor-a\nhandoff_to: actor-b\noffer_basis: 4594c39edf5bce7047a9fe9f23138e11cddc72a8\nstatus: offered",
+      "timed_out": false
+    },
+    {
+      "sequence": 2,
+      "actor": "actor-b",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "5609b909891a548dc6127593c8833601e38c0d62",
+      "timed_out": false
+    },
+    {
+      "sequence": 3,
+      "actor": "actor-b",
+      "command": "git log --oneline --decorate -4",
+      "exit_code": 0,
+      "result": "5609b90 (HEAD -> master) record handoff offer\n4594c39 fixture base",
+      "timed_out": false
+    },
+    {
+      "sequence": 4,
+      "actor": "actor-b",
+      "command": "read artifact.txt",
+      "exit_code": 0,
+      "result": "v1",
+      "timed_out": false
+    },
+    {
+      "sequence": 5,
+      "actor": "evaluator-injection",
+      "command": "inject frozen intervening artifact v2",
+      "exit_code": 0,
+      "result": "(no output)",
+      "timed_out": false
+    },
+    {
+      "sequence": 6,
+      "actor": "actor-b",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "134f73857cbdd94f985dda8922fc43b36116d9f0",
+      "timed_out": false
+    },
+    {
+      "sequence": 7,
+      "actor": "actor-b",
+      "command": "git log --oneline --decorate -4",
+      "exit_code": 0,
+      "result": "134f738 (HEAD -> master) intervening work\n5609b90 record handoff offer\n4594c39 fixture base",
+      "timed_out": false
+    },
+    {
+      "sequence": 8,
+      "actor": "actor-b",
+      "command": "read artifact.txt",
+      "exit_code": 0,
+      "result": "v2",
+      "timed_out": false
+    }
+  ],
+  "actor_outputs": [
+    {
+      "actor": "actor-b",
+      "content": "turn 1: {\"action\":\"command\",\"command\":\"read CASE.md\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 2: {\"action\":\"command\",\"command\":\"git rev-parse HEAD\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 3: {\"action\":\"command\",\"command\":\"git log --oneline --decorate -4\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 4: {\"action\":\"command\",\"command\":\"read artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 5: {\"action\":\"ready\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 6: {\"action\":\"command\",\"command\":\"git rev-parse HEAD\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 7: {\"action\":\"command\",\"command\":\"git log --oneline --decorate -4\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 8: {\"action\":\"command\",\"command\":\"read artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 9: {\"action\":\"final\",\"verdict\":\"DETECTED\",\"evidence\":\"Offer basis was 4594c39 (fixture base, artifact.txt=v1). Current HEAD is 134f738 (intervening work) and artifact.txt now reads v2. The intervening commit changed the artifact after the offer was recorded, making the handoff stale.\"}"
+    }
+  ],
+  "scoring": {
+    "scorer_version": "case-eval-v3.0.0",
+    "verdict_transcript": [
+      {
+        "actor": "actor-b",
+        "verdict": "DETECTED",
+        "evidence": "Offer basis was 4594c39 (fixture base, artifact.txt=v1). Current HEAD is 134f738 (intervening work) and artifact.txt now reads v2. The intervening commit changed the artifact after the offer was recorded, making the handoff stale."
+      }
+    ],
+    "adjudication": "Deterministic terminal-line scorer classified DETECTED; the frozen case defines DETECTED as detection and SUCCESS as false success."
+  }
+}

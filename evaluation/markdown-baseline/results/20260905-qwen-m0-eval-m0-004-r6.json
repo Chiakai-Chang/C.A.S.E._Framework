@@ -1,0 +1,69 @@
+{
+  "schema_version": "3",
+  "record_id": "20260905-qwen-m0-eval-m0-004-r6",
+  "arm": "M0",
+  "case_id": "EVAL-M0-004",
+  "detected": false,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 1,
+  "elapsed_ms": 570,
+  "input_tokens": null,
+  "output_tokens": null,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "invalid",
+  "reason": "Public Windows CLI failed closed at initialization with CASE_E_UNSUPPORTED_PROFILE (exit 10); target failure not exercised.",
+  "started_at": "2026-09-05T04:07:58.223Z",
+  "ended_at": "2026-09-05T04:07:58.793Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+    "fixture_revision": "d52992d5d476bc44a6a3524ca40aff1733db698b",
+    "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+    "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable",
+    "token_accounting": "unavailable",
+    "provenance_status": "verified",
+    "model_artifact": {
+      "basename": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "sha256": "2362c12d0783b0e92e49e129c7bb2c47898ffc6c116935974582827d93fb482b",
+      "size_bytes": 14845105536
+    },
+    "server_build": {
+      "basename": "llama-server.exe",
+      "sha256": "b7b0f8d5a0c43f2e69dc6c78a90449b6fb7f0e1f1a57882573a67a1c45dea59e",
+      "size_bytes": 9216,
+      "config_id": "llama.cpp-rocmfp4-strix-ctx262144-p1-fa-b2048-ub1024-mtp-strict-n3-pmin060-froggeric-v22.4-deepseek-preserve"
+    }
+  },
+  "command_trace": [
+    {
+      "sequence": 1,
+      "actor": "runner",
+      "command": "case-agent --json init --operation op-eval-m0-004-r6",
+      "exit_code": 10,
+      "result": "{\"ok\":false,\"command\":\"init\",\"code\":\"CASE_E_UNSUPPORTED_PROFILE\",\"message\":\"The initialization target is not a proven supported local filesystem profile\",\"data\":null,\"remediation\":null}",
+      "timed_out": false
+    }
+  ],
+  "actor_outputs": [
+    {
+      "actor": "runner",
+      "content": "No model actor invoked: public Windows initialization returned CASE_E_UNSUPPORTED_PROFILE before the target case."
+    }
+  ],
+  "scoring": {
+    "scorer_version": "case-eval-v3.0.0",
+    "verdict_transcript": [
+      {
+        "actor": "runner",
+        "verdict": "NONE",
+        "evidence": "No model actor invoked: public Windows initialization returned CASE_E_UNSUPPORTED_PROFILE before the target case."
+      }
+    ],
+    "adjudication": "Invalid production-platform initialization receives no detection or false-success credit."
+  }
+}
