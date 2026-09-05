@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { link, mkdir, open, readFile, rm } from "node:fs/promises";
+import { access, link, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/u;
@@ -91,20 +91,44 @@ export async function atomicPersistRecord(directory, record) {
   await mkdir(directory, { recursive: true });
   const target = join(directory, `${record.record_id}.json`);
   const temporary = join(directory, `.${record.record_id}.${process.pid}.${randomUUID()}.tmp`);
+  const reservation = join(directory, `.${record.record_id}.lock`);
   let handle = null;
+  let reserved = false;
   try {
     handle = await open(temporary, "wx");
     await handle.writeFile(serialized, "utf8");
     await handle.sync();
     await handle.close();
     handle = null;
-    await link(temporary, target);
+    if (process.platform === "win32") {
+      try {
+        await mkdir(reservation);
+        reserved = true;
+      } catch (error) {
+        if (error?.code !== "EEXIST") throw error;
+        try {
+          await access(target);
+          throw new Error(`record already exists: ${record.record_id}`);
+        } catch (targetError) {
+          if (targetError?.code !== "ENOENT") throw targetError;
+          throw new Error(`record has an in-flight or stale reservation requiring recovery: ${record.record_id}`);
+        }
+      }
+      try {
+        await access(target);
+        throw new Error(`record already exists: ${record.record_id}`);
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+      }
+      await rename(temporary, target);
+    } else await link(temporary, target);
   } catch (error) {
     if (error?.code === "EEXIST") throw new Error(`record already exists: ${record.record_id}`, { cause: error });
     throw error;
   } finally {
     if (handle) await handle.close().catch(() => {});
     await rm(temporary, { force: true }).catch(() => {});
+    if (reserved) await rm(reservation, { recursive: true, force: true }).catch(() => {});
   }
   return target;
 }

@@ -1,10 +1,10 @@
 # B0/M0 preregistered comparison protocol
 
-Status: original r1 preregistration retained; post-pilot r5 method frozen, with a storage-boundary amendment frozen after a failed first persistence attempt and before retained r5 outcomes
+Status: original r1 preregistration retained; post-pilot r6 storage-boundary amendment to be frozen after a failed r5 persistence attempt and before replacement outcomes
 
 Original protocol frozen against CLI commit: `55c8c47cb7639c4106af6016f41ce8c4c3c6afc7`. The r5 protocol revision is the later method commit containing this amendment; the runner requires that exact commit as an execution argument and writes it into every r5 record. r4 remains immutable but is ineligible: its path placeholders cannot prove the model artifact and its runner did not meet the final process-tree/timeout boundary.
 
-The first execution against method commit `d39dce25393d83fdf1829b344920274d0ff86e83` reached the first record persistence boundary, where this repository filesystem rejected the tested hard-link publication primitive with `EISDIR`. The runner emitted a stable terminal persistence failure, left no record or temporary file, and the remaining cases were stopped. This disclosed failure is not an outcome sample. The later r5 method commit replaces that primitive with a same-directory fsynced temporary file, an exclusive per-record reservation directory, target-absence verification, atomic rename, and `finally` cleanup; retained r5 outcomes must cite the later commit.
+The first execution against method commit `d39dce25393d83fdf1829b344920274d0ff86e83` reached the first record persistence boundary, where this repository filesystem rejected the tested hard-link publication primitive with `EISDIR`. The runner emitted a stable terminal persistence failure, left no record or temporary file, and the remaining cases were stopped. This disclosed failure is not an outcome sample. The later r6 method commit uses a same-directory fsynced temporary file and a per-record exclusive reservation before Windows atomic rename; POSIX uses an atomic hard link followed by temporary cleanup. A pre-existing target is never overwritten. An abandoned Windows reservation with no target fails closed as an explicit stale-reservation recovery condition; it is not silently stolen. `finally` removes only the current run's unique temporary and owned reservation. Replacement outcomes use new r6 record IDs and cite the later commit.
 
 ## Question and decision rule
 

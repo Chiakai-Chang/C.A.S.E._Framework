@@ -18,7 +18,7 @@ import {
 
 const root = resolve(import.meta.dirname, "../..");
 const endpoint = "http://127.0.0.1:8080/v1/chat/completions";
-const runLabel = "r5";
+const runLabel = "r6";
 const scorerVersion = "case-eval-v3.0.0";
 const childTimeoutMs = 30_000;
 const fetchTimeoutMs = 120_000;

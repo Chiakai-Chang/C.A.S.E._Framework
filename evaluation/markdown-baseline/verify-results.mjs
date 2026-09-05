@@ -38,6 +38,9 @@ export function statusFor(record) {
   if (record.record_id.endsWith("-r5")) return record.outcome === "complete"
     ? ["eligible-post-pilot-r5", "Method-frozen r5 observation; still not preregistered comparative evidence."]
     : ["invalid-run", `r5 outcome ${record.outcome} is not eligible comparative evidence.`];
+  if (record.record_id.endsWith("-r6")) return record.outcome === "complete"
+    ? ["eligible-post-pilot-r6", "Method-frozen r6 replacement observation; still not preregistered comparative evidence."]
+    : ["invalid-run", `r6 outcome ${record.outcome} is not eligible comparative evidence.`];
   return ["eligible-post-pilot", "Post-pilot amended observation; not preregistered comparative evidence."];
 }
 

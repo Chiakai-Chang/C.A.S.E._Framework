@@ -127,6 +127,23 @@ test("concurrent persistence gives one writer authority for a record id", async 
   assert.ok(["a", "b"].includes(JSON.parse(await readFile(join(directory, "shared.json"), "utf8")).actor));
 });
 
+test("atomic persistence works on the repository filesystem used for results", async (t) => {
+  const directory = await mkdtemp(join(import.meta.dirname, "..", ".case-record-worktree-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await atomicPersistRecord(directory, { record_id: "worktree", value: "complete" });
+  assert.deepEqual(JSON.parse(await readFile(join(directory, "worktree.json"), "utf8")), { record_id: "worktree", value: "complete" });
+  assert.deepEqual((await readdir(directory)).filter((name) => name.endsWith(".tmp")), []);
+});
+
+test("an abandoned Windows reservation fails closed without overwriting", { skip: process.platform !== "win32" }, async (t) => {
+  const directory = await mkdtemp(join(import.meta.dirname, "..", ".case-record-stale-lock-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await import("node:fs/promises").then(({ mkdir }) => mkdir(join(directory, ".stale.lock")));
+  await assert.rejects(atomicPersistRecord(directory, { record_id: "stale", value: "new" }), /stale reservation requiring recovery/u);
+  await assert.rejects(access(join(directory, "stale.json")));
+  assert.deepEqual((await readdir(directory)).filter((name) => name.endsWith(".tmp")), []);
+});
+
 test("semantic validation rejects contradictory and structurally misleading records", () => {
   const record = {
     schema_version: "2",
