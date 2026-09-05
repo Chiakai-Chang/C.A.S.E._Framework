@@ -4,7 +4,7 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
-| 直接採用完整工作流程 | [套件](workflow-kit/README.md)、[實例](workflow-kit/docs/WORKFLOW.md)、[宿主](workflow-kit/docs/HOSTS.md) | 初始化、接續、分工、驗收與使用入口 |
+| 直接採用完整工作流程 | [套件](workflow-kit/README.md)、[實例](workflow-kit/docs/WORKFLOW.md)、[AI 工具](workflow-kit/docs/HOSTS.md) | 初始化、接續、分工、驗收與使用入口 |
 | 功能與實測狀態 | [READINESS](workflow-kit/docs/READINESS.md) | 已交付能力與實測／未測範圍 |
 | 查本次交付驗收 | [驗收](docs/ACCEPTANCE.md) | 目標對照、結果及未證明範圍 |
 | 對齊目標、避免偏移 | [目標](docs/GOALS.md) | 完整交付範圍與工作判斷；沒有排程 |
@@ -20,6 +20,7 @@
 | 了解效果證據 | [基準報告](docs/evaluation/m0-baseline-report.md)、[復盤](docs/evaluation/m0-retrospective.md) | 方法、結果、無效樣本與適用限制 |
 | 查設計演進 | [探索紀錄](docs/design/2026-09-04-case-agent-protocol-discovery.md) | 按日期保留推論；早期段落不代表現況 |
 | 查先前研究 | [跨平台封裝](docs/research/2026-09-04-cross-platform-packaging.md)、[MECE-Autopilot](docs/research/2026-09-04-mece-autopilot-fit.md) | 研究來源與當時的評估 |
+| 查安裝方式的選擇依據 | [安裝慣例調查](docs/research/2026-09-05-installation-conventions.md) | 官方與既有社群方案、實際限制，不另造套件管理器 |
 | 查完整審閱與裁定 | [進度帳本](.superpowers/sdd/2026-09-04-m0-local-dossier-integrity/progress.md)、[最終報告](.superpowers/sdd/2026-09-04-m0-local-dossier-integrity/task-12-report.md) | 原始工作脈絡及 45 條裁定 |
 
 目前產品：`workflow-kit/install.mjs` 安裝技能；`workflow-kit/skills/case-workflow/SKILL.md` 指導工作；其 `scripts/case.mjs` 保存任務狀態；`references/`、`assets/` 按需提供說明及範本；`workflow-kit/tests/` 驗證操作。

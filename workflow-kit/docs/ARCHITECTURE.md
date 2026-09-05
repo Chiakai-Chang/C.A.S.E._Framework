@@ -6,12 +6,14 @@
 
 | 部分 | 負責 | 不負責 |
 |---|---|---|
-| 宿主：pi、Codex、Claude 等 | 模型、工具權限、session、可用的 subagent | 不由 Kit 更換模型或接管設定 |
+| AI 工具：pi、Codex、Claude 等 | 模型、工具權限、session、可用的 subagent | 不由 Kit 更換模型或接管設定 |
 | Skill 與按需 references | 需求理解、讀取範圍、工作方法、分工與成果判斷 | 不是強制執行或安全隔離 |
 | 本地 CLI | 初始化、結構驗證、任務狀態、精簡接續、驗收記錄 | 不呼叫模型、不執行測試、不驗真證據 |
 | Installer | 專案級技能安裝、更新、備份、移除 | 不修改全域設定、不刪任務、不自動遷移 M0 |
 
-使用者給需求 → agent 按技能執行實際工作 → CLI 保存必要狀態 → 新 session／另一宿主讀狀態及來源 → 繼續工作與交付。產物仍存於原專案，不塞進任務摘要。
+表中的 Installer 是套件內進階安裝器。一般使用者改用既有 Skills 工具安裝同一份技能；它的路徑、更新與移除以自身規則為準，不繼承此表的備份承諾。見 [安裝指南](HOSTS.md)。
+
+使用者給需求 → agent 按技能執行實際工作 → CLI 保存必要狀態 → 新 session／另一AI 工具讀狀態及來源 → 繼續工作與交付。產物仍存於原專案，不塞進任務摘要。
 
 ## 安裝與資料
 
@@ -27,7 +29,7 @@
 
 安裝不等於 init：installer 只放技能，agent 在值得持續追蹤的任務才初始化資料。工具沒有 runtime 依賴，需 Node.js 20+。技能安裝後包含 scripts、references、assets，不依賴原 framework repository。
 
-Antigravity 的當前標準路徑亦為 `.agents/skills`，相容範圍見 [HOSTS](HOSTS.md)。不同宿主分享同一 project 和 task ID，並非自動互傳訊息或同時協調執行。
+Antigravity 的當前標準路徑亦為 `.agents/skills`，相容範圍見 [HOSTS](HOSTS.md)。不同AI 工具分享同一 project 和 task ID，並非自動互傳訊息或同時協調執行。
 
 ## 目前產品的詞彙
 
@@ -35,7 +37,7 @@ Antigravity 的當前標準路徑亦為 `.agents/skills`，相容範圍見 [HOST
 |---|---|
 | 任務／卷宗（task） | 一個目標、約束、驗收及工作狀態，由 UUID 識別；不是聊天 session |
 | 協調者 | 唯一更新任務記錄的人或 agent；由工作分工約定，非身分認證 |
-| checkpoint | 保存摘要、下一步及 active／blocked 狀態，不替宿主壓縮 context |
+| checkpoint | 保存摘要、下一步及 active／blocked 狀態，不替AI 工具壓縮 context |
 | context | 有長度限制的接續視圖；有截斷警示時先用 show 補讀 |
 | handoff | 記錄接手對象、摘要與下一步；不發訊息、不要求協議式 accept |
 | evidence | 已觀察結果及可追溯來源的文字；CLI 不判斷內容真偽 |

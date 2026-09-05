@@ -4,7 +4,7 @@
 
 ## 一般小事
 
-使用者說「把 README 的失效連結改成新網址」，agent 直接修改並核對連結即可。不必建立卷宗、角色或復盤報告。
+使用者說「把 README 的失效連結改成新網址」，agent 直接修改並核對連結即可。不必建立任務記錄、角色或復盤報告。
 
 ## 持續任務：修好 CSV 匯出
 
@@ -24,7 +24,7 @@ node "<cli>" checkpoint --project "<project>" --task "<id>" --summary "特殊字
 
 ## Context 接近上限或換 session
 
-完成 checkpoint 後，透過宿主既有功能 compact 或開新 session。給下一個 agent 專案路徑、task ID 及技能入口即可；CLI 不會自行開啟 session。
+完成 checkpoint 後，透過AI 工具既有功能 compact 或開新 session。給下一個 agent 專案路徑、task ID 及技能入口即可；CLI 不會自行開啟 session。
 
 ```sh
 node "<cli>" context --project "<project>" --task "<id>"
@@ -34,11 +34,11 @@ node "<cli>" context --project "<project>" --task "<id>"
 
 ## 確實有用時分工
 
-測試修復與 README 可獨立處理，而且宿主提供已授權的 subagent 能力時，協調者自行修程式，交給 worker 撰寫 README。工作包可寫：「只修改 README 的匯出段落；讀 src/export.js 的公開介面；加入一個包含逗號的例子，核對可執行；回報修改位置、實際執行結果與限制；不要修改 .case-agent。」
+測試修復與 README 可獨立處理，而且AI 工具提供已授權的 subagent 能力時，協調者自行修程式，交給 worker 撰寫 README。工作包可寫：「只修改 README 的匯出段落；讀 src/export.js 的公開介面；加入一個包含逗號的例子，核對可執行；回報修改位置、實際執行結果與限制；不要修改 .case-agent。」
 
 worker 回報後，協調者核對例子與最終程式是否一致。若 worker 認為應新增依賴，協調者依原約束採用不新增依賴的方法，或有實際必要時說明取捨；不因 worker 建議而擅改任務。沒有 subagent 功能時依序完成，結果同樣可以交付。
 
-若由另一個 agent 接手整個任務，先保存交接，再由宿主實際傳遞：
+若由另一個 agent 接手整個任務，先保存交接，再由AI 工具實際傳遞：
 
 ```sh
 node "<cli>" handoff --project "<project>" --task "<id>" --to "接續 session 的 agent" --summary "程式已修正；README worker 回報待整合。驗收證據尚未全部更新" --next "核對 README 範例與 src/export.js，再執行受影響測試"

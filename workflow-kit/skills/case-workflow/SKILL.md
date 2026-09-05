@@ -18,19 +18,19 @@ description: Manage an AI agent task from agreed outcome through execution, boun
 ## 開始與執行
 
 1. 依使用者現有要求建立目標與驗收。已授權的工作自行執行；只有必要資訊、權限或重大取捨缺失才詢問。保持目標的原始意義，避免為容易測量而縮小交付。
-2. 若使用 CLI，找到**目前載入這份 SKILL.md 所在的目錄**，以下以 `<skill-dir>` 表示，執行 `node "<skill-dir>/scripts/case.mjs" --help`。不要假設技能在當前專案、某個 home 或固定宿主路徑。
+2. 若使用 CLI，找到**目前載入這份 SKILL.md 所在的目錄**，以下以 `<skill-dir>` 表示，執行 `node "<skill-dir>/scripts/case.mjs" --help`。不要假設技能在當前專案、某個 home 或固定AI 工具路徑。
 3. `init --project "<project>"` 初始化；`new --project "<project>" --title "..." --goal "..." --criterion "..."` 建立任務。多項驗收重複 `--criterion`，約束重複 `--constraint`。保存回傳 task ID。完整命令說明按需讀上面的 CLI reference。
 4. 選擇最直接可完成的實作路線。複雜工作以幾個可驗證步驟規劃；一般工作不先產生設計報告。先讀與下一步直接相關的程式／資料，不預載完整歷史。
 5. 在有意義的里程碑記錄目前狀態、關鍵觀察及下一個具體動作；大輸出留在檔案並引用路徑。失敗、未知成本及限制照實保留。不要逐次工具呼叫寫日誌。
 
-CLI 需要 Node.js 20+。它保存工作狀態，不執行模型、接管宿主或保證 agent 會遵守指引。宿主沒有 skill loader 時，可由使用者明確指定讀取此檔；不要宣稱已自動載入。
+CLI 需要 Node.js 20+。它保存工作狀態，不執行模型、接管AI 工具或保證 agent 會遵守指引。AI 工具沒有 skill loader 時，可由使用者明確指定讀取此檔；不要宣稱已自動載入。
 
 ## Context 與狀態紀律
 
 - 目標、驗收、約束是持續工作的依據；當前摘要是閱讀入口，原始程式、資料與實際驗證才是結果依據。
 - 接續先讀 bounded `context`，再按引用讀取必要證據。目標、驗收或約束被截斷時，行動前必須使用 `show` 或核對完整來源；不要猜省略內容，也不把未載入的內容當成不存在。
 - 只由一位協調者透過 CLI 修改任務狀態。其他 agent 提交有界結果與指定產物，不同時修改協調者記錄。
-- `checkpoint` 是可覆核的接續點，不是宿主 context 壓縮指令。寫好後才能依宿主既有方法開始新 session／壓縮。
+- `checkpoint` 是可覆核的接續點，不是AI 工具 context 壓縮指令。寫好後才能依AI 工具既有方法開始新 session／壓縮。
 - 不把祕密、完整敏感資料、冗長終端輸出放進摘要；保留適當的受控來源引用。
 - 目標或驗收需要改變時明示原因；此版本不提供 amend，建立新任務並在新摘要引用舊 task ID。舊任務仍在 active／blocked 時才補反向引用；已完成的舊紀錄維持原狀，不為補連結而 reopen。不能默改舊標準使任務通過。
 

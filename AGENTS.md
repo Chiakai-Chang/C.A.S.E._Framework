@@ -8,6 +8,6 @@
 
 主要文件與溝通使用臺灣慣用的正體中文（zh-TW），英文等語言為對應版本；命令、路徑與資料欄位不翻譯。修改前依 `docs/MAINTENANCE.md` 確認主要定義位置及受影響的程式、技能、範本、文件、翻譯與測試，同步處理實際相關處；不機械式改動所有文件。
 
-修改 kit 跑 `node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs`；文件小修核對來源與連結。只有觸及 M0 才跑其完整套件。保留失敗與未知成本，不宣稱未驗證的宿主／模型效果。
+修改 kit 跑 `node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs`；文件小修核對來源與連結。只有觸及 M0 才跑其完整套件。保留失敗與未知成本，不宣稱未驗證的AI 工具／模型效果。
 
 此檔只指導本 repository，不由 init 或 installer 複製到採用者專案。

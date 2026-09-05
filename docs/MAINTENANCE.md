@@ -4,6 +4,10 @@
 
 ## 語言與主要定義
 
+公開文件直接稱「AI 工具」、具體產品名稱，或在指作業系統時寫「Windows／macOS／Linux」；不將英文 host 直譯為「宿主」。任務、接續、分工用一般語言說明，不要求讀者先學一套框架術語。既有 `--host` 旗標與 HOSTS.md 路徑維持相容，中文標題與說明不必跟著直譯。歷史研究與不可變證據保留原文，避免改寫紀錄。
+
+安裝與操作入口優先沿用各工具的官方機制或成熟社群慣例。採用自訂做法前，先列出現有方案及無法滿足的具體需求；沒有明確好處就不另造入口。研究結論與實際安裝驗證分開記錄，不能把範例指令當成已測可用。
+
 主要文件採臺灣慣用的正體中文（zh-TW）：使用「專案、檔案、資料夾、資訊、軟體、程式碼、設定、預設、建立、支援、品質、使用者、相依套件」等用語。保留 pi、Codex、Claude Code 等產品名稱及必要技術名稱；首次出現時可加中文說明。
 
 命令、旗標、JSON 欄位、格式識別碼及檔名是介面，不因翻譯而改名。中文文件沿用現有路徑，不為語系重新搬動整個專案。其他語言以 `GUIDE.en.md` 等清楚標記，從 README 互相導航；新增語言不複製一套程式或資料規格。
@@ -23,7 +27,7 @@
 | 安裝位置、更新、移除：`install.mjs` | help、HOSTS、兩份 README、GUIDE.en、ARCHITECTURE、封裝設定 | install 與 journey 測試；共用目錄、備份及既有檔案保留 |
 | 工作方法、分工、驗收：`skills/case-workflow/SKILL.md` 與 `references/` | `assets/task-notes.md`、WORKFLOW、TEMPLATES、GUIDE.en；涉及新命令時回查 CLI | 技能與情境核對；工具行為變更才增加對應測試 |
 | 範本：`skills/case-workflow/assets/task-notes.md` | TEMPLATES、協作 reference、WORKFLOW、英文範本段落 | 欄位與工具能力一致，不強制重複記錄 |
-| 宿主支援與測試證據：HOSTS、READINESS | README、GUIDE.en、根 STATUS；改路徑時回查 installer | 官方來源與實際結果分開，未測不寫通過 |
+| AI 工具支援與測試證據：HOSTS、READINESS | README、GUIDE.en、根 STATUS；改路徑時回查 installer | 官方來源與實際結果分開，未測不寫通過 |
 | 檔案新增、移動或刪除 | 根 MAP、引用連結、兩份 README、`package.json` 的 files；必要時 CI 路徑 | 連結、封裝內容；技能安裝後的相對路徑仍可用 |
 | 支援環境／封裝：`package.json` | README、HOSTS、READINESS、根 CONTRIBUTING、`.github/workflows/workflow-kit.yml` | 執行受影響環境測試；設定不等於已實測 |
 | 使用文件的技術敘述 | GUIDE.en 的對應主題與其他語言版本 | 語意、命令、限制一致；純中文用字修正不必更動英文 |

@@ -6,6 +6,16 @@ The kit combines an Agent Skill with a local, dependency-free Node.js tool. The 
 
 ## Install and start
 
+The normal entry point is the established [Vercel Labs Skills installer](https://github.com/vercel-labs/skills), not the internal CASE installer. Run this in your working project (Node.js 20+ and Git required):
+
+```text
+npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy
+```
+
+Select your AI tool and keep project scope. Use `npx skills update case-workflow` / `npx skills remove case-workflow` for that installation. Do not mix installation managers or assume CASE's custom backup guarantees apply to third-party tools. Skills 1.5.23 discovery and copied installation from GitHub were exercised in an isolated project; the local npm exec cache lock failed, so validation used the separately installed CLI. This does not establish model behavior. Pi may see both the shared and Pi-specific copy; check their source if it reports duplicates.
+
+The direct installer below remains an advanced/offline option. Its host table describes that installer, not every third-party installation layout. Antigravity can be selected directly in Skills; the `--host codex` workaround below applies only to CASE's older direct installer.
+
 Requirements: Node.js 20 or newer, an existing project directory, and a host that can read skills or Markdown instructions. Local task commands require no model and no network. A host's model connection is configured separately.
 
 From the kit directory (the directory containing `install.mjs`):

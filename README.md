@@ -8,13 +8,15 @@ Portable workflow skill and dependency-free local task tools for Pi, Codex and C
 
 ## 開始使用
 
-取得本 repository，使用 Node.js 20+。在 repository 根目錄執行，將 project 換成實際要工作的專案：
+先準備 Node.js 20+、Git 與你使用的 AI 工具。在實際工作的專案資料夾執行：
 
 ```text
-node workflow-kit/install.mjs --project "D:/Projects/MyProject" --host pi
+npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy
 ```
 
-pi／Codex 共用 `.agents/skills/case-workflow/`；Claude 使用 `.claude/skills/case-workflow/`。可選 `--host codex`、`claude` 或 `all`。不修改原有 AGENTS.md、CLAUDE.md、全域設定或憑證。
+依提示選擇正在使用的 AI 工具，採專案範圍安裝（不加 `--global`）。這是 [Vercel Labs Skills](https://github.com/vercel-labs/skills) 提供的現成安裝器，不是 CASE 自製指令；`--copy` 使用一般檔案，避免 Windows 符號連結權限差異。安裝前請先查看技能內容，AI 工具原有權限仍適用。
+
+從 GitHub 安裝的流程已在隔離專案驗證；不等於各工具的模型行為均已實測。更新、移除、pi 原生套件及離線方式見 [安裝指南](workflow-kit/docs/HOSTS.md)。
 
 在目標專案啟動或重新載入 agent：
 
@@ -24,18 +26,18 @@ pi／Codex 共用 `.agents/skills/case-workflow/`；Claude 使用 `.claude/skill
 | Codex | `$case-workflow 請完成……，驗收條件是……` |
 | Claude Code | `/case-workflow 請完成……，驗收條件是……` |
 
-若技能未載入，明確請 agent 讀取安裝位置的 SKILL.md。宿主信任、權限及設定仍由宿主控制，見 [宿主說明](workflow-kit/docs/HOSTS.md)。
+若技能未載入，明確請 agent 讀取安裝位置的 SKILL.md。AI 工具信任、權限及設定仍由AI 工具控制，見 [AI 工具說明](workflow-kit/docs/HOSTS.md)。
 
 ## 完整工作流程
 
 - 目標、約束、驗收 → 規劃與執行 → 紀錄與檢查 → 交付 → 必要時重新開啟。
 - 按需讀取當前狀態及來源，提供精簡接續內容；重要內容截斷時要求補讀。
-- 同一專案與 task ID 可跨 session／宿主接續，無需複製完整對話。
-- 提供工作包、責任、回報和整合範本；分工使用宿主既有能力，沒有時依序處理。
+- 同一專案與 task ID 可跨 session／AI 工具接續，無需複製完整對話。
+- 提供工作包、責任、回報和整合範本；分工使用AI 工具既有能力，沒有時依序處理。
 - 在實際決策時判斷目標是否偏移，不設排程或強制多輪討論。
 - 初始化、列出、查閱、checkpoint、context、證據、交接、完成、reopen、doctor，以及技能更新／移除。
 
-短問答與小修改可直接做，不強制建卷宗。CLI 不自行執行模型、驗真證據或保證所有並行／外部修改安全。
+短問答與小修改可直接做，不強制建立任務記錄。CLI 不自行執行模型、驗真證據或保證所有並行／外部修改安全。
 
 ## 文件入口
 
@@ -53,7 +55,7 @@ pi／Codex 共用 `.agents/skills/case-workflow/`；Claude 使用 `.claude/skill
 
 [MAP.md](MAP.md) 是隨程式版本維護的 Wiki 首頁，不另維護 GitHub Wiki 副本。新使用者只需本頁與操作實例；歷史研究無需預讀。
 
-Antigravity（agy）的標準技能路徑也使用 `.agents/skills`，可用現有 `--host codex` 放置技能；這是路徑相容，不代表已經過 agy 真實任務測試，詳見 [宿主說明](workflow-kit/docs/HOSTS.md)。
+Antigravity（agy）可在上述安裝器選擇，不需冒用 `codex` 選項。平台差異與驗證範圍見 [安裝指南](workflow-kit/docs/HOSTS.md)。
 
 `workflow-kit/` 是目前產品；根目錄 `src/`、`conformance/` 與 `evaluation/markdown-baseline/` 保留 M0 完整性研究。格式不同，既有 `.case-agent/` 的衝突會被拒絕，不自動遷移或覆蓋。
 

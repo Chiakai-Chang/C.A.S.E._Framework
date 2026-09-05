@@ -16,7 +16,7 @@ node workflow-kit/skills/case-workflow/scripts/case.mjs --help
 
 在 `workflow-kit` 目錄 `npm pack --dry-run` 查核封裝。技能入口保持精簡，references 按需載入。規則對應實際需要；測試驗證操作及失敗副作用。README 指令應能在隔離專案跑通。
 
-文件小修核對連結與事實即可。分清功能實作、特定環境操作、宿主載入、模型行為及長期效果，不能互相替代。CI 設定不等於已觀察到 CI 通過。
+文件小修核對連結與事實即可。分清功能實作、特定環境操作、AI 工具載入、模型行為及長期效果，不能互相替代。CI 設定不等於已觀察到 CI 通過。
 
 ## M0 研究
 

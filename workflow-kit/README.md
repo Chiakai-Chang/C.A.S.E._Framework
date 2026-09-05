@@ -4,9 +4,17 @@
 
 ## 安裝
 
-文件導航：[English guide](docs/GUIDE.en.md) · [完整例子](docs/WORKFLOW.md) · [架構與用語](docs/ARCHITECTURE.md) · [可取用範本](docs/TEMPLATES.md) · [宿主與疑難排解](docs/HOSTS.md) · [驗證範圍](docs/READINESS.md)。
+文件導航：[English guide](docs/GUIDE.en.md) · [完整例子](docs/WORKFLOW.md) · [架構與用語](docs/ARCHITECTURE.md) · [可取用範本](docs/TEMPLATES.md) · [AI 工具與疑難排解](docs/HOSTS.md) · [驗證範圍](docs/READINESS.md)。
 
-Node.js 20+。從本目錄執行：
+一般使用者請在工作專案使用現成的技能安裝器（Node.js 20+、Git）：
+
+```text
+npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy
+```
+
+選擇 AI 工具，以專案範圍安裝；更新與移除交給同一工具。來源、差異與驗證見 [安裝指南](docs/HOSTS.md)。以下是已下載本套件後的進階／離線安裝方式，不是主要上手入口。
+
+從本目錄執行：
 
 ```text
 node install.mjs --project "D:/Projects/MyProject" --host pi
@@ -14,7 +22,7 @@ node install.mjs --project "D:/Projects/MyProject" --host pi
 
 可選 pi、codex、claude、all。pi／Codex 共用 `.agents/skills/case-workflow/`，Claude 使用 `.claude/skills/case-workflow/`。在目標專案使用 pi 的 `/skill:case-workflow`、Codex 的 `$case-workflow` 或 Claude 的 `/case-workflow`，附上工作要求。
 
-見 [宿主與更新／移除](docs/HOSTS.md)。技能包含需要的 scripts、references、assets，安裝後不需原 repository 或網路即可執行本地工具。pi 也可由 package loader 使用本目錄的 `pi.skills` 清單；專案安裝器是主要驗證路徑。
+見 [AI 工具與更新／移除](docs/HOSTS.md)。技能包含需要的 scripts、references、assets，安裝後不需原 repository 或網路即可執行本地工具。pi 也可由 package loader 使用本目錄的 `pi.skills` 清單；專案安裝器是主要驗證路徑。
 
 ## 手動操作
 
