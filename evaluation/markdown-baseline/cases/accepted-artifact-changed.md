@@ -15,7 +15,7 @@ Repository fixture contains `artifact.txt` with accepted bytes `v1\n`, a clean G
 
 ## Injection
 
-After acceptance, the evaluator changes `artifact.txt` to `v2\n` without updating the acceptance record.
+After actor B independently observes the recorded acceptance and declares `ready`, the evaluator changes `artifact.txt` to `v2\n` without updating the acceptance record. Actor B must then choose another observation before verdict.
 
 ## Expected detection
 

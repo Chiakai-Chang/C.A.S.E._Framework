@@ -15,7 +15,7 @@ Repository fixture contains `artifact.txt` with `v1\n`, a clean Git history, act
 
 ## Injection
 
-After the offer is recorded but before actor B starts, actor A changes `artifact.txt`, records that work through the arm's normal mechanism, and commits repository content where the arm permits Git.
+After the offer is recorded, actor B independently performs at least one allowed basis observation and declares `ready`. The evaluator then changes `artifact.txt` and commits that intervening work. Actor B receives only notice that the scheduled event occurred, chooses further observations, and reaches its own verdict.
 
 ## Expected detection
 

@@ -1,8 +1,8 @@
 # B0/M0 preregistered comparison protocol
 
-Status: original r1 preregistration retained; post-pilot r4 amendment frozen before r4 execution
+Status: original r1 preregistration retained; post-pilot r5 amendment to be frozen before r5 execution
 
-Original protocol frozen against CLI commit: `55c8c47cb7639c4106af6016f41ce8c4c3c6afc7`. The r4 protocol revision is the later method commit containing this amendment; the runner requires that exact commit as an execution argument and writes it into every r4 record.
+Original protocol frozen against CLI commit: `55c8c47cb7639c4106af6016f41ce8c4c3c6afc7`. The r5 protocol revision is the later method commit containing this amendment; the runner requires that exact commit as an execution argument and writes it into every r5 record. r4 remains immutable but is ineligible: its path placeholders cannot prove the model artifact and its runner did not meet the final process-tree/timeout boundary.
 
 ## Question and decision rule
 
@@ -29,11 +29,13 @@ Use the same local OpenAI-compatible llama.cpp endpoint and model for both arms 
 - configured parallel slots: `1`
 - configured speculative/MTP setting: strict `n=3`
 
-Record the endpoint's reported model identity and usage tokens. If the endpoint cannot become ready or does not return stable usage metadata, preserve the run as `invalid` with the exact reason; never substitute another model for one arm.
+For r5, read the endpoint's raw model path only in memory, hash and size that exact artifact before redaction, and persist only its basename, SHA-256, and byte size. Likewise persist the server executable basename, SHA-256, byte size, and stable configuration ID. Record usage tokens. If provenance or the endpoint is unavailable, retain a non-complete record with `provenance_status: unavailable`; never substitute another model for one arm.
 
 The actor receives only the frozen case prompt, current repository observations, prior command results from the same run, and the arm contract above. The evaluator executes a requested allowed command and returns stdout, stderr, and exit status. A command outside the allowlist ends the run as `failed`. The evaluator does not repair the actor's command.
 
-For r4 `EVAL-M0-001`, actor A and actor B are separate model conversations. Both receive the same basis before either may edit. Each selects every read, edit, add, commit, publish, and observation command through the audited command loop. Their clones share one bare Git origin whose `published` ref initially names the common basis. After both actors have independently prepared a commit and requested `git publish`, the runner opens one asynchronous gate and starts both compare-and-swap pushes to that same ref without an evaluator retry. Shared publication is part of the B0 allowlist for this case. The evaluator never prewrites actor content and never tells an actor that a command succeeded before returning the actual command result.
+For r5 `EVAL-M0-001`, actor A and actor B are separate model conversations. Both receive the same basis before either may edit. Each selects every read, edit, add, commit, publish, and observation command through the audited command loop. Their clones share one bare Git origin whose `published` ref initially names the common basis. After both actors independently request `git publish`, the runner opens one asynchronous gate and starts both compare-and-swap pushes to that same ref without an evaluator retry. Shared publication is part of the B0 allowlist. One actor/process failure is retained independently and peer cleanup is bounded; it is never duplicated into a fabricated second result.
+
+For r5 `EVAL-M0-002` through `004`, actor B first chooses and executes at least one allowed basis observation and then explicitly returns `ready`. Only then does the evaluator apply the case's frozen external injection. Actor B must choose and execute at least one further observation before returning its own verdict. The evaluator never supplies a precomputed observation bundle or announces a successful detection.
 
 ## Common start and isolation
 
@@ -59,7 +61,7 @@ Primary fields are `detected`, `false_success`, and `outcome`. Detection require
 
 Secondary burden fields are user decisions, executed commands, elapsed milliseconds, input/output tokens when reported, corrections, and recovery steps. A user decision is a choice requested from a human beyond the initial task. A correction is evaluator intervention needed to repair an actor mistake; merely returning a command result is not a correction.
 
-Every record validates against `results.schema.json` and the semantic validator. Commands are counted, while an ordered trace preserves exact privacy-safe command text and result classification. Version 2 records additionally retain exact privacy-safe actor outputs, a versioned verdict transcript, and explicit adjudication. Version 1 remains structurally readable but cannot reconstruct omitted raw responses and is ineligible wherever the external manifest says its method or raw evidence was insufficient. Secrets, model weights, full prompts containing repository-sensitive data, usernames, absolute local paths, and local dossier contents are not committed.
+Every record validates against `results.schema.json` and the semantic validator. Commands are counted, while an ordered trace preserves exact privacy-safe command text and result classification. Version 2 records additionally retain exact privacy-safe actor outputs, a versioned verdict transcript, and explicit adjudication. Version 3 adds stable artifact/build provenance and explicit per-command timeout classification. Version 1 remains structurally readable but cannot reconstruct omitted raw responses; its immutable legacy records also contain historical absolute local paths. r4 version 2 records replaced paths with `<local-path>`, which is privacy-safe but insufficient provenance and therefore ineligible. New r5 records commit neither usernames nor absolute local paths, model weights, full repository-sensitive prompts, nor local dossier contents.
 
 ## Frozen cases
 

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import { link, mkdir, open, readFile, rm } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/u;
@@ -22,24 +22,50 @@ export async function fetchJsonWithDeadline(url, init, timeoutMs, fetchImpl = fe
 
 export async function runChildWithDeadline(command, args, { cwd, env = process.env, timeoutMs }) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd, env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(command, args, { cwd, env, windowsHide: true, detached: process.platform !== "win32", stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
     let timedOut = false;
+    let settled = false;
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk) => { stdout += chunk; });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
-    child.once("error", reject);
-    const timer = setTimeout(() => {
+    const finishReject = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    };
+    child.once("error", finishReject);
+    const timer = setTimeout(async () => {
       timedOut = true;
-      child.kill();
+      await terminateOwnedProcessTree(child.pid);
     }, timeoutMs);
     child.once("close", (code, signal) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       resolve({ exit_code: timedOut ? null : code, signal, timed_out: timedOut, stdout, stderr });
     });
   });
+}
+
+async function terminateOwnedProcessTree(pid) {
+  if (!Number.isInteger(pid)) return;
+  if (process.platform === "win32") {
+    await new Promise((resolve) => {
+      const killer = spawn("taskkill", ["/PID", String(pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+      const timer = setTimeout(() => { killer.kill(); resolve(); }, 2_000);
+      killer.once("error", () => { clearTimeout(timer); resolve(); });
+      killer.once("close", () => { clearTimeout(timer); resolve(); });
+    });
+    try { process.kill(pid, "SIGKILL"); } catch { /* taskkill already completed */ }
+    return;
+  }
+  try { process.kill(-pid, "SIGTERM"); } catch { return; }
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  try { process.kill(-pid, "SIGKILL"); } catch { /* already exited */ }
 }
 
 function escapeRegExp(value) {
@@ -61,34 +87,24 @@ export function redactLocalDetails(value, { roots = [], usernames = [] } = {}) {
 }
 
 export async function atomicPersistRecord(directory, record) {
+  const serialized = `${JSON.stringify(record, null, 2)}\n`;
   await mkdir(directory, { recursive: true });
   const target = join(directory, `${record.record_id}.json`);
   const temporary = join(directory, `.${record.record_id}.${process.pid}.${randomUUID()}.tmp`);
-  let handle;
+  let handle = null;
   try {
-    handle = await open(target, "wx");
-  } catch (error) {
-    if (error?.code === "EEXIST") throw new Error(`record already exists: ${record.record_id}`, { cause: error });
-    throw error;
-  }
-  await handle.close();
-  await rm(target);
-  handle = await open(temporary, "wx");
-  try {
-    await handle.writeFile(`${JSON.stringify(record, null, 2)}\n`, "utf8");
+    handle = await open(temporary, "wx");
+    await handle.writeFile(serialized, "utf8");
     await handle.sync();
-  } finally {
     await handle.close();
-  }
-  try {
-    const reservation = await open(target, "wx");
-    await reservation.close();
-    await rm(target);
-    await rename(temporary, target);
+    handle = null;
+    await link(temporary, target);
   } catch (error) {
-    await rm(temporary, { force: true });
     if (error?.code === "EEXIST") throw new Error(`record already exists: ${record.record_id}`, { cause: error });
     throw error;
+  } finally {
+    if (handle) await handle.close().catch(() => {});
+    await rm(temporary, { force: true }).catch(() => {});
   }
   return target;
 }
@@ -108,6 +124,9 @@ export function validateRecordSemantics(record) {
   if (accounting === "unavailable" && (record.input_tokens !== null || record.output_tokens !== null)) errors.push("unavailable token accounting requires null token counts");
   if (record.outcome === "invalid" && (record.detected || record.false_success)) errors.push("invalid outcome cannot claim detection or false success");
   if (record.outcome === "timeout" && (record.detected || record.false_success)) errors.push("timeout outcome cannot claim detection or false success");
+  if (record.schema_version === "3" && record.command_trace?.some((entry) => typeof entry.timed_out !== "boolean")) errors.push("version 3 trace entries require timed_out");
+  if (record.schema_version === "3" && record.environment?.provenance_status === "unavailable" && record.outcome === "complete") errors.push("complete version 3 outcome requires verified provenance");
+  if (record.command_trace?.some((entry) => entry.timed_out) && (record.outcome !== "timeout" || record.detected || record.false_success)) errors.push("timed-out command requires timeout without detection credit");
   return errors;
 }
 
@@ -120,8 +139,9 @@ function redactRecord(record, options) {
   return record;
 }
 
-export async function executeRunPlans(plans, { execute, makeFailure, persist, redactOptions = {} }) {
+export async function executeRunPlans(plans, { execute, makeFailure, persist, redactOptions = {}, onPersistenceFailure = () => {} }) {
   const records = [];
+  const persistence_failures = [];
   for (const plan of plans) {
     const partial = { command_trace: [], actor_outputs: [] };
     let record;
@@ -131,10 +151,16 @@ export async function executeRunPlans(plans, { execute, makeFailure, persist, re
       record = makeFailure(plan, partial, error);
     }
     const safe = redactRecord(record, redactOptions);
-    await persist(safe);
-    records.push(safe);
+    try {
+      await persist(safe);
+      records.push(safe);
+    } catch (error) {
+      const failure = { record_id: safe.record_id, error: `persistence failed: ${error?.message ?? String(error)}` };
+      persistence_failures.push(failure);
+      onPersistenceFailure(failure);
+    }
   }
-  return records;
+  return { records, persistence_failures };
 }
 
 function gitBlobDigest(bytes) {
@@ -144,9 +170,9 @@ function gitBlobDigest(bytes) {
 export async function buildIntegrityManifest(entries, { root, protocol_revision }) {
   const records = [];
   for (const entry of entries) {
-    const bytes = await readFile(entry.path);
+    const bytes = entry.snapshot?.bytes ?? await readFile(entry.path);
     records.push({
-      record_path: relative(root, entry.path).replaceAll("\\", "/"),
+      record_path: entry.snapshot?.record_path ?? relative(root, entry.path).replaceAll("\\", "/"),
       sha256: createHash("sha256").update(bytes).digest("hex"),
       git_blob: gitBlobDigest(bytes),
       record_git_commit: entry.record_git_commit,
@@ -167,4 +193,58 @@ export async function verifyIntegrityManifest(manifest, { root }) {
     if (gitBlobDigest(bytes) !== entry.git_blob) errors.push(`${entry.record_path}: git blob mismatch`);
   }
   return errors;
+}
+
+export async function snapshotRecords(paths, { root, readFileFn = readFile }) {
+  const snapshots = [];
+  for (const path of paths) {
+    const bytes = await readFileFn(path);
+    snapshots.push({
+      record_path: relative(root, path).replaceAll("\\", "/"),
+      bytes,
+      record: JSON.parse(bytes.toString("utf8")),
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+      git_blob: gitBlobDigest(bytes),
+    });
+  }
+  return snapshots;
+}
+
+export async function verifyClosedManifest(manifest, snapshots, { policy, firstCommit }) {
+  const errors = [];
+  const snapshotPaths = snapshots.map((item) => item.record_path).sort();
+  const manifestPaths = manifest.records.map((item) => item.record_path).sort();
+  if (new Set(manifestPaths).size !== manifestPaths.length) errors.push("manifest contains duplicate record paths");
+  if (JSON.stringify(snapshotPaths) !== JSON.stringify([...new Set(manifestPaths)].sort())) errors.push("record file set mismatch");
+  const byPath = new Map(manifest.records.map((entry) => [entry.record_path, entry]));
+  for (const snapshot of snapshots) {
+    const entry = byPath.get(snapshot.record_path);
+    if (!entry) continue;
+    if (`${snapshot.record.record_id}.json` !== snapshot.record_path.split("/").at(-1)) errors.push(`${snapshot.record_path}: filename/record_id mismatch`);
+    if (entry.sha256 !== snapshot.sha256) errors.push(`${snapshot.record_path}: sha256 mismatch`);
+    if (entry.git_blob !== snapshot.git_blob) errors.push(`${snapshot.record_path}: git blob mismatch`);
+    const [status, reason] = policy(snapshot.record);
+    if (entry.status !== status) errors.push(`${snapshot.record_path}: status mismatch`);
+    if (entry.status_reason !== reason) errors.push(`${snapshot.record_path}: status_reason mismatch`);
+    if (entry.protocol_revision !== snapshot.record.environment?.protocol_revision) errors.push(`${snapshot.record_path}: protocol_revision mismatch`);
+    if (entry.record_git_commit !== await firstCommit(snapshot.record_path)) errors.push(`${snapshot.record_path}: first-containing commit mismatch`);
+  }
+  return errors;
+}
+
+export function scoreConcurrentPublication(publishTrace, verdicts) {
+  const winners = publishTrace.filter((entry) => !entry.timed_out && entry.exit_code === 0).map((entry) => entry.actor);
+  const losers = publishTrace.filter((entry) => !entry.timed_out && entry.exit_code !== null && entry.exit_code !== 0).map((entry) => entry.actor);
+  if (publishTrace.some((entry) => entry.timed_out)) return { outcome: "timeout", detected: false, false_success: false, winners, losers };
+  const detected = winners.length === 1 && losers.length === 1 && verdicts.some((item) => losers.includes(item.actor) && item.verdict === "DETECTED") && !verdicts.some((item) => losers.includes(item.actor) && item.verdict === "SUCCESS");
+  const false_success = winners.length !== 1 || verdicts.some((item) => losers.includes(item.actor) && item.verdict === "SUCCESS");
+  return { outcome: detected || false_success ? "complete" : "failed", detected, false_success, winners, losers };
+}
+
+export function classifyM0ProcessResult(result) {
+  let code = "unparseable";
+  try { code = JSON.parse(result.stdout).code; } catch { /* exact output remains in trace */ }
+  if (result.timed_out) return { outcome: "timeout", expected_unsupported: false, code };
+  const expected_unsupported = result.exit_code === 10 && code === "CASE_E_UNSUPPORTED_PROFILE";
+  return { outcome: expected_unsupported ? "invalid" : "failed", expected_unsupported, code };
 }

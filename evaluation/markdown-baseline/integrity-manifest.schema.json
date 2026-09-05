@@ -20,7 +20,7 @@
           "git_blob": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
           "record_git_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
           "protocol_revision": { "type": "string", "minLength": 1 },
-          "status": { "enum": ["eligible-post-pilot", "eligible-post-pilot-r4", "invalid-preregistered-pilot", "invalid-method", "invalid-production", "invalid-run"] },
+          "status": { "enum": ["eligible-post-pilot", "eligible-post-pilot-r5", "invalid-preregistered-pilot", "invalid-method", "invalid-production", "invalid-provenance-runner-boundary", "invalid-run"] },
           "status_reason": { "type": "string", "minLength": 1 }
         }
       }

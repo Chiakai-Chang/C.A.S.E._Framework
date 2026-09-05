@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -7,10 +7,14 @@ import test from "node:test";
 import {
   atomicPersistRecord,
   buildIntegrityManifest,
+  classifyM0ProcessResult,
   executeRunPlans,
   fetchJsonWithDeadline,
   redactLocalDetails,
   runChildWithDeadline,
+  scoreConcurrentPublication,
+  snapshotRecords,
+  verifyClosedManifest,
   validateRecordSemantics,
   verifyIntegrityManifest,
 } from "../runner-lib.mjs";
@@ -43,6 +47,35 @@ test("child timeout retains partial stdout and classifies timeout", async () => 
   assert.equal(result.stdout, "partial-output");
 });
 
+test("child timeout terminates an owned grandchild before it can write later", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-process-tree-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const marker = join(directory, "late-marker.txt");
+  const grandchild = `setTimeout(() => require("node:fs").writeFileSync(${JSON.stringify(marker)}, "late"), 600); setInterval(() => {}, 1000);`;
+  const parent = `require("node:child_process").spawn(process.execPath, ["-e", ${JSON.stringify(grandchild)}], {stdio:"ignore"}); setInterval(() => {}, 1000);`;
+  const result = await runChildWithDeadline(process.execPath, ["-e", parent], { cwd: directory, timeoutMs: 100 });
+  assert.equal(result.timed_out, true);
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  await assert.rejects(access(marker));
+});
+
+test("spawn rejection remains independent while a timed peer process tree is cleaned up", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-spawn-peer-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const marker = join(directory, "peer-late-marker.txt");
+  const grandchild = `setTimeout(() => require("node:fs").writeFileSync(${JSON.stringify(marker)}, "late"), 600); setInterval(() => {}, 1000);`;
+  const parent = `require("node:child_process").spawn(process.execPath, ["-e", ${JSON.stringify(grandchild)}], {stdio:"ignore"}); setInterval(() => {}, 1000);`;
+  const settled = await Promise.allSettled([
+    runChildWithDeadline("case-command-that-does-not-exist", [], { cwd: directory, timeoutMs: 100 }),
+    runChildWithDeadline(process.execPath, ["-e", parent], { cwd: directory, timeoutMs: 100 }),
+  ]);
+  assert.equal(settled[0].status, "rejected");
+  assert.equal(settled[1].status, "fulfilled");
+  assert.equal(settled[1].value.timed_out, true);
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  await assert.rejects(access(marker));
+});
+
 test("redaction removes worktree, user profile, and username spellings", () => {
   const source = [
     "D:\\MyProject\\C.A.S.E._Framework\\.worktrees\\m0-local-dossier-integrity\\secret.txt",
@@ -61,8 +94,9 @@ test("redaction removes worktree, user profile, and username spellings", () => {
   assert.match(redacted, /<worktree>|<user-profile>/);
 });
 
-test("atomic persistence never overwrites an existing record", async () => {
+test("atomic persistence never overwrites an existing record", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "case-record-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
   const first = { record_id: "example", value: "first" };
   await atomicPersistRecord(directory, first);
 
@@ -73,8 +107,16 @@ test("atomic persistence never overwrites an existing record", async () => {
   assert.deepEqual(JSON.parse(await readFile(join(directory, "example.json"), "utf8")), first);
 });
 
-test("concurrent persistence gives one writer authority for a record id", async () => {
+test("serialization failure leaves no temporary or target record", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-record-serialization-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await assert.rejects(atomicPersistRecord(directory, { record_id: "broken", value: 1n }), /BigInt/u);
+  assert.deepEqual(await readdir(directory), []);
+});
+
+test("concurrent persistence gives one writer authority for a record id", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "case-record-race-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
   const attempts = await Promise.allSettled([
     atomicPersistRecord(directory, { record_id: "shared", actor: "a" }),
     atomicPersistRecord(directory, { record_id: "shared", actor: "b" }),
@@ -169,8 +211,88 @@ test("per-plan failure persists partial redacted evidence and later plans still 
   assert.equal(persisted[1].record_id, "second");
 });
 
-test("external integrity manifest detects a record changed after hashing", async () => {
+test("persistence failure is reported and later plans still attempt persistence", async () => {
+  const persisted = [];
+  const terminal = [];
+  const result = await executeRunPlans([{ id: "first" }, { id: "second" }], {
+    execute: async (plan) => ({ record_id: plan.id }),
+    makeFailure: () => assert.fail("execution should not fail"),
+    persist: async (record) => {
+      if (record.record_id === "first") throw new Error("disk unavailable");
+      persisted.push(record.record_id);
+    },
+    onPersistenceFailure: (failure) => terminal.push(failure),
+  });
+  assert.deepEqual(persisted, ["second"]);
+  assert.equal(result.records.length, 1);
+  assert.deepEqual(result.persistence_failures, [{ record_id: "first", error: "persistence failed: disk unavailable" }]);
+  assert.deepEqual(terminal, result.persistence_failures);
+});
+
+test("timed-out publication cannot earn detection", () => {
+  const result = scoreConcurrentPublication([
+    { actor: "actor-a", exit_code: 0, timed_out: false },
+    { actor: "actor-b", exit_code: null, timed_out: true },
+  ], [
+    { actor: "actor-a", verdict: "SUCCESS" },
+    { actor: "actor-b", verdict: "DETECTED" },
+  ]);
+  assert.deepEqual(result, { outcome: "timeout", detected: false, false_success: false, winners: ["actor-a"], losers: [] });
+});
+
+test("M0 process hang is timeout rather than unsupported invalid", () => {
+  assert.deepEqual(classifyM0ProcessResult({ timed_out: true, exit_code: null, stdout: "" }), {
+    outcome: "timeout", expected_unsupported: false, code: "unparseable",
+  });
+});
+
+test("closed manifest rejects duplicate, dropped, and relabeled entries", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-closed-manifest-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const first = join(directory, "first.json");
+  const second = join(directory, "second.json");
+  await writeFile(first, "{\"record_id\":\"first\",\"environment\":{\"protocol_revision\":\"p1\"}}\n");
+  await writeFile(second, "{\"record_id\":\"second\",\"environment\":{\"protocol_revision\":\"p2\"}}\n");
+  const snapshots = await snapshotRecords([first, second], { root: directory });
+  const entry = (snapshot, status) => ({
+    record_path: snapshot.record_path, sha256: snapshot.sha256, git_blob: snapshot.git_blob,
+    record_git_commit: `commit-${snapshot.record.record_id}`, protocol_revision: snapshot.record.environment.protocol_revision,
+    status, status_reason: `reason-${status}`,
+  });
+  const manifest = { records: [entry(snapshots[0], "eligible"), entry(snapshots[1], "invalid")] };
+  const policy = (record) => record.record_id === "first" ? ["eligible", "reason-eligible"] : ["invalid", "reason-invalid"];
+  const firstCommit = async (recordPath) => `commit-${recordPath.slice(0, -5)}`;
+  assert.deepEqual(await verifyClosedManifest(manifest, snapshots, { policy, firstCommit }), []);
+  assert.ok((await verifyClosedManifest({ records: [manifest.records[0], manifest.records[0]] }, snapshots, { policy, firstCommit })).some((error) => /duplicate/u.test(error)));
+  assert.ok((await verifyClosedManifest({ records: [manifest.records[0]] }, snapshots, { policy, firstCommit })).some((error) => /set mismatch/u.test(error)));
+  const relabeled = structuredClone(manifest);
+  relabeled.records[0].status = "invalid";
+  assert.ok((await verifyClosedManifest(relabeled, snapshots, { policy, firstCommit })).some((error) => /status mismatch/u.test(error)));
+});
+
+test("record snapshot uses one buffer for parsing and hashing despite later mutation", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-snapshot-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const path = join(directory, "one.json");
+  await writeFile(path, "{\"record_id\":\"one\"}\n");
+  let reads = 0;
+  const snapshots = await snapshotRecords([path], {
+    root: directory,
+    readFileFn: async (target) => {
+      reads += 1;
+      const buffer = await readFile(target);
+      await writeFile(target, "{\"record_id\":\"mutated\"}\n");
+      return buffer;
+    },
+  });
+  assert.equal(reads, 1);
+  assert.equal(snapshots[0].record.record_id, "one");
+  assert.match(snapshots[0].sha256, /^[0-9a-f]{64}$/u);
+});
+
+test("external integrity manifest detects a record changed after hashing", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "case-integrity-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
   const recordPath = join(directory, "record.json");
   await writeFile(recordPath, "{\"record_id\":\"record\"}\n", "utf8");
   const manifest = await buildIntegrityManifest([{ path: recordPath, record_git_commit: "abc", status: "eligible" }], {

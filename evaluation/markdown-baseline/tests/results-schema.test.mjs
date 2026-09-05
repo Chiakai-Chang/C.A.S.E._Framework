@@ -68,6 +68,28 @@ test("v2 schema accepts a complete reproducible record", () => {
   assert.equal(validate(minimalV2()), true, JSON.stringify(validate.errors));
 });
 
+test("v3 requires stable model/server provenance and timed_out trace classification", () => {
+  const record = minimalV2({ schema_version: "3" });
+  assert.equal(validate(record), false);
+  record.environment.model_artifact = { basename: "model.gguf", sha256: "a".repeat(64), size_bytes: 10 };
+  record.environment.server_build = { basename: "llama-server.exe", sha256: "b".repeat(64), size_bytes: 20, config_id: "ctx262144-p1-mtp3" };
+  record.environment.provenance_status = "verified";
+  record.command_trace[0].timed_out = false;
+  record.scoring.scorer_version = "case-eval-v3.0.0";
+  assert.equal(validate(record), true, JSON.stringify(validate.errors));
+});
+
+test("v3 permits unavailable provenance only for a non-complete retained failure", () => {
+  const record = minimalV2({ schema_version: "3", outcome: "failed", false_success: false, input_tokens: null, output_tokens: null });
+  record.environment.token_accounting = "unavailable";
+  record.environment.provenance_status = "unavailable";
+  record.environment.model_artifact = null;
+  record.environment.server_build = null;
+  record.command_trace[0].timed_out = false;
+  record.scoring.scorer_version = "case-eval-v3.0.0";
+  assert.equal(validate(record), true, JSON.stringify(validate.errors));
+});
+
 test("all retained v1 records remain schema and semantically readable", async () => {
   const directory = new URL("../results/", import.meta.url);
   const { readdir } = await import("node:fs/promises");

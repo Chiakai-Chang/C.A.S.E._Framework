@@ -10,7 +10,7 @@ Repository fixture contains `artifact.txt` with `v1\n`, a clean Git history, and
 
 ## Allowed commands
 
-- B0 r4: read `CASE.md`, read `artifact.txt`, inspect `git status`/`git diff`/`git rev-parse`, edit `artifact.txt`, `git add artifact.txt`, `git commit`, publish exactly once to the shared origin's `published` ref, fetch that ref, and inspect its revision/content. The shared publish is the only B0 write outside the actor's clone.
+- B0 r5: read `CASE.md`, read `artifact.txt`, inspect `git status`/`git diff`/`git rev-parse`, edit `artifact.txt`, `git add artifact.txt`, `git commit`, publish exactly once to the shared origin's `published` ref, fetch that ref, and inspect its revision/content. The shared publish is the only B0 write outside the actor's clone.
 - M0: the public `case-agent` commands required for init/create/show and one governed evidence mutation, plus read-only Git inspection and the declared artifact edit.
 
 ## Injection

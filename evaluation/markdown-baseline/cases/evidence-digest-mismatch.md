@@ -15,7 +15,7 @@ Repository fixture contains `artifact.txt` with originally recorded bytes `v1\n`
 
 ## Injection
 
-The evaluator changes `artifact.txt` to `v2\n` after the evidence digest is recorded and does not update the evidence record.
+After actor B independently observes the recorded digest and declares `ready`, the evaluator changes `artifact.txt` to `v2\n` and does not update the evidence record. Actor B must then choose another observation before verdict.
 
 ## Expected detection
 
