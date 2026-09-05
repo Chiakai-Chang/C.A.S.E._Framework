@@ -128,6 +128,8 @@ No tests, evaluation records, caches, secrets, local dossiers, conformance fixtu
 
 Post-result runner method note: the publication gate now clears both wait timers at release and settles each request exactly once after bounded push outcomes are gathered. Future runs have no r6/v3 default and must explicitly use a unique r7-or-later label, reserved schema v4, v4 scorer, and a clean frozen method revision. No r7/v4 evaluation was executed; all selected r6 arithmetic and the `narrow` decision above are unchanged.
 
+Round-six future-method hardening additionally makes the CLI executable provenance content-addressed. Before any model request or result write, the runner refuses dirty tracked CLI/method inputs, freshly compiles the clean frozen commit into a unique temporary artifact, bundles schemas and runtime dependency bytes, and records the executed artifact's SHA-256/file-count/byte-count plus source commit in v4. The ignored workspace `dist` is never an execution authority. Live finalization and external verification now share one eligibility policy: every failed, timeout, invalid, unsupported-production, or ungrounded B0 observation is ineligible. A publication actor remains permanently seen after its first gate request, so a later duplicate receives one immediate stable error trace and cannot begin another wait. This is method-only work: no raw record, r6 selection, aggregate, or `narrow` decision changed, and no model was run.
+
 Round-five verification: 310/310 core tests, 45/45 evaluation tests, and 140/140 conformance cases passed; 34/34 immutable records and manifest entries verified with no failure; package contents and hash remained unchanged.
 
 Remaining release blockers:

@@ -65,6 +65,7 @@
       "properties": {
         "os": { "type": "string", "minLength": 1 }, "node": { "type": "string", "minLength": 1 },
         "cli_commit": { "type": "string", "minLength": 1 }, "fixture_revision": { "type": "string", "minLength": 1 },
+        "cli_artifact": { "$ref": "#/$defs/cliArtifact" },
         "protocol_revision": { "type": "string", "minLength": 1 }, "model": { "type": "string", "minLength": 1 },
         "server": { "type": "string", "minLength": 1 }, "sampling": { "type": "string", "minLength": 1 },
         "token_accounting": { "enum": ["reported", "unavailable"] },
@@ -88,6 +89,16 @@
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "size_bytes": { "type": "integer", "minimum": 1 },
         "config_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "cliArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_commit", "sha256", "file_count", "total_bytes"],
+      "properties": {
+        "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "file_count": { "type": "integer", "minimum": 1 },
+        "total_bytes": { "type": "integer", "minimum": 1 }
       }
     },
     "trace": {
@@ -126,7 +137,12 @@
     },
     {
       "if": { "properties": { "schema_version": { "const": "4" } }, "required": ["schema_version"] },
-      "then": { "properties": { "scoring": { "type": "object", "properties": { "scorer_version": { "const": "case-eval-v4.0.0" } } } } }
+      "then": {
+        "properties": {
+          "environment": { "type": "object", "properties": { "cli_artifact": { "$ref": "#/$defs/cliArtifact" } }, "required": ["cli_artifact"] },
+          "scoring": { "type": "object", "properties": { "scorer_version": { "const": "case-eval-v4.0.0" } } }
+        }
+      }
     },
     {
       "if": { "properties": { "outcome": { "enum": ["invalid", "timeout"] } }, "required": ["outcome"] },

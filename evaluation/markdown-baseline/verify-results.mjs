@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 
-import { adjudicateRecord, buildIntegrityManifest, runChildWithDeadline, snapshotRecords, validateRecordSemantics, verifyClosedManifest, verifyFinalPointInTime } from "./runner-lib.mjs";
+import { adjudicateRecord, buildIntegrityManifest, runChildWithDeadline, snapshotRecords, statusForRecord, validateRecordSemantics, verifyClosedManifest, verifyFinalPointInTime } from "./runner-lib.mjs";
 
 const directory = import.meta.dirname;
 const root = resolve(directory, "../..");
@@ -29,22 +29,7 @@ async function recursiveJsonFiles(path) {
   return found.sort();
 }
 
-export function statusFor(record) {
-  if (record.record_id.endsWith("-r1")) return ["invalid-preregistered-pilot", "Retained pilot record is invalid under the recorded r1 limitations."];
-  if (record.record_id === "20260905-qwen-b0-eval-m0-001-r2") return ["invalid-method", "One post-hoc evaluator was not two independent writer actors."];
-  if (record.record_id === "20260905-qwen-b0-eval-m0-001-r3") return ["invalid-method", "Evaluator prewrote disconnected commits; raw actor transcript was omitted, so the manual override is not reproducible."];
-  if (record.record_id.endsWith("-r4")) return ["invalid-provenance-runner-boundary", "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."];
-  if (record.arm === "M0") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
-  if (record.record_id.endsWith("-r5")) return record.outcome === "complete"
-    ? ["eligible-post-pilot-r5", "Method-frozen r5 observation; still not preregistered comparative evidence."]
-    : ["invalid-run", `r5 outcome ${record.outcome} is not eligible comparative evidence.`];
-  if (record.record_id.endsWith("-r6")) return record.outcome === "complete"
-    ? (adjudicateRecord(record).eligible
-      ? ["eligible-post-pilot-r6", "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."]
-      : ["invalid-run", `r6 deterministic re-adjudication failed: ${adjudicateRecord(record).reason}`])
-    : ["invalid-run", `r6 outcome ${record.outcome} is not eligible comparative evidence.`];
-  return ["eligible-post-pilot", "Post-pilot amended observation; not preregistered comparative evidence."];
-}
+export const statusFor = statusForRecord;
 
 const paths = await recursiveJsonFiles(resultsDirectory);
 const snapshots = await snapshotRecords(paths, { root: directory });
@@ -59,7 +44,7 @@ for (const snapshot of snapshots) {
   if (!validateResult(snapshot.record)) failures.push(`${snapshot.record_path}: schema ${JSON.stringify(validateResult.errors)}`);
   const semantic = validateRecordSemantics(snapshot.record);
   if (semantic.length) failures.push(`${snapshot.record_path}: semantic ${semantic.join("; ")}`);
-  if (snapshot.record.record_id.endsWith("-r6") && snapshot.record.arm === "B0") {
+  if (["3", "4"].includes(snapshot.record.schema_version) && snapshot.record.arm === "B0" && snapshot.record.outcome === "complete") {
     const adjudication = adjudicateRecord(snapshot.record);
     if (snapshot.record.detected !== adjudication.detected || snapshot.record.false_success !== adjudication.false_success || !adjudication.eligible) failures.push(`${snapshot.record_path}: deterministic adjudication ${adjudication.reason}`);
   }

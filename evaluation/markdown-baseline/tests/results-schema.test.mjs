@@ -92,6 +92,7 @@ test("v3 permits unavailable provenance only for a non-complete retained failure
 
 test("v4 reserves post-r6 records for the explicit v4 scorer", () => {
   const record = minimalV2({ schema_version: "4" });
+  record.environment.cli_artifact = { source_commit: "a".repeat(40), sha256: "b".repeat(64), file_count: 1, total_bytes: 1 };
   record.environment.model_artifact = { basename: "model.gguf", sha256: "a".repeat(64), size_bytes: 10 };
   record.environment.server_build = { basename: "llama-server.exe", sha256: "b".repeat(64), size_bytes: 20, config_id: "ctx262144-p1-mtp3" };
   record.environment.provenance_status = "verified";

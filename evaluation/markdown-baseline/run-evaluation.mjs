@@ -20,6 +20,7 @@ import {
   classifyM0ProcessResult,
   createPublicationGate,
   injectSingleB0,
+  prepareFreshCliArtifact,
   scoreConcurrentPublication,
   validateEvaluationIdentity,
   validateRecordSemantics,
@@ -39,6 +40,7 @@ const cases = [
   ["EVAL-M0-003", "accepted-artifact-changed.md"],
   ["EVAL-M0-004", "evidence-digest-mismatch.md"],
 ];
+let cliArtifact = null;
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -82,7 +84,7 @@ function safe(value) {
 }
 
 async function run(command, args, cwd, env = buildEvaluatorEnvironment(), timeoutMs = childTimeoutMs) {
-  const cliPath = join(root, "dist", "src", "cli", "main.js");
+  const cliPath = cliArtifact?.cliPath ?? "<fresh-cli-artifact-unavailable>";
   if (command !== "git" && !(command === process.execPath && resolve(args[0] ?? "") === cliPath)) throw new Error(`command outside closed evaluator executable allowlist: ${command}`);
   const result = await runChildWithDeadline(command, args, { cwd, env, timeoutMs });
   return { ...result, stdout: safe(result.stdout), stderr: safe(result.stderr) };
@@ -207,6 +209,7 @@ function environment(provenance, fixtureRevision, tokensAvailable, cliCommit) {
     os,
     node: process.version,
     cli_commit: cliCommit,
+    cli_artifact: { source_commit: cliArtifact.sourceCommit, ...cliArtifact.provenance },
     fixture_revision: fixtureRevision,
     protocol_revision: protocolRevision,
     model: provenance?.model?.id ?? "unavailable",
@@ -438,7 +441,7 @@ async function runM0(provenance, cliCommit, caseId, partial) {
   const { repository, revision } = await initialize(caseId, deadlineAt);
   partial.fixture_revision = revision;
   try {
-    const result = await run(process.execPath, [join(root, "dist", "src", "cli", "main.js"), "--json", "init", "--operation", `op-${caseId.toLowerCase()}-${runLabel}`], repository, buildEvaluatorEnvironment(), remaining(deadlineAt));
+    const result = await run(process.execPath, [cliArtifact.cliPath, "--json", "init", "--operation", `op-${caseId.toLowerCase()}-${runLabel}`], repository, buildEvaluatorEnvironment(), remaining(deadlineAt));
     addTrace(partial, "runner", `case-agent --json init --operation op-${caseId.toLowerCase()}-${runLabel}`, result);
     requireCompletedCommand(result, "M0 initialization");
     const ended = new Date();
@@ -466,12 +469,20 @@ const cliCommit = (await gitText(root, ["rev-parse", "HEAD"], "CLI commit"));
 const methodPaths = [
   "evaluation/markdown-baseline/run-evaluation.mjs",
   "evaluation/markdown-baseline/runner-lib.mjs",
+  "evaluation/markdown-baseline/verify-results.mjs",
   "evaluation/markdown-baseline/results.schema.json",
   "evaluation/markdown-baseline/protocol.md",
   "evaluation/markdown-baseline/cases",
+  "src",
+  "schemas",
+  "package.json",
+  "package-lock.json",
+  "tsconfig.json",
 ];
 const methodStatus = must(await runGit(root, ["status", "--porcelain=v1", "--", ...methodPaths]), "frozen method status").stdout.trim();
 assertFrozenEvaluationMethod({ protocolRevision, headRevision: cliCommit, dirtyPaths: methodStatus ? methodStatus.split(/\r?\n/u) : [] });
+cliArtifact = await prepareFreshCliArtifact({ root, sourceCommit: cliCommit });
+try {
 let provenance = null;
 let modelFailure = null;
 try {
@@ -521,3 +532,6 @@ const execution = await executeRunPlans(plans, {
 
 if (execution.persistence_failures.length) process.exitCode = 1;
 process.stdout.write(`${JSON.stringify({ run: runLabel, protocol_revision: protocolRevision, results_directory: basename(resultsDirectory), records: execution.records.map(({ record_id, outcome, detected, false_success }) => ({ record_id, outcome, detected, false_success })), persistence_failures: execution.persistence_failures }, null, 2)}\n`);
+} finally {
+  await cliArtifact.cleanup();
+}

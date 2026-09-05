@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { access, link, mkdir, open, readFile, rename, rm } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { access, cp, link, mkdir, mkdtemp, open, readFile, readdir, rename, rm, stat } from "node:fs/promises";
+import { extname, join, relative, resolve } from "node:path";
 
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/u;
 
@@ -101,6 +101,72 @@ export function assertFrozenEvaluationMethod({ protocolRevision, headRevision, d
   if (dirtyPaths.length) throw new Error(`evaluation method is not frozen: uncommitted method paths: ${dirtyPaths.join(", ")}`);
 }
 
+async function artifactFiles(root, directory = root) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await artifactFiles(root, path));
+    else if (entry.isFile()) files.push(path);
+  }
+  return files.sort((a, b) => relative(root, a).localeCompare(relative(root, b)));
+}
+
+async function retainRuntimeBytes(directory, extensions) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await retainRuntimeBytes(path, extensions);
+      if ((await readdir(path)).length === 0) await rm(path, { recursive: true, force: true });
+    } else if (entry.isFile() && !extensions.has(extname(entry.name))) await rm(path, { force: true });
+  }
+}
+
+export async function digestCliArtifact(root) {
+  const hash = createHash("sha256");
+  let total_bytes = 0;
+  const files = await artifactFiles(root);
+  for (const path of files) {
+    const name = relative(root, path).replaceAll("\\", "/");
+    const bytes = await readFile(path);
+    hash.update(`${name}\0${bytes.length}\0`, "utf8");
+    hash.update(bytes);
+    total_bytes += bytes.length;
+  }
+  return { sha256: hash.digest("hex"), file_count: files.length, total_bytes };
+}
+
+export async function prepareFreshCliArtifact({
+  root, sourceCommit, compile = null,
+  runtimePackages = ["ajv", "fast-deep-equal", "fast-uri", "json-schema-traverse", "require-from-string"],
+}) {
+  if (!/^[0-9a-f]{40}$/u.test(sourceCommit)) throw new Error("fresh CLI artifact requires an exact source commit");
+  const artifactRoot = await mkdtemp(join(root, ".case-eval-cli-"));
+  try {
+    await cp(join(root, "schemas"), join(artifactRoot, "schemas"), { recursive: true });
+    for (const packageName of runtimePackages) {
+      await cp(join(root, "node_modules", packageName), join(artifactRoot, "node_modules", packageName), { recursive: true });
+    }
+    if (compile) await compile(artifactRoot);
+    else {
+      const result = await runChildWithDeadline(process.execPath, [
+        join(root, "node_modules", "typescript", "bin", "tsc"), "-p", join(root, "tsconfig.json"),
+        "--outDir", join(artifactRoot, "dist"), "--declaration", "false", "--sourceMap", "false",
+      ], { cwd: root, env: buildEvaluatorEnvironment(), timeoutMs: 120_000 });
+      if (result.timed_out || result.exit_code !== 0) throw new Error(`fresh CLI build failed: ${result.stderr || result.stdout}`);
+    }
+    await rm(join(artifactRoot, "dist", "tests"), { recursive: true, force: true });
+    await retainRuntimeBytes(join(artifactRoot, "dist"), new Set([".js", ".cjs", ".mjs"]));
+    if (runtimePackages.length) await retainRuntimeBytes(join(artifactRoot, "node_modules"), new Set([".js", ".cjs", ".mjs", ".json", ".node"]));
+    const cliPath = resolve(artifactRoot, "dist", "src", "cli", "main.js");
+    await access(cliPath);
+    const provenance = await digestCliArtifact(artifactRoot);
+    return { root: artifactRoot, cliPath, sourceCommit, provenance, cleanup: () => rm(artifactRoot, { recursive: true, force: true }) };
+  } catch (error) {
+    await rm(artifactRoot, { recursive: true, force: true });
+    throw error;
+  }
+}
+
 function appendTrace(partial, actor, command, result) {
   partial.command_trace.push({ sequence: partial.command_trace.length + 1, actor, command, exit_code: result.exit_code, result: `${result.stdout}${result.stderr}`.trim() || "(no output)", timed_out: Boolean(result.timed_out) });
   return result;
@@ -127,11 +193,13 @@ export async function injectSingleB0({ caseId, repository, partial, deadlineAt, 
 
 export function createPublicationGate(partial, deadlineAt, { runGit, remaining, sanitize = String, waitCapMs = 120_000 }) {
   const requests = new Map();
+  const seenActors = new Set();
   let released = false;
   let failedMessage = null;
   function terminalize(actor, request, result, error = null) {
     if (request.terminal) return;
     request.terminal = true;
+    seenActors.add(actor);
     clearTimeout(request.timer);
     if (requests.get(actor) === request) requests.delete(actor);
     appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", result);
@@ -159,6 +227,11 @@ export function createPublicationGate(partial, deadlineAt, { runGit, remaining, 
   }
   return {
     request(actor, repository) {
+      if (seenActors.has(actor)) {
+        const result = { exit_code: 2, stdout: "", stderr: `publish already terminalized for ${actor}`, timed_out: false };
+        appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", result);
+        return Promise.resolve(result);
+      }
       if (requests.has(actor)) return Promise.resolve({ exit_code: 2, stdout: "", stderr: "publish already requested", timed_out: false });
       if (failedMessage) {
         const result = { exit_code: null, stdout: "", stderr: failedMessage, timed_out: true };
@@ -281,6 +354,7 @@ export function validateRecordSemantics(record) {
   if (record.outcome === "timeout" && (record.detected || record.false_success)) errors.push("timeout outcome cannot claim detection or false success");
   if (["3", "4"].includes(record.schema_version) && record.command_trace?.some((entry) => typeof entry.timed_out !== "boolean")) errors.push("version 3+ trace entries require timed_out");
   if (["3", "4"].includes(record.schema_version) && record.environment?.provenance_status === "unavailable" && record.outcome === "complete") errors.push("complete version 3+ outcome requires verified provenance");
+  if (record.schema_version === "4" && record.environment?.cli_artifact?.source_commit !== record.environment?.cli_commit) errors.push("version 4 CLI artifact source_commit must equal cli_commit");
   if (record.command_trace?.some((entry) => entry.timed_out) && (record.outcome !== "timeout" || record.detected || record.false_success)) errors.push("timed-out command requires timeout without detection credit");
   return errors;
 }
@@ -428,14 +502,19 @@ export function adjudicateRecord(record) {
   };
   if (record.arm !== "B0") return { eligible: false, detected: false, false_success: false, reason: "Non-B0 record is not detection evidence.", burden };
   const verdict = detectedVerdict(record);
-  if (!verdict) return { eligible: false, detected: false, false_success: record.scoring?.verdict_transcript?.some((item) => item.verdict === "SUCCESS") ?? false, reason: "No DETECTED verdict.", burden };
-  const evidence = verdict.evidence.toLowerCase();
+  const success = record.scoring?.verdict_transcript?.find((item) => item.verdict === "SUCCESS") ?? null;
+  const evidence = verdict?.evidence.toLowerCase() ?? "";
   if (record.case_id === "EVAL-M0-001") {
     const publishes = record.command_trace.filter((entry) => entry.command.includes("publish origin"));
     const loser = publishes.find((entry) => !entry.timed_out && entry.exit_code !== null && entry.exit_code !== 0);
     const winner = publishes.find((entry) => !entry.timed_out && entry.exit_code === 0);
     const match = loser?.result.match(/is at ([0-9a-f]{40}) but expected ([0-9a-f]{40})/iu);
-    const grounded = Boolean(loser && winner && match && verdict.actor === loser.actor && containsRevision(evidence, match[1]) && containsRevision(evidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(evidence));
+    const relationGrounded = Boolean(loser && winner && match);
+    if (!verdict) {
+      const groundedFalseSuccess = Boolean(relationGrounded && success?.actor === loser?.actor);
+      return { eligible: groundedFalseSuccess, detected: false, false_success: groundedFalseSuccess, reason: groundedFalseSuccess ? "SUCCESS verdict is grounded as false success by the audited losing publication conflict." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
+    }
+    const grounded = Boolean(relationGrounded && verdict.actor === loser.actor && containsRevision(evidence, match[1]) && containsRevision(evidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(evidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Loser verdict binds both exact shared-ref revisions and the audited publication conflict." : "DETECTED evidence is not grounded in the audited loser publication conflict and both revisions.", burden };
   }
   const injected = artifactInjectionCount(record) === 1;
@@ -444,7 +523,11 @@ export function adjudicateRecord(record) {
   const postHash = [...record.command_trace].reverse().find((entry) => entry.actor === "actor-b" && entry.command === "sha256 artifact.txt")?.result.match(/[0-9a-f]{64}/iu)?.[0];
   if (record.case_id === "EVAL-M0-003" || record.case_id === "EVAL-M0-004") {
     const oldHash = hashes[0];
-    const grounded = Boolean(injected && oldHash && postHash && oldHash !== postHash && evidence.includes(oldHash.toLowerCase()) && evidence.includes(postHash.toLowerCase()) && evidence.includes("artifact") && /stale|mismatch|no longer match/iu.test(evidence));
+    const relationGrounded = Boolean(injected && oldHash && postHash && oldHash !== postHash);
+    if (!verdict) {
+      return { eligible: Boolean(success && relationGrounded), detected: false, false_success: Boolean(success && relationGrounded), reason: success && relationGrounded ? "SUCCESS verdict is grounded as false success by the audited digest mismatch." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
+    }
+    const grounded = Boolean(relationGrounded && evidence.includes(oldHash.toLowerCase()) && evidence.includes(postHash.toLowerCase()) && evidence.includes("artifact") && /stale|mismatch|no longer match/iu.test(evidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Verdict binds the recorded and current artifact SHA-256 values plus the audited injection." : "DETECTED evidence does not bind both audited artifact digests and their stale relation.", burden };
   }
   if (record.case_id === "EVAL-M0-002") {
@@ -452,17 +535,49 @@ export function adjudicateRecord(record) {
     const postRevision = [...record.command_trace].reverse().find((entry) => entry.actor === "actor-b" && entry.command === "git rev-parse HEAD")?.result.match(/[0-9a-f]{40}/iu)?.[0];
     const sawOld = record.command_trace.some((entry) => entry.actor === "actor-b" && entry.command === "read artifact.txt" && entry.result.trim() === "v1");
     const sawNew = [...record.command_trace].reverse().some((entry) => entry.actor === "actor-b" && entry.command === "read artifact.txt" && entry.result.trim() === "v2");
-    const grounded = Boolean(injected && oldRevision && postRevision && oldRevision !== postRevision && containsRevision(evidence, oldRevision) && containsRevision(evidence, postRevision) && evidence.includes("artifact.txt") && evidence.includes("v1") && evidence.includes("v2") && sawOld && sawNew && /stale|intervening/iu.test(evidence));
+    const relationGrounded = Boolean(injected && oldRevision && postRevision && oldRevision !== postRevision && sawOld && sawNew);
+    if (!verdict) {
+      return { eligible: Boolean(success && relationGrounded), detected: false, false_success: Boolean(success && relationGrounded), reason: success && relationGrounded ? "SUCCESS verdict is grounded as false success by the audited stale handoff relation." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
+    }
+    const grounded = Boolean(relationGrounded && containsRevision(evidence, oldRevision) && containsRevision(evidence, postRevision) && evidence.includes("artifact.txt") && evidence.includes("v1") && evidence.includes("v2") && /stale|intervening/iu.test(evidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Verdict binds unambiguous revision prefixes, artifact path/versions, and the audited intervening injection." : "DETECTED evidence does not bind the audited handoff basis, current revision, artifact versions, and stale relation.", burden };
   }
   return { eligible: false, detected: false, false_success: false, reason: "Unknown case.", burden };
 }
 
+export function statusForRecord(record) {
+  const recordId = record.record_id ?? "unlabeled-record";
+  if (recordId.endsWith("-r1")) return ["invalid-preregistered-pilot", "Retained pilot record is invalid under the recorded r1 limitations."];
+  if (recordId === "20260905-qwen-b0-eval-m0-001-r2") return ["invalid-method", "One post-hoc evaluator was not two independent writer actors."];
+  if (recordId === "20260905-qwen-b0-eval-m0-001-r3") return ["invalid-method", "Evaluator prewrote disconnected commits; raw actor transcript was omitted, so the manual override is not reproducible."];
+  if (recordId.endsWith("-r4")) return ["invalid-provenance-runner-boundary", "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."];
+  if (record.arm === "M0" && record.outcome === "invalid") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
+  if (record.outcome !== "complete") return ["invalid-run", `${recordId.match(/-(r\d+)$/u)?.[1] ?? "run"} outcome ${record.outcome} is not eligible comparative evidence.`];
+  if (record.arm === "M0") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
+  const runNumber = Number(recordId.match(/-r(\d+)$/u)?.[1] ?? 0);
+  if (runNumber >= 7 && (record.schema_version !== "4" || record.scoring?.scorer_version !== "case-eval-v4.0.0")) {
+    return ["invalid-method-identity", "r7-or-later records require schema 4 and case-eval-v4.0.0."];
+  }
+  if (record.schema_version === "4" && runNumber < 7) return ["invalid-method-identity", "Schema 4 is reserved for an explicit r7-or-later identity."];
+  if (recordId.endsWith("-r5")) return ["eligible-post-pilot-r5", "Method-frozen r5 observation; still not preregistered comparative evidence."];
+  if (["3", "4"].includes(record.schema_version) && record.arm === "B0") {
+    const adjudication = adjudicateRecord(record);
+    const label = recordId.match(/-(r\d+)$/u)?.[1] ?? "future";
+    if (label === "r6" && adjudication.eligible) return ["eligible-post-pilot-r6", "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."];
+    return adjudication.eligible
+      ? [`eligible-post-pilot-${label}`, `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`]
+      : ["invalid-run", `${label} deterministic adjudication failed: ${adjudication.reason}`];
+  }
+  return ["eligible-post-pilot", "Post-pilot amended observation; not preregistered comparative evidence."];
+}
+
 export function applyLiveAdjudication(record) {
   if (record.arm !== "B0" || record.outcome !== "complete") return record;
   const adjudication = adjudicateRecord(record);
-  if (record.false_success && !record.detected && adjudication.false_success) return record;
-  if (record.detected && !record.false_success && adjudication.eligible && adjudication.detected) return record;
+  const [status] = statusForRecord(record);
+  const eligible = status.startsWith("eligible-");
+  if (record.false_success && !record.detected && eligible && adjudication.eligible && adjudication.false_success) return record;
+  if (record.detected && !record.false_success && eligible && adjudication.eligible && adjudication.detected) return record;
   return {
     ...record,
     detected: false,

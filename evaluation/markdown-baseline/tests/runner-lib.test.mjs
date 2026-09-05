@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { access, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import test from "node:test";
 
 import {
@@ -18,6 +18,8 @@ import {
   executeRunPlans,
   fetchJsonWithDeadline,
   injectSingleB0,
+  prepareFreshCliArtifact,
+  digestCliArtifact,
   redactLocalDetails,
   runChildWithDeadline,
   requireCompletedCommand,
@@ -27,6 +29,7 @@ import {
   verifyFinalPointInTime,
   validateRecordSemantics,
   validateEvaluationIdentity,
+  statusForRecord,
   verifyIntegrityManifest,
 } from "../runner-lib.mjs";
 
@@ -143,6 +146,71 @@ test("release-time deadline failure settles and traces each peer exactly once", 
   assert.ok(partial.command_trace.every((entry) => entry.timed_out));
   await new Promise((resolve) => setTimeout(resolve, 250));
   assert.equal(partial.command_trace.length, 2);
+});
+
+test("publication gate permanently rejects an actor already terminalized", async () => {
+  const partial = { command_trace: [] };
+  const gate = createPublicationGate(partial, Date.now() + 1_000, {
+    runGit: async (_repository, _args) => ({ exit_code: 0, stdout: "published", stderr: "", timed_out: false }),
+    remaining: () => 500,
+  });
+  await Promise.all([gate.request("actor-a", "a"), gate.request("actor-b", "b")]);
+  const duplicate = await gate.request("actor-a", "a");
+  assert.equal(duplicate.exit_code, 2);
+  assert.equal(duplicate.stderr, "publish already terminalized for actor-a");
+  assert.equal(partial.command_trace.length, 3);
+  assert.equal(partial.command_trace.filter((entry) => entry.actor === "actor-a").length, 2);
+});
+
+test("future eligibility rejects non-complete and generic B0 records", () => {
+  const base = {
+    schema_version: "4", record_id: "future-r7", arm: "B0", case_id: "EVAL-M0-004",
+    outcome: "failed", detected: false, false_success: false, command_trace: [],
+    scoring: { scorer_version: "case-eval-v4.0.0", verdict_transcript: [{ actor: "actor-b", verdict: "NONE", evidence: "" }] },
+  };
+  assert.equal(statusForRecord(base)[0], "invalid-run");
+  assert.equal(statusForRecord({ ...base, outcome: "timeout" })[0], "invalid-run");
+  const generic = { ...base, outcome: "complete", detected: true, scoring: { ...base.scoring, verdict_transcript: [{ actor: "actor-b", verdict: "DETECTED", evidence: "something changed" }] } };
+  assert.equal(statusForRecord(generic)[0], "invalid-run");
+});
+
+test("fresh CLI artifact ignores poisoned workspace dist and exposes a verifiable digest", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "case-cli-source-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, "dist", "src", "cli"), { recursive: true });
+  await writeFile(join(root, "dist", "src", "cli", "main.js"), "throw new Error('poisoned workspace dist');\n");
+  await mkdir(join(root, "schemas"));
+  await writeFile(join(root, "schemas", "fixture.schema.json"), "{}\n");
+  const artifact = await prepareFreshCliArtifact({
+    root, sourceCommit: "a".repeat(40),
+    compile: async (artifactRoot) => {
+      await mkdir(join(artifactRoot, "dist", "src", "cli"), { recursive: true });
+      await writeFile(join(artifactRoot, "dist", "src", "cli", "main.js"), "process.stdout.write('fresh');\n");
+    },
+    runtimePackages: [],
+  });
+  t.after(artifact.cleanup);
+  const result = await runChildWithDeadline(process.execPath, [artifact.cliPath], { cwd: root, timeoutMs: 2_000 });
+  assert.equal(result.stdout, "fresh");
+  assert.notEqual(artifact.cliPath, join(root, "dist", "src", "cli", "main.js"));
+  assert.deepEqual(await digestCliArtifact(artifact.root), artifact.provenance);
+});
+
+test("real fresh CLI build executes outside workspace dist and its bytes rehash exactly", async (t) => {
+  const root = resolve(import.meta.dirname, "../../..");
+  const artifact = await prepareFreshCliArtifact({ root, sourceCommit: "c".repeat(40) });
+  t.after(artifact.cleanup);
+  const result = await runChildWithDeadline(process.execPath, [artifact.cliPath, "--help"], { cwd: root, timeoutMs: 5_000 });
+  assert.equal(result.exit_code, 0);
+  assert.match(result.stdout, /case-agent/u);
+  assert.notEqual(artifact.cliPath, join(root, "dist", "src", "cli", "main.js"));
+  assert.deepEqual(await digestCliArtifact(artifact.root), artifact.provenance);
+});
+
+test("dirty tracked source is rejected before artifact preparation", () => {
+  assert.throws(() => assertFrozenEvaluationMethod({
+    protocolRevision: "d".repeat(40), headRevision: "d".repeat(40), dirtyPaths: [" M src/cli/main.ts"],
+  }), /not frozen.*src\/cli\/main\.ts/iu);
 });
 
 test("single-actor token accounting retains completed calls before a later failure", () => {
@@ -424,10 +492,16 @@ test("live runner adjudication rejects generic DETECTED before persistence and s
   assert.deepEqual(execution.records, [persisted]);
 });
 
-test("live adjudication preserves a scored false success instead of erasing it", () => {
+test("live adjudication preserves only an audited grounded false success", () => {
+  const oldHash = "a".repeat(64);
+  const newHash = "b".repeat(64);
   const record = {
     arm: "B0", case_id: "EVAL-M0-004", outcome: "complete", detected: false, false_success: true,
-    command_trace: [],
+    command_trace: [
+      { actor: "actor-b", command: "read CASE.md", result: `evidence_artifact_sha256: ${oldHash}` },
+      { actor: "evaluator-injection", command: "inject frozen intervening artifact v2", result: "v2" },
+      { actor: "actor-b", command: "sha256 artifact.txt", result: `${newHash} artifact.txt` },
+    ],
     scoring: { adjudication: "terminal scorer", verdict_transcript: [{ actor: "actor-b", verdict: "SUCCESS", evidence: "claimed success" }] },
   };
   assert.equal(applyLiveAdjudication(record), record);
