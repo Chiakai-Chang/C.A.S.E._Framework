@@ -6,11 +6,16 @@ import test from "node:test";
 
 import {
   atomicPersistRecord,
+  accumulateTokenUsage,
   adjudicateRecord,
+  applyLiveAdjudication,
+  buildEvaluatorEnvironment,
   buildIntegrityManifest,
   classifyM0ProcessResult,
+  createPublicationGate,
   executeRunPlans,
   fetchJsonWithDeadline,
+  injectSingleB0,
   redactLocalDetails,
   runChildWithDeadline,
   requireCompletedCommand,
@@ -52,6 +57,50 @@ test("child timeout retains partial stdout and classifies timeout", async () => 
 
 test("a traced timed-out command throws a typed timeout before scoring", () => {
   assert.throws(() => requireCompletedCommand({ timed_out: true, stdout: "partial" }, "actor read"), { name: "EvaluationTimeoutError" });
+});
+
+test("single-case injection traces a timed-out Git step before throwing typed timeout", async () => {
+  const partial = { command_trace: [] };
+  const deadlineAt = 12345;
+  await assert.rejects(injectSingleB0({
+    caseId: "EVAL-M0-002", repository: "fixture", partial, deadlineAt,
+    writeArtifact: async (_repository, observedDeadline) => assert.equal(observedDeadline, deadlineAt),
+    remaining: (observedDeadline) => { assert.equal(observedDeadline, deadlineAt); return 7; },
+    runGit: async (_repository, args, timeoutMs) => {
+      assert.deepEqual(args, ["add", "artifact.txt"]);
+      assert.equal(timeoutMs, 7);
+      return { exit_code: null, stdout: "partial add", stderr: "", timed_out: true };
+    },
+  }), { name: "EvaluationTimeoutError" });
+  assert.equal(partial.command_trace.length, 2);
+  assert.equal(partial.command_trace[1].command, "inject git add artifact.txt");
+  assert.equal(partial.command_trace[1].timed_out, true);
+  assert.match(partial.command_trace[1].result, /partial add/u);
+});
+
+test("publication gate traces its wait timeout before throwing typed timeout", async () => {
+  const partial = { command_trace: [] };
+  const gate = createPublicationGate(partial, Date.now() + 100, {
+    runGit: async () => assert.fail("one actor must not publish alone"),
+    remaining: () => 10,
+    waitCapMs: 10,
+  });
+  await assert.rejects(gate.request("actor-a", "fixture-a"), { name: "EvaluationTimeoutError" });
+  assert.equal(partial.command_trace.length, 1);
+  assert.equal(partial.command_trace[0].command, "git publish origin HEAD:refs/heads/published");
+  assert.equal(partial.command_trace[0].timed_out, true);
+  assert.match(partial.command_trace[0].result, /waiting for peer/u);
+});
+
+test("single-actor token accounting retains completed calls before a later failure", () => {
+  const partial = { tokens_available: true };
+  accumulateTokenUsage(partial, { input: 11, output: 3 });
+  accumulateTokenUsage(partial, { input: 7, output: 2 });
+  assert.deepEqual(partial, { tokens_available: true, input_tokens_total: 18, output_tokens_total: 5 });
+  accumulateTokenUsage(partial, { input: null, output: null });
+  assert.equal(partial.tokens_available, false);
+  assert.equal(partial.input_tokens_total, 18);
+  assert.equal(partial.output_tokens_total, 5);
 });
 
 test("timed-out actor command is atomically retained as timeout rather than persistence failure", async (t) => {
@@ -251,6 +300,65 @@ test("per-plan failure persists partial redacted evidence and later plans still 
   assert.equal(persisted[0].outcome, "failed");
   assert.equal(JSON.stringify(persisted).includes("\\User\\"), false);
   assert.equal(persisted[1].record_id, "second");
+});
+
+test("live runner adjudication rejects generic DETECTED before persistence and summary", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-live-adjudication-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const actorOutputs = [{ actor: "actor-b", content: "exact model output: DETECTED generic issue" }];
+  const record = {
+    schema_version: "3", record_id: "live-generic", arm: "B0", case_id: "EVAL-M0-004",
+    detected: true, false_success: false, outcome: "complete", reason: "raw scorer accepted DETECTED",
+    command_trace: [
+      { actor: "actor-b", command: "read CASE.md", result: `evidence_artifact_sha256: ${"a".repeat(64)}` },
+      { actor: "evaluator-injection", command: "inject write artifact v2", result: "v2" },
+      { actor: "actor-b", command: "sha256 artifact.txt", result: `${"b".repeat(64)} artifact.txt` },
+    ],
+    actor_outputs: actorOutputs,
+    scoring: { adjudication: "raw terminal scorer.", verdict_transcript: [{ actor: "actor-b", verdict: "DETECTED", evidence: "generic issue" }] },
+  };
+  const execution = await executeRunPlans([{ id: "live-generic" }], {
+    execute: async () => record,
+    makeFailure: () => assert.fail("execution should not fail"),
+    finalize: applyLiveAdjudication,
+    persist: (value) => atomicPersistRecord(directory, value),
+  });
+  const persisted = JSON.parse(await readFile(join(directory, "live-generic.json"), "utf8"));
+  assert.equal(persisted.outcome, "failed");
+  assert.equal(persisted.detected, false);
+  assert.equal(persisted.false_success, false);
+  assert.deepEqual(persisted.actor_outputs, actorOutputs);
+  assert.match(persisted.scoring.adjudication, /pre-persistence adjudication rejected/u);
+  assert.deepEqual(execution.records, [persisted]);
+});
+
+test("live adjudication preserves a scored false success instead of erasing it", () => {
+  const record = {
+    arm: "B0", case_id: "EVAL-M0-004", outcome: "complete", detected: false, false_success: true,
+    command_trace: [],
+    scoring: { adjudication: "terminal scorer", verdict_transcript: [{ actor: "actor-b", verdict: "SUCCESS", evidence: "claimed success" }] },
+  };
+  assert.equal(applyLiveAdjudication(record), record);
+});
+
+test("closed evaluator environment drops inherited executable Git hooks", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-closed-git-env-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const marker = join(directory, "external-diff-ran.txt");
+  const hook = join(directory, process.platform === "win32" ? "external-diff.cmd" : "external-diff.sh");
+  await writeFile(hook, process.platform === "win32" ? `@echo ran>${marker}\r\n` : `#!/bin/sh\nprintf ran > ${JSON.stringify(marker)}\n`, "utf8");
+  const environment = buildEvaluatorEnvironment({ ...process.env, GIT_EXTERNAL_DIFF: hook });
+  assert.equal(environment.GIT_EXTERNAL_DIFF, undefined);
+  const git = (args) => runChildWithDeadline("git", ["-c", "user.name=CASE Test", "-c", "user.email=test@example.invalid", "-c", `core.hooksPath=${process.platform === "win32" ? "NUL" : "/dev/null"}`, "-c", "commit.gpgSign=false", ...args], { cwd: directory, env: environment, timeoutMs: 5_000 });
+  assert.equal((await git(["init", "--quiet"])).exit_code, 0);
+  await writeFile(join(directory, "artifact.txt"), "v1\n");
+  assert.equal((await git(["add", "artifact.txt"])).exit_code, 0);
+  assert.equal((await git(["commit", "--quiet", "-m", "base"])).exit_code, 0);
+  await writeFile(join(directory, "artifact.txt"), "v2\n");
+  const diff = await git(["--no-pager", "diff", "--no-ext-diff", "--no-textconv", "--", "artifact.txt"]);
+  assert.equal(diff.exit_code, 0);
+  assert.match(diff.stdout, /v2/u);
+  await assert.rejects(access(marker));
 });
 
 test("persistence failure is reported and later plans still attempt persistence", async () => {

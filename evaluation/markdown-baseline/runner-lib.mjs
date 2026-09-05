@@ -63,6 +63,97 @@ export function requireCompletedCommand(result, label) {
   return result;
 }
 
+export function buildEvaluatorEnvironment(source = process.env, overrides = {}) {
+  const environment = {};
+  for (const key of ["PATH", "Path", "SystemRoot", "WINDIR", "COMSPEC", "PATHEXT", "TEMP", "TMP"]) {
+    if (typeof source[key] === "string" && source[key]) environment[key] = source[key];
+  }
+  return {
+    ...environment,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null",
+    GIT_TERMINAL_PROMPT: "0",
+    GCM_INTERACTIVE: "Never",
+    ...overrides,
+  };
+}
+
+export function accumulateTokenUsage(partial, response) {
+  if (!Number.isInteger(response.input) || !Number.isInteger(response.output)) {
+    partial.tokens_available = false;
+    return;
+  }
+  partial.input_tokens_total = (partial.input_tokens_total ?? 0) + response.input;
+  partial.output_tokens_total = (partial.output_tokens_total ?? 0) + response.output;
+}
+
+function appendTrace(partial, actor, command, result) {
+  partial.command_trace.push({ sequence: partial.command_trace.length + 1, actor, command, exit_code: result.exit_code, result: `${result.stdout}${result.stderr}`.trim() || "(no output)", timed_out: Boolean(result.timed_out) });
+  return result;
+}
+
+export async function injectSingleB0({ caseId, repository, partial, deadlineAt, writeArtifact, runGit, remaining }) {
+  try {
+    await writeArtifact(repository, deadlineAt);
+    appendTrace(partial, "evaluator-injection", "inject write artifact v2", { exit_code: 0, stdout: "artifact.txt replaced with externally supplied v2\n", stderr: "", timed_out: false });
+  } catch (error) {
+    appendTrace(partial, "evaluator-injection", "inject write artifact v2", { exit_code: null, stdout: "", stderr: error?.message ?? String(error), timed_out: error instanceof EvaluationTimeoutError });
+    throw error;
+  }
+  if (caseId !== "EVAL-M0-002") return;
+  for (const [command, args, label] of [
+    ["inject git add artifact.txt", ["add", "artifact.txt"], "intervening add"],
+    ["inject git commit intervening work", ["commit", "--quiet", "-m", "intervening work"], "intervening commit"],
+  ]) {
+    const result = appendTrace(partial, "evaluator-injection", command, await runGit(repository, args, remaining(deadlineAt)));
+    requireCompletedCommand(result, label);
+    if (result.exit_code !== 0) throw new Error(`${label}: ${result.stderr || result.stdout}`);
+  }
+}
+
+export function createPublicationGate(partial, deadlineAt, { runGit, remaining, sanitize = String, waitCapMs = 120_000 }) {
+  const requests = new Map();
+  let released = false;
+  let failedMessage = null;
+  async function release() {
+    if (released || requests.size !== 2) return;
+    released = true;
+    const pairs = [...requests.entries()];
+    const settled = await Promise.allSettled(pairs.map(([, request]) => runGit(request.repository, ["push", "--porcelain", "origin", "HEAD:refs/heads/published"], remaining(deadlineAt))));
+    const results = settled.map((item) => item.status === "fulfilled" ? item.value : { exit_code: null, stdout: "", stderr: sanitize(`spawn rejected: ${item.reason}`), timed_out: false });
+    pairs.forEach(([actor, request], index) => {
+      const result = results[index];
+      appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", result);
+      request.resolve(result);
+    });
+  }
+  return {
+    request(actor, repository) {
+      if (requests.has(actor)) return Promise.resolve({ exit_code: 2, stdout: "", stderr: "publish already requested", timed_out: false });
+      if (failedMessage) {
+        const result = { exit_code: null, stdout: "", stderr: failedMessage, timed_out: true };
+        appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", result);
+        return Promise.resolve(result);
+      }
+      return new Promise((resolvePromise, rejectPromise) => {
+        const timer = setTimeout(() => {
+          const message = `${actor} timed out waiting for peer at shared publication gate`;
+          failedMessage = message;
+          requests.delete(actor);
+          appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", { exit_code: null, stdout: "", stderr: message, timed_out: true });
+          rejectPromise(new EvaluationTimeoutError(message));
+        }, remaining(deadlineAt, waitCapMs));
+        const resolve = (result) => { clearTimeout(timer); resolvePromise(result); };
+        requests.set(actor, { repository, resolve });
+        void release();
+      });
+    },
+    abort(message) {
+      for (const [, request] of requests) request.resolve({ exit_code: null, stdout: "", stderr: message, timed_out: false });
+    },
+  };
+}
+
 async function terminateOwnedProcessTree(pid) {
   if (!Number.isInteger(pid)) return;
   if (process.platform === "win32") {
@@ -175,7 +266,7 @@ function redactRecord(record, options) {
   return record;
 }
 
-export async function executeRunPlans(plans, { execute, makeFailure, persist, redactOptions = {}, onPersistenceFailure = () => {} }) {
+export async function executeRunPlans(plans, { execute, makeFailure, finalize = (record) => record, persist, redactOptions = {}, onPersistenceFailure = () => {} }) {
   const records = [];
   const persistence_failures = [];
   for (const plan of plans) {
@@ -186,7 +277,7 @@ export async function executeRunPlans(plans, { execute, makeFailure, persist, re
     } catch (error) {
       record = makeFailure(plan, partial, error);
     }
-    const safe = redactRecord(record, redactOptions);
+    const safe = redactRecord(finalize(record), redactOptions);
     try {
       await persist(safe);
       records.push(safe);
@@ -297,6 +388,10 @@ function injectionCount(record) {
   return record.command_trace.filter((entry) => entry.actor === "evaluator-injection").length;
 }
 
+function artifactInjectionCount(record) {
+  return record.command_trace.filter((entry) => entry.actor === "evaluator-injection" && /inject (?:write artifact|frozen intervening artifact)/u.test(entry.command)).length;
+}
+
 export function adjudicateRecord(record) {
   const burden = {
     trace_events: record.command_trace.length,
@@ -315,7 +410,7 @@ export function adjudicateRecord(record) {
     const grounded = Boolean(loser && winner && match && verdict.actor === loser.actor && containsRevision(evidence, match[1]) && containsRevision(evidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(evidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Loser verdict binds both exact shared-ref revisions and the audited publication conflict." : "DETECTED evidence is not grounded in the audited loser publication conflict and both revisions.", burden };
   }
-  const injected = injectionCount(record) === 1;
+  const injected = artifactInjectionCount(record) === 1;
   const caseObservation = record.command_trace.find((entry) => entry.actor === "actor-b" && entry.command === "read CASE.md")?.result ?? "";
   const hashes = [...caseObservation.matchAll(/[0-9a-f]{64}/giu)].map((match) => match[0]);
   const postHash = [...record.command_trace].reverse().find((entry) => entry.actor === "actor-b" && entry.command === "sha256 artifact.txt")?.result.match(/[0-9a-f]{64}/iu)?.[0];
@@ -333,6 +428,24 @@ export function adjudicateRecord(record) {
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Verdict binds unambiguous revision prefixes, artifact path/versions, and the audited intervening injection." : "DETECTED evidence does not bind the audited handoff basis, current revision, artifact versions, and stale relation.", burden };
   }
   return { eligible: false, detected: false, false_success: false, reason: "Unknown case.", burden };
+}
+
+export function applyLiveAdjudication(record) {
+  if (record.arm !== "B0" || record.outcome !== "complete") return record;
+  const adjudication = adjudicateRecord(record);
+  if (record.false_success && !record.detected && adjudication.false_success) return record;
+  if (record.detected && !record.false_success && adjudication.eligible && adjudication.detected) return record;
+  return {
+    ...record,
+    detected: false,
+    false_success: false,
+    outcome: "failed",
+    reason: `Live deterministic adjudication rejected the terminal verdict: ${adjudication.reason}`,
+    scoring: {
+      ...record.scoring,
+      adjudication: `${record.scoring.adjudication} Live pre-persistence adjudication rejected eligibility: ${adjudication.reason}`,
+    },
+  };
 }
 
 export function scoreConcurrentPublication(publishTrace, verdicts) {

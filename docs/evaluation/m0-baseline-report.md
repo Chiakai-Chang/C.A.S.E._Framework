@@ -122,7 +122,7 @@ No tests, evaluation records, caches, secrets, local dossiers, conformance fixtu
 - Package dry-run: 86 allowlisted files; prohibited categories absent.
 - Evaluation validation after r6: 34/34 immutable records pass the closed schema and semantic validator; the external integrity manifest has the exact recursive 34/34 result set with unique paths and no SHA-256/Git-blob/first-containing-commit/status/protocol mismatch.
 - Round-two method tests include abort deadlines, partial timeout traces, normal-descendant termination, spawn-rejection peer cleanup, persistence failure continuation, D: filesystem atomic publication, stale reservation failure, recursive closed-manifest set equality, relabel/drop/duplicate detection, and single-buffer mutation resistance. This is not an arbitrary process-tree or sandbox claim.
-- Final exact `npm run check` after r6: typecheck passed; 310/310 core tests and 27/27 evaluation tests passed with no failed/skipped/todo; conformance passed 140/140 with no uncovered direction.
+- Final exact `npm run check` after r6: typecheck passed; 310/310 core tests and 27/27 evaluation tests passed with no failed/skipped/todo; conformance passed 140/140 with no uncovered direction. Post-result round-four runner hardening passes the same 310/310 core and 140/140 conformance gates plus 38/38 evaluation tests; it changes no raw result and ran no model.
 - Final fix-round-three `npm run check`: typecheck passed; 310/310 core tests and 32/32 evaluation tests passed with no failed/skipped/todo; conformance passed 140/140 with no uncovered direction.
 - Final range `git diff --check 55c8c47..HEAD`: clean.
 

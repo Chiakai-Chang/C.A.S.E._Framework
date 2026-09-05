@@ -32,7 +32,7 @@ See `docs/evaluation/m0-baseline-report.md` and schema-valid per-run records und
 - r1: eight retained invalid records (non-identical fixture revisions; B0 verdict truncation).
 - prior B0 aggregate withdrawn: independent review invalidated r3 because evaluator-created disconnected commits did not implement two model-directed writers or shared publication, and the raw actor responses needed to reproduce manual grading were not retained.
 - r4: retained raw but externally invalidated for placeholder provenance and incomplete runner process boundary.
-- method-frozen r6 B0: 4/4 detected, 0/4 false success; 35 commands; 235,693 ms; 34,925 input and 5,851 output tokens; exact privacy-safe actor outputs and versioned adjudication retained.
+- method-frozen r6 B0: 4/4 detected, 0/4 false success; 35 trace events comprising 32 actor commands and 3 evaluator injections; 235,693 ms; 34,925 input and 5,851 output tokens; exact privacy-safe actor outputs and versioned adjudication retained.
 - paired r6 M0: four invalid production Windows outcomes at init; 4 commands; 2,276 ms; tokens unavailable; no controlled-test substitution.
 - user decisions, corrections, and recovery steps: zero in selected observations.
 
@@ -71,3 +71,11 @@ The exact compressed list is README and package metadata; nine named schemas; an
 Commit `45204acb0f8cebd6afb43d9a8d43934d098b6ea4` adds case-specific deterministic adjudication, absolute per-case deadlines, typed timeout retention, final point-in-time verifier re-reading, closed evaluator Git/CLI execution, and explicit process-containment limits. All four immutable r6 B0 records reproduce their claimed detection, so no new model execution or outcome record was created. Derived burden is 35 trace events: 32 actor commands and 3 evaluator injections. The frozen runner was renamed from the stale `run-r4.mjs` label to `run-evaluation.mjs`; immutable old trace strings were not rewritten.
 
 Final round-three check passed 310/310 core tests, 32/32 evaluation tests, and 140/140 conformance cases. The final cooperative point-in-time integrity verification retained 34/34 records with no failure; package contents remain 86 allowlisted files.
+
+## Fix round 4
+
+This is post-result runner hardening only: no raw record was changed and no model was run. Future live B0 records pass the case-specific deterministic adjudicator before atomic persistence and terminal summary; an ungrounded `DETECTED` is retained as a failed, zero-credit record with exact actor output and the adjudication reason. Immutable r6 qualifies only through the external post-hoc re-adjudication recorded after execution.
+
+The same absolute ten-minute case deadline now covers fixture setup and all injection steps as well as actor turns, child commands, and publication-gate waiting. Single-actor usage is accumulated into partial state after every completed model response so a later failure retains available usage. Evaluator Git uses a minimal newly built environment, ignores system/global configuration, disables hooks/signing/credentials/pagers and executable diff/text-conversion helpers, and invokes diff with `--no-ext-diff --no-textconv`; this narrows inherited-process surprises without claiming a general sandbox.
+
+Final round-four verification passed 310/310 core tests, 38/38 evaluation tests, and 140/140 conformance cases. The closed integrity verifier retained 34/34 records and 34/34 manifest entries with no failure. Package dry-run remains 86 allowlisted files, 143,799 packed bytes, 778,110 unpacked bytes, and shasum `13f071f42efc3c403642376f695bcd717846e6ea`.
