@@ -89,11 +89,11 @@ r6 preserves the r5 actor method while using new IDs and a tested Windows atomic
 | EVAL-M0-003 accepted artifact changed | complete | yes | no | 4 commands; 38,552 ms; 3,285 in / 1,042 out tokens | invalid: init exit 10 |
 | EVAL-M0-004 evidence digest mismatch | complete | yes | no | 4 commands; 31,237 ms; 3,299 in / 850 out tokens | invalid: init exit 10 |
 
-r6 B0 aggregate: 4/4 detected; 0/4 false success; 35 commands; 235,693 ms; 34,925 input tokens; 5,851 output tokens; zero user decisions, corrections, or recovery steps. Paired r6 M0 aggregate: four invalid outcomes, four init commands, 2,276 ms, unavailable token counts, and no target failure exercised.
+r6 B0 aggregate: 4/4 detected; 0/4 false success; 35 trace events, comprising 32 actor commands and 3 evaluator injection events; 235,693 ms; 34,925 input tokens; 5,851 output tokens; zero user decisions, corrections, or recovery steps. A command is a model-selected allowed operation; an evaluator event is the frozen external injection and is not actor burden. Paired r6 M0 aggregate: four invalid outcomes, four runner init commands, 2,276 ms, unavailable token counts, and no target failure exercised.
 
 ## Interpretation
 
-The eligible r6 B0 observations support only a narrow provisional conclusion: this exact model artifact detected all four injected failures under the amended method, including the real shared-publication conflict. The sample is one post-pilot run per case and is not model-general evidence. Because all paired production M0 runs are invalid, it cannot establish that M0 outperforms Markdown plus Git.
+The immutable r6 B0 records were re-adjudicated post hoc by a case-specific deterministic scorer. It requires trace-backed old/current revisions or digests, the artifact/ref relation, the frozen injection or publication conflict, and matching actor evidence; generic or unrelated `DETECTED` text earns no credit. All four r6 B0 records reproduce their original detection classification. This supports only a narrow provisional conclusion for this exact model artifact and method. The sample is one post-pilot run per case and is not model-general evidence. Because all paired production M0 runs are invalid, it cannot establish that M0 outperforms Markdown plus Git.
 
 The deterministic controlled-test corpus now passes 140 cases and includes the complete semantic double-writer, stale-handoff, stale-acceptance, and changed-evidence behaviors. That is implementation/conformance evidence under injected capabilities. It cannot answer whether a public production M0 adapter works on Windows or POSIX.
 
@@ -121,7 +121,7 @@ No tests, evaluation records, caches, secrets, local dossiers, conformance fixtu
 - The first full test run after adding the 140th case exposed one stale hard-coded expected corpus count (`139`). It produced 310 tests, 308 passed, 2 failure entries (the leaf assertion and its parent suite). After correcting the count to 140, a fresh exact `npm run check` passed typecheck, all 310 tests, and all 140 conformance cases with zero skipped/todo and no uncovered direction.
 - Package dry-run: 86 allowlisted files; prohibited categories absent.
 - Evaluation validation after r6: 34/34 immutable records pass the closed schema and semantic validator; the external integrity manifest has the exact recursive 34/34 result set with unique paths and no SHA-256/Git-blob/first-containing-commit/status/protocol mismatch.
-- Round-two method tests include abort deadlines, partial timeout traces, owned process-tree termination, spawn-rejection peer cleanup, persistence failure continuation, D: filesystem atomic publication, stale reservation failure, recursive closed-manifest set equality, relabel/drop/duplicate detection, and single-buffer mutation resistance.
+- Round-two method tests include abort deadlines, partial timeout traces, normal-descendant termination, spawn-rejection peer cleanup, persistence failure continuation, D: filesystem atomic publication, stale reservation failure, recursive closed-manifest set equality, relabel/drop/duplicate detection, and single-buffer mutation resistance. This is not an arbitrary process-tree or sandbox claim.
 - Final exact `npm run check` after r6: typecheck passed; 310/310 core tests and 27/27 evaluation tests passed with no failed/skipped/todo; conformance passed 140/140 with no uncovered direction.
 - Final range `git diff --check 55c8c47..HEAD`: clean.
 

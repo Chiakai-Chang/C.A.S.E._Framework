@@ -51,6 +51,18 @@ export async function runChildWithDeadline(command, args, { cwd, env = process.e
   });
 }
 
+export class EvaluationTimeoutError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EvaluationTimeoutError";
+  }
+}
+
+export function requireCompletedCommand(result, label) {
+  if (result.timed_out) throw new EvaluationTimeoutError(`${label}: command deadline exceeded`);
+  return result;
+}
+
 async function terminateOwnedProcessTree(pid) {
   if (!Number.isInteger(pid)) return;
   if (process.platform === "win32") {
@@ -179,7 +191,7 @@ export async function executeRunPlans(plans, { execute, makeFailure, persist, re
       await persist(safe);
       records.push(safe);
     } catch (error) {
-      const failure = { record_id: safe.record_id, error: `persistence failed: ${error?.message ?? String(error)}` };
+      const failure = { record_id: safe.record_id, error: redactLocalDetails(`persistence failed: ${error?.message ?? String(error)}`, redactOptions) };
       persistence_failures.push(failure);
       onPersistenceFailure(failure);
     }
@@ -254,6 +266,73 @@ export async function verifyClosedManifest(manifest, snapshots, { policy, firstC
     if (entry.record_git_commit !== await firstCommit(snapshot.record_path)) errors.push(`${snapshot.record_path}: first-containing commit mismatch`);
   }
   return errors;
+}
+
+export async function verifyFinalPointInTime(initialSnapshots, finalPaths, { root, readFileFn = readFile }) {
+  const errors = [];
+  const finalSnapshots = await snapshotRecords(finalPaths, { root, readFileFn });
+  const initialPaths = initialSnapshots.map((item) => item.record_path).sort();
+  const finalPathNames = finalSnapshots.map((item) => item.record_path).sort();
+  if (JSON.stringify(initialPaths) !== JSON.stringify(finalPathNames)) errors.push("result file set changed during verification");
+  const initial = new Map(initialSnapshots.map((item) => [item.record_path, item]));
+  for (const snapshot of finalSnapshots) {
+    const before = initial.get(snapshot.record_path);
+    if (!before) continue;
+    if (before.sha256 !== snapshot.sha256 || before.git_blob !== snapshot.git_blob) errors.push(`${snapshot.record_path}: bytes changed during verification`);
+    if (before.record.record_id !== snapshot.record.record_id) errors.push(`${snapshot.record_path}: identity changed during verification`);
+  }
+  return errors;
+}
+
+function detectedVerdict(record) {
+  return record.scoring?.verdict_transcript?.find((item) => item.verdict === "DETECTED") ?? null;
+}
+
+function containsRevision(evidence, revision) {
+  const lower = evidence.toLowerCase();
+  return lower.includes(revision.toLowerCase()) || lower.includes(revision.slice(0, 7).toLowerCase());
+}
+
+function injectionCount(record) {
+  return record.command_trace.filter((entry) => entry.actor === "evaluator-injection").length;
+}
+
+export function adjudicateRecord(record) {
+  const burden = {
+    trace_events: record.command_trace.length,
+    actor_commands: record.command_trace.filter((entry) => entry.actor !== "evaluator-injection" && entry.actor !== "runner").length,
+    evaluator_events: injectionCount(record),
+  };
+  if (record.arm !== "B0") return { eligible: false, detected: false, false_success: false, reason: "Non-B0 record is not detection evidence.", burden };
+  const verdict = detectedVerdict(record);
+  if (!verdict) return { eligible: false, detected: false, false_success: record.scoring?.verdict_transcript?.some((item) => item.verdict === "SUCCESS") ?? false, reason: "No DETECTED verdict.", burden };
+  const evidence = verdict.evidence.toLowerCase();
+  if (record.case_id === "EVAL-M0-001") {
+    const publishes = record.command_trace.filter((entry) => entry.command.includes("publish origin"));
+    const loser = publishes.find((entry) => !entry.timed_out && entry.exit_code !== null && entry.exit_code !== 0);
+    const winner = publishes.find((entry) => !entry.timed_out && entry.exit_code === 0);
+    const match = loser?.result.match(/is at ([0-9a-f]{40}) but expected ([0-9a-f]{40})/iu);
+    const grounded = Boolean(loser && winner && match && verdict.actor === loser.actor && containsRevision(evidence, match[1]) && containsRevision(evidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(evidence));
+    return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Loser verdict binds both exact shared-ref revisions and the audited publication conflict." : "DETECTED evidence is not grounded in the audited loser publication conflict and both revisions.", burden };
+  }
+  const injected = injectionCount(record) === 1;
+  const caseObservation = record.command_trace.find((entry) => entry.actor === "actor-b" && entry.command === "read CASE.md")?.result ?? "";
+  const hashes = [...caseObservation.matchAll(/[0-9a-f]{64}/giu)].map((match) => match[0]);
+  const postHash = [...record.command_trace].reverse().find((entry) => entry.actor === "actor-b" && entry.command === "sha256 artifact.txt")?.result.match(/[0-9a-f]{64}/iu)?.[0];
+  if (record.case_id === "EVAL-M0-003" || record.case_id === "EVAL-M0-004") {
+    const oldHash = hashes[0];
+    const grounded = Boolean(injected && oldHash && postHash && oldHash !== postHash && evidence.includes(oldHash.toLowerCase()) && evidence.includes(postHash.toLowerCase()) && evidence.includes("artifact") && /stale|mismatch|no longer match/iu.test(evidence));
+    return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Verdict binds the recorded and current artifact SHA-256 values plus the audited injection." : "DETECTED evidence does not bind both audited artifact digests and their stale relation.", burden };
+  }
+  if (record.case_id === "EVAL-M0-002") {
+    const oldRevision = caseObservation.match(/offer_basis:\s*([0-9a-f]{40})/iu)?.[1];
+    const postRevision = [...record.command_trace].reverse().find((entry) => entry.actor === "actor-b" && entry.command === "git rev-parse HEAD")?.result.match(/[0-9a-f]{40}/iu)?.[0];
+    const sawOld = record.command_trace.some((entry) => entry.actor === "actor-b" && entry.command === "read artifact.txt" && entry.result.trim() === "v1");
+    const sawNew = [...record.command_trace].reverse().some((entry) => entry.actor === "actor-b" && entry.command === "read artifact.txt" && entry.result.trim() === "v2");
+    const grounded = Boolean(injected && oldRevision && postRevision && oldRevision !== postRevision && containsRevision(evidence, oldRevision) && containsRevision(evidence, postRevision) && evidence.includes("artifact.txt") && evidence.includes("v1") && evidence.includes("v2") && sawOld && sawNew && /stale|intervening/iu.test(evidence));
+    return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Verdict binds unambiguous revision prefixes, artifact path/versions, and the audited intervening injection." : "DETECTED evidence does not bind the audited handoff basis, current revision, artifact versions, and stale relation.", burden };
+  }
+  return { eligible: false, detected: false, false_success: false, reason: "Unknown case.", burden };
 }
 
 export function scoreConcurrentPublication(publishTrace, verdicts) {

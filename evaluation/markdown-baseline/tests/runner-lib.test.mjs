@@ -6,15 +6,18 @@ import test from "node:test";
 
 import {
   atomicPersistRecord,
+  adjudicateRecord,
   buildIntegrityManifest,
   classifyM0ProcessResult,
   executeRunPlans,
   fetchJsonWithDeadline,
   redactLocalDetails,
   runChildWithDeadline,
+  requireCompletedCommand,
   scoreConcurrentPublication,
   snapshotRecords,
   verifyClosedManifest,
+  verifyFinalPointInTime,
   validateRecordSemantics,
   verifyIntegrityManifest,
 } from "../runner-lib.mjs";
@@ -47,8 +50,30 @@ test("child timeout retains partial stdout and classifies timeout", async () => 
   assert.equal(result.stdout, "partial-output");
 });
 
-test("child timeout terminates an owned grandchild before it can write later", async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "case-process-tree-test-"));
+test("a traced timed-out command throws a typed timeout before scoring", () => {
+  assert.throws(() => requireCompletedCommand({ timed_out: true, stdout: "partial" }, "actor read"), { name: "EvaluationTimeoutError" });
+});
+
+test("timed-out actor command is atomically retained as timeout rather than persistence failure", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-timeout-record-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const execution = await executeRunPlans([{ id: "timeout-case" }], {
+    execute: async (_plan, partial) => {
+      const result = { exit_code: null, stdout: "partial", stderr: "", timed_out: true };
+      partial.command_trace.push({ sequence: 1, actor: "actor-b", command: "read artifact.txt", exit_code: null, result: "partial", timed_out: true });
+      requireCompletedCommand(result, "read artifact.txt");
+    },
+    makeFailure: (_plan, partial, error) => ({ record_id: "timeout-case", outcome: error.name === "EvaluationTimeoutError" ? "timeout" : "failed", detected: false, false_success: false, command_trace: partial.command_trace }),
+    persist: (record) => atomicPersistRecord(directory, record),
+  });
+  assert.equal(execution.persistence_failures.length, 0);
+  assert.equal(execution.records[0].outcome, "timeout");
+  assert.equal(execution.records[0].command_trace[0].timed_out, true);
+  assert.equal(JSON.parse(await readFile(join(directory, "timeout-case.json"))).outcome, "timeout");
+});
+
+test("child timeout terminates a normal descendant before it can write later", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-normal-descendant-test-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const marker = join(directory, "late-marker.txt");
   const grandchild = `setTimeout(() => require("node:fs").writeFileSync(${JSON.stringify(marker)}, "late"), 600); setInterval(() => {}, 1000);`;
@@ -59,7 +84,7 @@ test("child timeout terminates an owned grandchild before it can write later", a
   await assert.rejects(access(marker));
 });
 
-test("spawn rejection remains independent while a timed peer process tree is cleaned up", async (t) => {
+test("spawn rejection remains independent while a timed peer's normal descendants are cleaned up", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "case-spawn-peer-test-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const marker = join(directory, "peer-late-marker.txt");
@@ -305,6 +330,33 @@ test("record snapshot uses one buffer for parsing and hashing despite later muta
   assert.equal(reads, 1);
   assert.equal(snapshots[0].record.record_id, "one");
   assert.match(snapshots[0].sha256, /^[0-9a-f]{64}$/u);
+});
+
+test("final point-in-time verification turns nonzero after integrated mutation", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-final-point-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const path = join(directory, "one.json");
+  await writeFile(path, '{"record_id":"one"}\n');
+  const initial = await snapshotRecords([path], { root: directory });
+  await writeFile(path, '{"record_id":"mutated"}\n');
+  const errors = await verifyFinalPointInTime(initial, [path], { root: directory });
+  assert.ok(errors.length > 0);
+  assert.ok(errors.some((error) => /bytes changed/u.test(error)));
+});
+
+test("case-specific adjudicator rejects generic or unrelated DETECTED evidence", () => {
+  const record = {
+    arm: "B0", case_id: "EVAL-M0-004",
+    command_trace: [
+      { actor: "actor-b", command: "read CASE.md", result: `evidence_artifact_sha256: ${"a".repeat(64)}` },
+      { actor: "evaluator-injection", command: "inject frozen intervening artifact v2", result: "v2" },
+      { actor: "actor-b", command: "sha256 artifact.txt", result: `${"b".repeat(64)} artifact.txt` },
+    ],
+    scoring: { verdict_transcript: [{ actor: "actor-b", verdict: "DETECTED", evidence: "Detected a possible unrelated problem." }] },
+  };
+  assert.equal(adjudicateRecord(record).eligible, false);
+  record.scoring.verdict_transcript[0].evidence = `artifact recorded ${"a".repeat(64)} no longer matches current ${"b".repeat(64)}; evidence is stale`;
+  assert.equal(adjudicateRecord(record).eligible, true);
 });
 
 test("external integrity manifest detects a record changed after hashing", async (t) => {

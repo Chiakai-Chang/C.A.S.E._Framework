@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import Ajv2020 from "ajv/dist/2020.js";
 
-import { validateRecordSemantics } from "../runner-lib.mjs";
+import { adjudicateRecord, validateRecordSemantics } from "../runner-lib.mjs";
 
 const schema = JSON.parse(await readFile(new URL("../results.schema.json", import.meta.url), "utf8"));
 const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
@@ -102,4 +102,22 @@ test("all retained v1 records remain schema and semantically readable", async ()
     if (record.schema_version === "1") v1Count += 1;
   }
   assert.equal(v1Count, 18);
+});
+
+test("immutable r6 B0 records pass deterministic post-hoc adjudication", async () => {
+  const directory = new URL("../results/", import.meta.url);
+  const { readdir } = await import("node:fs/promises");
+  const files = (await readdir(directory)).filter((file) => file.includes("-b0-") && file.endsWith("-r6.json")).sort();
+  assert.equal(files.length, 4);
+  const derived = JSON.parse(await readFile(new URL("../r6-readjudication.json", import.meta.url), "utf8"));
+  const recomputed = [];
+  for (const file of files) {
+    const record = JSON.parse(await readFile(new URL(file, directory), "utf8"));
+    const adjudication = adjudicateRecord(record);
+    assert.equal(adjudication.eligible, true, `${file}: ${adjudication.reason}`);
+    assert.equal(adjudication.detected, record.detected, file);
+    assert.equal(adjudication.false_success, record.false_success, file);
+    recomputed.push({ record_id: record.record_id, eligible: adjudication.eligible, detected: adjudication.detected, false_success: adjudication.false_success, ...adjudication.burden });
+  }
+  assert.deepEqual(derived.records, recomputed);
 });

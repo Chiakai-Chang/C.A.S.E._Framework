@@ -7,9 +7,11 @@ import Ajv2020 from "ajv/dist/2020.js";
 
 import {
   atomicPersistRecord,
+  EvaluationTimeoutError,
   executeRunPlans,
   fetchJsonWithDeadline,
   redactLocalDetails,
+  requireCompletedCommand,
   runChildWithDeadline,
   classifyM0ProcessResult,
   scoreConcurrentPublication,
@@ -50,17 +52,50 @@ function safe(value) {
   return redactLocalDetails(value, redactionOptions);
 }
 
-async function run(command, args, cwd, env = process.env) {
-  const result = await runChildWithDeadline(command, args, { cwd, env, timeoutMs: childTimeoutMs });
+async function run(command, args, cwd, env = process.env, timeoutMs = childTimeoutMs) {
+  const cliPath = join(root, "dist", "src", "cli", "main.js");
+  if (command !== "git" && !(command === process.execPath && resolve(args[0] ?? "") === cliPath)) throw new Error(`command outside closed evaluator executable allowlist: ${command}`);
+  const result = await runChildWithDeadline(command, args, { cwd, env, timeoutMs });
   return { ...result, stdout: safe(result.stdout), stderr: safe(result.stderr) };
 }
 
-async function runGit(cwd, args) {
-  return run("git", ["-c", "user.name=CASE Evaluation", "-c", "user.email=case-eval@example.invalid", ...args], cwd, {
+async function runGit(cwd, args, timeoutMs = childTimeoutMs) {
+  return run("git", ["-c", "user.name=CASE Evaluation", "-c", "user.email=case-eval@example.invalid", "-c", `core.hooksPath=${process.platform === "win32" ? "NUL" : "/dev/null"}`, "-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false", "-c", "credential.helper=", ...args], cwd, {
     ...process.env,
     GIT_AUTHOR_DATE: "2026-09-05T00:00:00Z",
     GIT_COMMITTER_DATE: "2026-09-05T00:00:00Z",
-  });
+    GIT_TERMINAL_PROMPT: "0",
+    GCM_INTERACTIVE: "Never",
+    GIT_ASKPASS: "",
+  }, timeoutMs);
+}
+
+function remaining(deadlineAt, cap = childTimeoutMs) {
+  const value = deadlineAt - Date.now();
+  if (value <= 0) throw new EvaluationTimeoutError("absolute 10-minute case deadline exceeded");
+  return Math.min(cap, value);
+}
+
+async function readWithinDeadline(path, deadlineAt, encoding = null) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), remaining(deadlineAt));
+  try {
+    return await readFile(path, { encoding, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) throw new EvaluationTimeoutError(`read ${basename(path)}: command deadline exceeded`);
+    throw error;
+  } finally { clearTimeout(timer); }
+}
+
+async function writeWithinDeadline(path, content, deadlineAt) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), remaining(deadlineAt));
+  try {
+    await writeFile(path, content, { encoding: "utf8", signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) throw new EvaluationTimeoutError(`write ${basename(path)}: command deadline exceeded`);
+    throw error;
+  } finally { clearTimeout(timer); }
 }
 
 function must(result, label) {
@@ -94,6 +129,17 @@ function addTrace(partial, actor, command, result) {
     timed_out: Boolean(result.timed_out),
   });
   return result;
+}
+
+async function traceManualCommand(partial, actor, command, operation) {
+  try {
+    const result = await operation();
+    addTrace(partial, actor, command, result);
+    return requireCompletedCommand(result, command);
+  } catch (error) {
+    if (error instanceof EvaluationTimeoutError) addTrace(partial, actor, command, { exit_code: null, stdout: "", stderr: error.message, timed_out: true });
+    throw error;
+  }
 }
 
 async function artifactProvenance(path) {
@@ -180,20 +226,22 @@ async function injectSingleB0(caseId, repository, partial) {
   addTrace(partial, "evaluator-injection", "inject frozen intervening artifact v2", result);
 }
 
-async function singleActorCommand(repository, command, partial) {
+async function singleActorCommand(repository, command, partial, deadlineAt) {
   let result;
-  if (command === "read CASE.md") result = { exit_code: 0, stdout: await readFile(join(repository, "CASE.md"), "utf8"), stderr: "", timed_out: false };
-  else if (command === "read artifact.txt") result = { exit_code: 0, stdout: await readFile(join(repository, "artifact.txt"), "utf8"), stderr: "", timed_out: false };
-  else if (command === "git rev-parse HEAD") result = await runGit(repository, ["rev-parse", "HEAD"]);
-  else if (command === "git log --oneline --decorate -4") result = await runGit(repository, ["log", "--oneline", "--decorate", "-4"]);
-  else if (command === "git diff -- artifact.txt") result = await runGit(repository, ["diff", "--", "artifact.txt"]);
-  else if (command === "sha256 artifact.txt") result = { exit_code: 0, stdout: `${createHash("sha256").update(await readFile(join(repository, "artifact.txt"))).digest("hex")}  artifact.txt\n`, stderr: "", timed_out: false };
+  if (command === "read CASE.md") return traceManualCommand(partial, "actor-b", command, async () => ({ exit_code: 0, stdout: await readWithinDeadline(join(repository, "CASE.md"), deadlineAt, "utf8"), stderr: "", timed_out: false }));
+  else if (command === "read artifact.txt") return traceManualCommand(partial, "actor-b", command, async () => ({ exit_code: 0, stdout: await readWithinDeadline(join(repository, "artifact.txt"), deadlineAt, "utf8"), stderr: "", timed_out: false }));
+  else if (command === "git rev-parse HEAD") result = await runGit(repository, ["rev-parse", "HEAD"], remaining(deadlineAt));
+  else if (command === "git log --oneline --decorate -4") result = await runGit(repository, ["log", "--oneline", "--decorate", "-4"], remaining(deadlineAt));
+  else if (command === "git diff -- artifact.txt") result = await runGit(repository, ["diff", "--", "artifact.txt"], remaining(deadlineAt));
+  else if (command === "sha256 artifact.txt") return traceManualCommand(partial, "actor-b", command, async () => ({ exit_code: 0, stdout: `${createHash("sha256").update(await readWithinDeadline(join(repository, "artifact.txt"), deadlineAt)).digest("hex")}  artifact.txt\n`, stderr: "", timed_out: false }));
   else throw new Error(`actor-b requested command outside allowlist: ${command}`);
-  return addTrace(partial, "actor-b", command, result);
+  addTrace(partial, "actor-b", command, result);
+  return requireCompletedCommand(result, command);
 }
 
 async function runSingleB0(provenance, cliCommit, caseId, caseFile, partial) {
   const started = new Date();
+  const deadlineAt = started.getTime() + 600_000;
   const { repository, revision } = await initialize(caseId);
   partial.fixture_revision = revision;
   try {
@@ -212,7 +260,7 @@ async function runSingleB0(provenance, cliCommit, caseId, caseFile, partial) {
     let tokensAvailable = true;
     let verdict = null;
     for (let turn = 1; turn <= 20 && !verdict; turn += 1) {
-      const response = await complete(provenance.model.request_id, messages);
+      const response = await complete(provenance.model.request_id, messages, remaining(deadlineAt, fetchTimeoutMs));
       partial.actor_outputs.push({ actor: "actor-b", content: `turn ${turn}: ${response.content || "(empty model response)"}` });
       if (response.input === null || response.output === null) tokensAvailable = false;
       else { inputTokens += response.input; outputTokens += response.output; }
@@ -224,7 +272,7 @@ async function runSingleB0(provenance, cliCommit, caseId, caseFile, partial) {
         await injectSingleB0(caseId, repository, partial);
         messages.push({ role: "user", content: "The scheduled external event occurred. Continue auditing with allowed observations before a final verdict." });
       } else if (action.action === "command") {
-        const result = await singleActorCommand(repository, action.command, partial);
+        const result = await singleActorCommand(repository, action.command, partial, deadlineAt);
         if (ready) postCommands += 1; else preCommands += 1;
         messages.push({ role: "user", content: `Audited result: exit=${result.exit_code}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}\nChoose the next action.` });
       } else {
@@ -263,14 +311,14 @@ function parseActorAction(content) {
   throw new Error(`actor returned invalid action: ${content}`);
 }
 
-function publishGate(partial) {
+function publishGate(partial, deadlineAt) {
   const requests = new Map();
   let released = false;
   async function release() {
     if (released || requests.size !== 2) return;
     released = true;
     const pairs = [...requests.entries()];
-    const settled = await Promise.allSettled(pairs.map(([, request]) => runGit(request.repository, ["push", "--porcelain", "origin", "HEAD:refs/heads/published"])));
+    const settled = await Promise.allSettled(pairs.map(([, request]) => runGit(request.repository, ["push", "--porcelain", "origin", "HEAD:refs/heads/published"], remaining(deadlineAt))));
     const results = settled.map((item) => item.status === "fulfilled"
       ? item.value
       : { exit_code: null, stdout: "", stderr: safe(`spawn rejected: ${item.reason}`), timed_out: false });
@@ -284,7 +332,7 @@ function publishGate(partial) {
     request(actor, repository) {
       if (requests.has(actor)) return Promise.resolve({ exit_code: 2, stdout: "", stderr: "publish already requested" });
       return new Promise((resolvePromise, rejectPromise) => {
-        const timer = setTimeout(() => rejectPromise(new Error(`${actor} timed out waiting for peer at shared publication gate`)), fetchTimeoutMs);
+        const timer = setTimeout(() => rejectPromise(new EvaluationTimeoutError(`${actor} timed out waiting for peer at shared publication gate`)), remaining(deadlineAt, fetchTimeoutMs));
         const resolve = (result) => { clearTimeout(timer); resolvePromise(result); };
         requests.set(actor, { repository, resolve });
         void release();
@@ -296,26 +344,29 @@ function publishGate(partial) {
   };
 }
 
-async function actorCommand(actor, repository, command, gate, partial) {
+async function actorCommand(actor, repository, command, gate, partial, deadlineAt) {
   if (partial.command_trace.length >= 30) throw new Error("case reached the 30-command limit");
   let result;
-  if (command === "read CASE.md") result = { exit_code: 0, stdout: await readFile(join(repository, "CASE.md"), "utf8"), stderr: "" };
-  else if (command === "read artifact.txt") result = { exit_code: 0, stdout: await readFile(join(repository, "artifact.txt"), "utf8"), stderr: "" };
-  else if (command === "git rev-parse HEAD") result = await runGit(repository, ["rev-parse", "HEAD"]);
-  else if (command === "git status --short") result = await runGit(repository, ["status", "--short"]);
+  if (command === "read CASE.md") return traceManualCommand(partial, actor, command, async () => ({ exit_code: 0, stdout: await readWithinDeadline(join(repository, "CASE.md"), deadlineAt, "utf8"), stderr: "", timed_out: false }));
+  else if (command === "read artifact.txt") return traceManualCommand(partial, actor, command, async () => ({ exit_code: 0, stdout: await readWithinDeadline(join(repository, "artifact.txt"), deadlineAt, "utf8"), stderr: "", timed_out: false }));
+  else if (command === "git rev-parse HEAD") result = await runGit(repository, ["rev-parse", "HEAD"], remaining(deadlineAt));
+  else if (command === "git status --short") result = await runGit(repository, ["status", "--short"], remaining(deadlineAt));
   else if (command === "edit artifact.txt") {
-    const current = await readFile(join(repository, "artifact.txt"), "utf8");
-    await writeFile(join(repository, "artifact.txt"), `${current}${actor}\n`, "utf8");
-    result = { exit_code: 0, stdout: `appended ${actor}\n`, stderr: "" };
-  } else if (command === "git diff -- artifact.txt") result = await runGit(repository, ["diff", "--", "artifact.txt"]);
-  else if (command === "git add artifact.txt") result = await runGit(repository, ["add", "artifact.txt"]);
-  else if (command === "git commit") result = await runGit(repository, ["commit", "--quiet", "-m", `${actor} result`]);
-  else if (command === "git publish") return gate.request(actor, repository);
-  else if (command === "git fetch origin") result = await runGit(repository, ["fetch", "--quiet", "origin"]);
-  else if (command === "git rev-parse origin/published") result = await runGit(repository, ["rev-parse", "origin/published"]);
-  else if (command === "git show origin/published:artifact.txt") result = await runGit(repository, ["show", "origin/published:artifact.txt"]);
+    return traceManualCommand(partial, actor, command, async () => {
+      const current = await readWithinDeadline(join(repository, "artifact.txt"), deadlineAt, "utf8");
+      await writeWithinDeadline(join(repository, "artifact.txt"), `${current}${actor}\n`, deadlineAt);
+      return { exit_code: 0, stdout: `appended ${actor}\n`, stderr: "", timed_out: false };
+    });
+  } else if (command === "git diff -- artifact.txt") result = await runGit(repository, ["diff", "--", "artifact.txt"], remaining(deadlineAt));
+  else if (command === "git add artifact.txt") result = await runGit(repository, ["add", "artifact.txt"], remaining(deadlineAt));
+  else if (command === "git commit") result = await runGit(repository, ["commit", "--quiet", "-m", `${actor} result`], remaining(deadlineAt));
+  else if (command === "git publish") return requireCompletedCommand(await gate.request(actor, repository), command);
+  else if (command === "git fetch origin") result = await runGit(repository, ["fetch", "--quiet", "origin"], remaining(deadlineAt));
+  else if (command === "git rev-parse origin/published") result = await runGit(repository, ["rev-parse", "origin/published"], remaining(deadlineAt));
+  else if (command === "git show origin/published:artifact.txt") result = await runGit(repository, ["show", "origin/published:artifact.txt"], remaining(deadlineAt));
   else throw new Error(`${actor} requested command outside allowlist: ${command}`);
-  return addTrace(partial, actor, command, result);
+  addTrace(partial, actor, command, result);
+  return requireCompletedCommand(result, command);
 }
 
 async function runActor(provenance, actor, repository, basis, caseText, gate, partial, deadlineAt) {
@@ -348,7 +399,7 @@ async function runActor(provenance, actor, repository, basis, caseText, gate, pa
     if (action.action === "final") {
       return { actor, content: outputs.join("\n"), verdict: { actor, verdict: action.verdict, evidence: action.evidence }, inputTokens, outputTokens, tokensAvailable };
     }
-    const result = await actorCommand(actor, repository, action.command, gate, partial);
+    const result = await actorCommand(actor, repository, action.command, gate, partial, deadlineAt);
     messages.push({ role: "user", content: `Audited result for ${action.command}: exit=${result.exit_code}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}\nSelect the next command or final verdict.` });
   }
   throw new Error(`${actor} reached the 20-turn limit`);
@@ -359,11 +410,12 @@ async function runConcurrentB0(provenance, cliCommit, partial) {
   const started = new Date();
   const { repository: source, revision } = await initialize(caseId);
   partial.fixture_revision = revision;
-  const parent = await mkdtemp(join(tmpdir(), "case-eval-r4-writers-"));
+  const parent = await mkdtemp(join(tmpdir(), "case-eval-r6-writers-"));
   const origin = join(parent, "origin.git");
   const actorA = join(parent, "actor-a");
   const actorB = join(parent, "actor-b");
-  const gate = publishGate(partial);
+  const deadlineAt = started.getTime() + 600_000;
+  const gate = publishGate(partial, deadlineAt);
   try {
     must(await runGit(parent, ["clone", "--quiet", "--bare", source, origin]), "create shared bare origin");
     must(await runGit(source, ["remote", "add", "shared", origin]), "add shared origin");
@@ -371,7 +423,6 @@ async function runConcurrentB0(provenance, cliCommit, partial) {
     must(await runGit(parent, ["clone", "--quiet", origin, actorA]), "clone actor-a");
     must(await runGit(parent, ["clone", "--quiet", origin, actorB]), "clone actor-b");
     const caseText = await readFile(join(import.meta.dirname, "cases", "same-version-double-writer.md"), "utf8");
-    const deadlineAt = started.getTime() + 600_000;
     const settled = await Promise.allSettled([
       runActor(provenance, "actor-a", actorA, revision, caseText, gate, partial, deadlineAt),
       runActor(provenance, "actor-b", actorB, revision, caseText, gate, partial, deadlineAt),
@@ -409,11 +460,13 @@ async function runConcurrentB0(provenance, cliCommit, partial) {
 
 async function runM0(provenance, cliCommit, caseId, partial) {
   const started = new Date();
+  const deadlineAt = started.getTime() + 600_000;
   const { repository, revision } = await initialize(caseId);
   partial.fixture_revision = revision;
   try {
-    const result = await run(process.execPath, [join(root, "dist", "src", "cli", "main.js"), "--json", "init", "--operation", `op-${caseId.toLowerCase()}-${runLabel}`], repository);
+    const result = await run(process.execPath, [join(root, "dist", "src", "cli", "main.js"), "--json", "init", "--operation", `op-${caseId.toLowerCase()}-${runLabel}`], repository, process.env, remaining(deadlineAt));
     addTrace(partial, "runner", `case-agent --json init --operation op-${caseId.toLowerCase()}-${runLabel}`, result);
+    requireCompletedCommand(result, "M0 initialization");
     const ended = new Date();
     const classification = classifyM0ProcessResult(result);
     const { code, expected_unsupported: expected } = classification;
@@ -449,7 +502,7 @@ const plans = [...chosen.map(([caseId, caseFile]) => ({ arm: "B0", caseId, caseF
 function failureRecord(plan, partial, error) {
   const ended = new Date();
   const started = partial.started_at ?? ended;
-  const timeout = /deadline|turn limit|timed out/i.test(String(error));
+  const timeout = error instanceof EvaluationTimeoutError || /deadline|turn limit|timed out/i.test(String(error));
   const content = safe(String(error?.stack ?? error));
   return {
     schema_version: "3", record_id: `20260905-qwen-${plan.arm.toLowerCase()}-${plan.caseId.toLowerCase()}-${runLabel}`, arm: plan.arm, case_id: plan.caseId,

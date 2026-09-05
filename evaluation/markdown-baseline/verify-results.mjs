@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 
-import { buildIntegrityManifest, runChildWithDeadline, snapshotRecords, validateRecordSemantics, verifyClosedManifest } from "./runner-lib.mjs";
+import { adjudicateRecord, buildIntegrityManifest, runChildWithDeadline, snapshotRecords, validateRecordSemantics, verifyClosedManifest, verifyFinalPointInTime } from "./runner-lib.mjs";
 
 const directory = import.meta.dirname;
 const root = resolve(directory, "../..");
@@ -39,7 +39,9 @@ export function statusFor(record) {
     ? ["eligible-post-pilot-r5", "Method-frozen r5 observation; still not preregistered comparative evidence."]
     : ["invalid-run", `r5 outcome ${record.outcome} is not eligible comparative evidence.`];
   if (record.record_id.endsWith("-r6")) return record.outcome === "complete"
-    ? ["eligible-post-pilot-r6", "Method-frozen r6 replacement observation; still not preregistered comparative evidence."]
+    ? (adjudicateRecord(record).eligible
+      ? ["eligible-post-pilot-r6", "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."]
+      : ["invalid-run", `r6 deterministic re-adjudication failed: ${adjudicateRecord(record).reason}`])
     : ["invalid-run", `r6 outcome ${record.outcome} is not eligible comparative evidence.`];
   return ["eligible-post-pilot", "Post-pilot amended observation; not preregistered comparative evidence."];
 }
@@ -57,6 +59,10 @@ for (const snapshot of snapshots) {
   if (!validateResult(snapshot.record)) failures.push(`${snapshot.record_path}: schema ${JSON.stringify(validateResult.errors)}`);
   const semantic = validateRecordSemantics(snapshot.record);
   if (semantic.length) failures.push(`${snapshot.record_path}: semantic ${semantic.join("; ")}`);
+  if (snapshot.record.record_id.endsWith("-r6") && snapshot.record.arm === "B0") {
+    const adjudication = adjudicateRecord(snapshot.record);
+    if (snapshot.record.detected !== adjudication.detected || snapshot.record.false_success !== adjudication.false_success || !adjudication.eligible) failures.push(`${snapshot.record_path}: deterministic adjudication ${adjudication.reason}`);
+  }
 }
 
 async function firstContainingCommit(recordPath) {
@@ -90,6 +96,8 @@ for (const entry of manifest.records) {
   const committedBlob = await git(["rev-parse", `${entry.record_git_commit}:${repositoryPath}`]).catch(() => "");
   if (committedBlob !== entry.git_blob) failures.push(`${entry.record_path}: commit/blob mapping mismatch`);
 }
+const finalPaths = await recursiveJsonFiles(resultsDirectory);
+failures.push(...await verifyFinalPointInTime(snapshots, finalPaths, { root: directory }));
 
 process.stdout.write(`${JSON.stringify({ records: snapshots.length, manifest_entries: manifest.records.length, failures }, null, 2)}\n`);
 if (failures.length) process.exitCode = 1;
