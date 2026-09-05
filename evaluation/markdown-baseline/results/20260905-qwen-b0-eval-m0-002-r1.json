@@ -1,0 +1,36 @@
+{
+  "schema_version": "1",
+  "record_id": "20260905-qwen-b0-eval-m0-002-r1",
+  "arm": "B0",
+  "case_id": "EVAL-M0-002",
+  "detected": false,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 4,
+  "elapsed_ms": 25720,
+  "input_tokens": 573,
+  "output_tokens": 700,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "invalid",
+  "reason": "INVALIDATED AFTER RUN: the first driver did not fix Git commit timestamps, so the paired B0/M0 fixture revisions were not identical. The model response began an inspection table but exhausted max_tokens before an explicit verdict.",
+  "started_at": "2026-09-05T01:41:18.434Z",
+  "ended_at": "2026-09-05T01:41:44.154Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "ca6ea1dcb54b665568b40fb04e63b7a8ab57e13a",
+    "fixture_revision": "642078594865985ffe85f2ae9db1dd9dd4b834ac",
+    "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+    "model": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=700; seed unavailable",
+    "token_accounting": "reported"
+  },
+  "command_trace": [
+    { "sequence": 1, "actor": "local-model", "command": "git rev-parse HEAD", "exit_code": 0, "result": "dbad157925cfa05a11a434b136b4c74d0588edea" },
+    { "sequence": 2, "actor": "local-model", "command": "git log --oneline --decorate -4", "exit_code": 0, "result": "dbad157 intervening work; 12ea8a0 record handoff offer; 6420785 fixture base" },
+    { "sequence": 3, "actor": "local-model", "command": "git diff -- artifact.txt", "exit_code": 0, "result": "(no output)" },
+    { "sequence": 4, "actor": "local-model", "command": "read CASE.md and artifact.txt", "exit_code": 0, "result": "offer_basis: 642078594865985ffe85f2ae9db1dd9dd4b834ac; status: offered; artifact.txt: v2" }
+  ]
+}

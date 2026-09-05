@@ -1,0 +1,14 @@
+{
+  "schema_version": "1", "record_id": "20260905-qwen-b0-eval-m0-002-r2", "arm": "B0", "case_id": "EVAL-M0-002",
+  "detected": true, "false_success": false, "user_decisions": 0, "commands": 4, "elapsed_ms": 18945,
+  "input_tokens": 608, "output_tokens": 524, "corrections": 0, "recovery_steps": 0, "outcome": "complete",
+  "reason": "POST-PILOT AMENDED RUN. DETECTED — offer_basis 4594c39edf5bce7047a9fe9f23138e11cddc72a8 (artifact v1) is stale; current HEAD 134f73857cbdd94f985dda8922fc43b36116d9f0 is intervening work with artifact v2.",
+  "started_at": "2026-09-05T01:46:35.294Z", "ended_at": "2026-09-05T01:46:54.239Z",
+  "environment": { "os": "win32 x64 v24.19.0", "node": "v24.19.0", "cli_commit": "ca6ea1dcb54b665568b40fb04e63b7a8ab57e13a", "fixture_revision": "4594c39edf5bce7047a9fe9f23138e11cddc72a8", "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution", "model": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf", "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean", "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable", "token_accounting": "reported" },
+  "command_trace": [
+    { "sequence": 1, "actor": "local-model", "command": "git rev-parse HEAD", "exit_code": 0, "result": "134f73857cbdd94f985dda8922fc43b36116d9f0" },
+    { "sequence": 2, "actor": "local-model", "command": "git log --oneline --decorate -4", "exit_code": 0, "result": "134f738 intervening work; 5609b90 record handoff offer; 4594c39 fixture base" },
+    { "sequence": 3, "actor": "local-model", "command": "git diff -- artifact.txt", "exit_code": 0, "result": "(no output)" },
+    { "sequence": 4, "actor": "local-model", "command": "read CASE.md and artifact.txt", "exit_code": 0, "result": "offer_basis: 4594c39edf5bce7047a9fe9f23138e11cddc72a8; status: offered; artifact.txt: v2" }
+  ]
+}

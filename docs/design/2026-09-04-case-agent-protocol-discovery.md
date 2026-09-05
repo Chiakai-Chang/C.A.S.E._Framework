@@ -551,3 +551,19 @@ One ambiguity found during planning was resolved without changing the intended s
 **Alignment assessment**: the plan remains confined to the smallest deterministic oracle needed to test whether C.A.S.E. catches stale and conflicting work while reducing human reconstruction effort. It does not repair Pi, add orchestration, or commit to skills/plugins before the B0/M0 evidence exists.
 
 **Next decision gate**: choose how to execute the plan. Outcome claims remain prohibited until the implementation, frozen corpus, platform-profile results, and preregistered baseline have been independently verified.
+
+## 24. M0 implementation and baseline checkpoint — 2026-09-05
+
+**Tested objective**: determine whether the smallest file-native dossier protocol can detect the four approved stale/conflicting-work failures with acceptable added burden, before adding skills, plugins, host orchestration, or Pi repair.
+
+**Implementation evidence**: the controlled-test corpus at CLI commit `ca6ea1dcb54b665568b40fb04e63b7a8ab57e13a` exercises 140 cases with no uncovered required direction, including real bundled human help. Controlled-test remains an injected capability profile, not a production platform claim.
+
+**Baseline evidence**: the frozen protocol is commit `c7e1e083065e62956055286c03b4bd8564e729d2`. The first pilot was retained as invalid after fixture nondeterminism and completion-budget exhaustion were discovered. Post-pilot results using the authorized local Qwen3.8 27B model show B0 detected three of four cases; two same-basis writers independently committed and both falsely claimed success. All four public Windows M0 runs were invalid because initialization correctly returned `CASE_E_UNSUPPORTED_PROFILE` before the target behavior could run.
+
+**Measured burden**: selected B0 records used 16 commands, 180,329 ms, 3,103 input tokens, 4,935 output tokens, and no user decisions or corrections. M0 burden is not comparable: its four commands and 2,325 ms measure only early unsupported-profile rejection.
+
+**Quality and cognitive-load assessment**: canonical revisions/digests and the conformance oracle remain promising for making stale state mechanically visible, while the B0 double-writer false success supports the need for serialization. However, a useful user outcome is still unproven because no production adapter can execute M0 on this host. Adding prompts, roles, plugins, or ceremonies now would increase cognitive and maintenance burden without closing that gap.
+
+**Smallest alternative and decision**: **narrow**. Freeze feature expansion and focus only on proving one real local-filesystem adapter against the existing corpus. After that, freeze a new comparison revision and rerun all four pairs. If a real adapter cannot be proven without disproportionate native/runtime complexity, reduce C.A.S.E. to the smallest validators whose outcome value is demonstrable.
+
+**Explicitly deferred**: skills, plugins, host connection helpers, Pi cleanup, multi-agent scheduling, MECE deliberation automation, MCP, telemetry, hooks, and broad reliability/cross-platform claims.

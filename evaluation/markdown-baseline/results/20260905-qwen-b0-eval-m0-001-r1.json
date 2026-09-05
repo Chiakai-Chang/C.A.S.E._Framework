@@ -1,0 +1,34 @@
+{
+  "schema_version": "1",
+  "record_id": "20260905-qwen-b0-eval-m0-001-r1",
+  "arm": "B0",
+  "case_id": "EVAL-M0-001",
+  "detected": false,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 2,
+  "elapsed_ms": 28056,
+  "input_tokens": 543,
+  "output_tokens": 700,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "invalid",
+  "reason": "INVALIDATED AFTER RUN: the first driver did not fix Git commit timestamps, so its B0 and M0 fixture revisions were not identical; the completion also exhausted max_tokens before emitting a verdict and returned empty content.",
+  "started_at": "2026-09-05T01:40:50.363Z",
+  "ended_at": "2026-09-05T01:41:18.419Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "ca6ea1dcb54b665568b40fb04e63b7a8ab57e13a",
+    "fixture_revision": "05dd5f5ce4fab436f593a7b91502f24ad6eaff84",
+    "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+    "model": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=700; seed unavailable",
+    "token_accounting": "reported"
+  },
+  "command_trace": [
+    { "sequence": 1, "actor": "local-model", "command": "git log --all --graph --oneline --decorate", "exit_code": 0, "result": "* 346d727 (writer-a) writer A result\n| * 6ec0fd3 (HEAD -> writer-b) writer B result\n|/\n* 05dd5f5 (master) fixture base" },
+    { "sequence": 2, "actor": "local-model", "command": "read CASE.md", "exit_code": 0, "result": "common_basis: 05dd5f5ce4fab436f593a7b91502f24ad6eaff84; writer_a_claim: success on writer-a; writer_b_claim: success on writer-b; current artifact: v1, writer-b" }
+  ]
+}

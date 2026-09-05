@@ -1,0 +1,15 @@
+{
+  "schema_version": "1", "record_id": "20260905-qwen-b0-eval-m0-003-r2", "arm": "B0", "case_id": "EVAL-M0-003",
+  "detected": true, "false_success": false, "user_decisions": 0, "commands": 5, "elapsed_ms": 27464,
+  "input_tokens": 706, "output_tokens": 791, "corrections": 0, "recovery_steps": 0, "outcome": "complete",
+  "reason": "POST-PILOT AMENDED RUN. DETECTED — recorded acceptance SHA-256 2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf is stale; current artifact SHA-256 81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56 covers v2 instead of accepted v1.",
+  "started_at": "2026-09-05T01:46:54.248Z", "ended_at": "2026-09-05T01:47:21.712Z",
+  "environment": { "os": "win32 x64 v24.19.0", "node": "v24.19.0", "cli_commit": "ca6ea1dcb54b665568b40fb04e63b7a8ab57e13a", "fixture_revision": "1f8a5c7a32c98d6a964f1031e90ed10337a2a837", "protocol_revision": "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution", "model": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf", "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean", "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable", "token_accounting": "reported" },
+  "command_trace": [
+    { "sequence": 1, "actor": "local-model", "command": "git rev-parse HEAD", "exit_code": 0, "result": "17608fa6a5f88a7e98aa3dddc2930549c7187243" },
+    { "sequence": 2, "actor": "local-model", "command": "git log --oneline --decorate -4", "exit_code": 0, "result": "17608fa record v1 basis; 1f8a5c7 fixture base" },
+    { "sequence": 3, "actor": "local-model", "command": "git diff -- artifact.txt", "exit_code": 0, "result": "artifact.txt changed from v1 to v2" },
+    { "sequence": 4, "actor": "local-model", "command": "read CASE.md and artifact.txt", "exit_code": 0, "result": "accepted_artifact_sha256: 2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf; status: accepted; artifact.txt: v2" },
+    { "sequence": 5, "actor": "local-model", "command": "sha256 artifact.txt", "exit_code": 0, "result": "81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56  artifact.txt" }
+  ]
+}

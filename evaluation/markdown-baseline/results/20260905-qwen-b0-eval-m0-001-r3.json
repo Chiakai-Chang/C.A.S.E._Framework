@@ -1,0 +1,12 @@
+{
+  "schema_version": "1", "record_id": "20260905-qwen-b0-eval-m0-001-r3", "arm": "B0", "case_id": "EVAL-M0-001",
+  "detected": false, "false_success": true, "user_decisions": 0, "commands": 2, "elapsed_ms": 107535,
+  "input_tokens": 1081, "output_tokens": 2889, "corrections": 0, "recovery_steps": 0, "outcome": "complete",
+  "reason": "POST-PILOT CONCURRENT-WRITER AMENDMENT. Both isolated actors began from fixture revision a4fbf1245e52890b82e7723f630153d831dcbe33. Actor A reported SUCCESS at commit 4ae99a7d3dd847414fb2134347080ad522261da8; actor B reported SUCCESS at commit 1414a7152b5c1cbc0b966902c941fd1f9ae7475c. Actor B's phrase 'DETECTED — not applicable; no conflict observed' is not substantive detection. Both writers falsely treated their separate commit as uniquely current.",
+  "started_at": "2026-09-05T01:52:33.445Z", "ended_at": "2026-09-05T01:54:20.980Z",
+  "environment": { "os": "win32 x64 v24.19.0", "node": "v24.19.0", "cli_commit": "6f8228ca2c01688e9c484ea50f63cd0c90f59259", "fixture_revision": "a4fbf1245e52890b82e7723f630153d831dcbe33", "protocol_revision": "post-pilot-concurrent-writer-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; runner-change-uncommitted-at-execution", "model": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf", "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean", "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable", "token_accounting": "reported" },
+  "command_trace": [
+    { "sequence": 1, "actor": "actor-a", "command": "git commit from common basis a4fbf1245e52890b82e7723f630153d831dcbe33", "exit_code": 0, "result": "commit 4ae99a7d3dd847414fb2134347080ad522261da8; artifact v1\\nactor-a" },
+    { "sequence": 2, "actor": "actor-b", "command": "git commit from common basis a4fbf1245e52890b82e7723f630153d831dcbe33", "exit_code": 0, "result": "commit 1414a7152b5c1cbc0b966902c941fd1f9ae7475c; artifact v1\\nactor-b" }
+  ]
+}

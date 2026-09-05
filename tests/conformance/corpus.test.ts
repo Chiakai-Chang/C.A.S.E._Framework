@@ -834,7 +834,7 @@ test("harness-owned Git state is immutable and derived-view network attempts tur
         assert.ok(summary.failed > 0);
 
         const cleanSummary = await runCorpus(root);
-        assert.equal(cleanSummary.total, 139);
+        assert.equal(cleanSummary.total, 140);
         assert.equal(cleanSummary.failed, 0);
         assert.deepEqual(cleanSummary.uncovered_positive, []);
         assert.deepEqual(cleanSummary.uncovered_negative, []);

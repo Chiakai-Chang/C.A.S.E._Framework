@@ -1,0 +1,37 @@
+{
+  "schema_version": "1",
+  "record_id": "20260905-qwen-b0-eval-m0-004-r1",
+  "arm": "B0",
+  "case_id": "EVAL-M0-004",
+  "detected": false,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 5,
+  "elapsed_ms": 26187,
+  "input_tokens": 683,
+  "output_tokens": 700,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "invalid",
+  "reason": "INVALIDATED AFTER RUN: the first driver did not fix paired fixture revisions. The response began comparing recorded SHA-256 2d27fbdf... to current SHA-256 81db67b6... but exhausted max_tokens before the required verdict, so detection receives no credit.",
+  "started_at": "2026-09-05T01:42:10.496Z",
+  "ended_at": "2026-09-05T01:42:36.683Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "ca6ea1dcb54b665568b40fb04e63b7a8ab57e13a",
+    "fixture_revision": "554030f5ed53b9eb2367174b854fc25f402d9452",
+    "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2",
+    "model": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=700; seed unavailable",
+    "token_accounting": "reported"
+  },
+  "command_trace": [
+    { "sequence": 1, "actor": "local-model", "command": "git rev-parse HEAD", "exit_code": 0, "result": "904bc150648193b061a0d49355776785d0663f0b" },
+    { "sequence": 2, "actor": "local-model", "command": "git log --oneline --decorate -4", "exit_code": 0, "result": "904bc15 record v1 basis; 554030f fixture base" },
+    { "sequence": 3, "actor": "local-model", "command": "git diff -- artifact.txt", "exit_code": 0, "result": "artifact.txt changed from v1 to v2" },
+    { "sequence": 4, "actor": "local-model", "command": "read CASE.md and artifact.txt", "exit_code": 0, "result": "evidence_artifact_sha256: 2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf; status: evidence-current; artifact.txt: v2" },
+    { "sequence": 5, "actor": "local-model", "command": "sha256 artifact.txt", "exit_code": 0, "result": "81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56  artifact.txt" }
+  ]
+}

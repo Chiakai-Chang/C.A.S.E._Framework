@@ -1,0 +1,9 @@
+{
+  "schema_version": "1", "record_id": "20260905-qwen-m0-eval-m0-003-r1", "arm": "M0", "case_id": "EVAL-M0-003",
+  "detected": false, "false_success": false, "user_decisions": 0, "commands": 1, "elapsed_ms": 655,
+  "input_tokens": null, "output_tokens": null, "corrections": 0, "recovery_steps": 0, "outcome": "invalid",
+  "reason": "Public Windows CLI failed closed at initialization with CASE_E_UNSUPPORTED_PROFILE (exit 10); the target failure could not be exercised. This first-run pair was additionally invalidated because fixture Git timestamps were not fixed.",
+  "started_at": "2026-09-05T01:42:37.955Z", "ended_at": "2026-09-05T01:42:38.610Z",
+  "environment": { "os": "win32 x64 v24.19.0", "node": "v24.19.0", "cli_commit": "ca6ea1dcb54b665568b40fb04e63b7a8ab57e13a", "fixture_revision": "9eeb2d852e080934e546807ea666038c2d540653", "protocol_revision": "c7e1e083065e62956055286c03b4bd8564e729d2", "model": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf", "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean", "sampling": "temperature=0; max_tokens=700; seed unavailable", "token_accounting": "unavailable" },
+  "command_trace": [{ "sequence": 1, "actor": "local-model", "command": "case-agent --json init --operation op-eval-m0-003", "exit_code": 10, "result": "{\"ok\":false,\"command\":\"init\",\"code\":\"CASE_E_UNSUPPORTED_PROFILE\",\"message\":\"The initialization target is not a proven supported local filesystem profile\",\"data\":null,\"remediation\":null}" }]
+}
