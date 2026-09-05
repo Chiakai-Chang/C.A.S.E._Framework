@@ -1438,7 +1438,7 @@
     "rule_id": "M0-OFFLINE-008",
     "source_section": "20",
     "statement": "Human help is bundled for offline use.",
-    "requires_positive": false,
+    "requires_positive": true,
     "requires_negative": false
   },
   {

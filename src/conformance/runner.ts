@@ -2733,6 +2733,47 @@ async function runProtocolProbe(
       );
       probeThrowsAssertion(() => assertInvocationStructure({ ...valid, expected: [] }), /counts differ/u, "invocation expectation count mismatch rejected");
     }
+  } else if (probe === "bundled-human-help") {
+    const executablePath = resolve(dirname(fileURLToPath(import.meta.url)), "../cli/main.js");
+    const child = spawn(process.execPath, [executablePath, "--help"], {
+      cwd: context.repositoryRoot,
+      env: {
+        Path: process.env.Path,
+        SystemRoot: process.env.SystemRoot,
+        TEMP: process.env.TEMP,
+        TMP: process.env.TMP,
+        CASE_NETWORK: "deny",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+    child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
+    child.stderr.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
+    const processExit = await new Promise<number>((resolveExit, rejectExit) => {
+      child.once("error", rejectExit);
+      child.once("close", (code, signal) => signal === null && code !== null
+        ? resolveExit(code)
+        : rejectExit(new CorpusValidationError("public help process did not exit normally")));
+    });
+    const stdout = Buffer.concat(stdoutChunks).toString("utf8");
+    const stderr = Buffer.concat(stderrChunks).toString("utf8");
+    const requiredMaterial = [
+      "case-agent init --operation <id>",
+      "case-agent dossier show --dossier <id>",
+      "No network, telemetry, or update checks",
+      ".case-agent/",
+      "Recorded Human Acceptance is not authenticated identity",
+      "Windows production mutation is unsupported",
+      "No production POSIX profile is claimed",
+      "No sandbox or complete audit guarantee",
+    ];
+    probeAssertion(
+      processExit === 0 && stderr === "" && requiredMaterial.every((material) => stdout.includes(material)),
+      "public CLI serves complete human help without platform initialization",
+    );
+    probeAssertion((await collectFiles(context.repositoryRoot, true)).size === 0, "public human help is read-only");
   } else if (probe === "platform-boundary") {
     const production = nodeAtomicFsPort(context.repositoryRoot);
     probeAssertion(!production.profile.supported, "unproven production adapter stays unsupported");

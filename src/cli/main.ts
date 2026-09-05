@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
 import { stdin, stderr, stdout } from "node:process";
 import { DECISION_CONFIRMATION_PHRASE, type ConfirmationPort, type ExactSubmissionReview, type ProposedTransition } from "./confirm.js";
+import { HUMAN_HELP } from "./help.js";
 import { parseCliRequest, type CliRequest } from "./args.js";
 import { renderHuman, renderJson } from "./render.js";
 import { exitCodeFor } from "../protocol/errors.js";
@@ -143,9 +144,15 @@ async function productionDependencies(cwd: string): Promise<CliDependencies> {
 }
 
 async function executable(): Promise<void> {
-  const json = process.argv.slice(2).includes("--json");
+  const argv = process.argv.slice(2);
+  if (argv.length === 1 && argv[0] === "--help") {
+    stdout.write(HUMAN_HELP);
+    process.exitCode = 0;
+    return;
+  }
+  const json = argv.includes("--json");
   let result: ResultEnvelope<unknown>;
-  try { result = await runCli(process.argv.slice(2), await productionDependencies(process.cwd())); } catch { result = failure("cli", "CASE_E_INTERNAL", "The CLI could not start safely"); }
+  try { result = await runCli(argv, await productionDependencies(process.cwd())); } catch { result = failure("cli", "CASE_E_INTERNAL", "The CLI could not start safely"); }
   if (json) renderJson(result, stdout); else renderHuman(result, stdout);
   process.exitCode = exitCodeFor(result.code);
 }

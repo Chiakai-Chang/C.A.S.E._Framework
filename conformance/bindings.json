@@ -3870,7 +3870,15 @@
     },
     {
       "rule_id": "M0-OFFLINE-008",
-      "positive": [],
+      "positive": [
+        {
+          "case_id": "bundled-human-help",
+          "assertion_ids": [
+            "probe.public-cli-serves-complete-human-help-without-platform-initialization",
+            "probe.public-human-help-is-read-only"
+          ]
+        }
+      ],
       "negative": []
     },
     {

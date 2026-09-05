@@ -190,6 +190,27 @@ test("real process JSON usage is one newline-terminated envelope with empty stde
   assert.equal(JSON.parse(run.stdout).code, "CASE_E_USAGE");
 });
 
+test("public CLI serves complete bundled human help before platform setup", () => {
+  const run = spawnSync(process.execPath, ["dist/src/cli/main.js", "--help"], {
+    encoding: "utf8",
+    env: { ...process.env, CASE_NETWORK: "deny" },
+  });
+  assert.equal(run.status, 0);
+  assert.equal(run.stderr, "");
+  for (const required of [
+    "case-agent 0.1.0-preview",
+    "case-agent init --operation <id>",
+    "case-agent dossier show --dossier <id>",
+    "case-agent guard recover --dossier <id>",
+    "No network, telemetry, or update checks",
+    ".case-agent/",
+    "Recorded Human Acceptance is not authenticated identity",
+    "Windows production mutation is unsupported",
+    "No production POSIX profile is claimed",
+    "No sandbox or complete audit guarantee",
+  ]) assert.match(run.stdout, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+});
+
 test("production Windows initialization fails closed", { skip: process.platform !== "win32" }, () => {
   const run = spawnSync(process.execPath, ["dist/src/cli/main.js", "--json", "init", "--operation", "op"], { encoding: "utf8" });
   assert.equal(run.status, 10);
