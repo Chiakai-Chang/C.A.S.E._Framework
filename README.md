@@ -1,4 +1,19 @@
-# C.A.S.E. local dossier integrity preview
+# C.A.S.E. Framework
+
+讓人與 AI 在有限 context 下，透過可追溯的工作卷宗交接、檢查證據與驗收成果。目標是在減輕認知與抉擇負擔的同時提升品質。
+
+**目前階段：M0 研究原型。核心協定與受控測試已完成，尚未提供可供日常工作使用的 production adapter。** Windows 的初始化會回傳 `CASE_E_UNSUPPORTED_PROFILE`；Linux/macOS 尚未驗證。Codex、Claude Code、Pi 共用協定是設計方向，目前沒有可安裝的宿主整合或自動協作功能。
+
+The M0 research prototype is implemented and tested under controlled capabilities. Production dossier workflows and host integrations are not yet supported.
+
+- 第一次來：[文件地圖](MAP.md)，依目的選擇閱讀路徑。
+- 想知道完成了嗎、能用嗎：[目前狀態與路線](docs/STATUS.md)。
+- 想參與開發：[貢獻與驗證指引](CONTRIBUTING.md)。
+- 想了解這一輪的取捨：[M0 復盤](docs/evaluation/m0-retrospective.md)。
+
+這些是本框架原始碼倉庫的導覽檔案；未來在使用者專案執行 `init` 時，只能建立 `.case-agent/` 命名空間，不會散落或覆寫 README、MAP、AGENTS 等通用檔案。
+
+## Local dossier integrity preview
 
 This repository contains the private `0.1.0-preview` reference implementation for one deliberately narrow experiment: can a file-native dossier protocol catch stale handoffs, competing writers, changed evidence, and stale recorded acceptance more explicitly than Markdown plus Git?
 
@@ -20,14 +35,13 @@ Use Node.js 24 and the lockfile:
 
 ```powershell
 npm ci
-npm run check
-npm pack --dry-run
-npm pack
-npm install --global .\case-agent-0.1.0-preview.tgz
-case-agent --help
+npm run build
+node dist/src/cli/main.js --help
 ```
 
-`npm pack --dry-run` is the review gate before creating or installing the local tarball. The package allowlist contains the compiled runtime under `dist/src`, bundled schemas, this README, and npm package metadata. It excludes tests, evaluation records, caches, secrets, and repository-local `.case-agent/` dossiers.
+以上可在此 repository 內查看 CLI 說明，不需要全域安裝，也不代表初始化已受支援。維護者完整驗證使用 `npm run check`，在目前量測的 Windows 環境約需 9–10 分鐘。只有 Node 24.19.0 已量測；其他 Node 24 版本仍須通過能力檢查。
+
+For local package inspection, build first and run `npm pack --dry-run`. The package allowlist contains the compiled runtime under `dist/src`, bundled schemas, this README, and npm package metadata. It excludes tests, evaluation records, caches, secrets, and repository-local `.case-agent/` dossiers. Repository documentation linked above is available in the source checkout, not bundled in the tarball.
 
 Uninstalling the CLI does not remove `.case-agent/` data.
 
