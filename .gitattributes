@@ -2,3 +2,5 @@ conformance/** text eol=lf
 conformance/**/*.bin -text
 # Exact terminal prompt fixtures end with the intentional cursor bytes "> ".
 conformance/data/prompts/*.txt -whitespace
+# Immutable evaluation evidence is hashed as bytes; never transform on checkout.
+evaluation/markdown-baseline/results/** -text
