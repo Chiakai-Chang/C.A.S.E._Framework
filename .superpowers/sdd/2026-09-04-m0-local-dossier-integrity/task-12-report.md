@@ -65,3 +65,9 @@ The exact compressed list is README and package metadata; nine named schemas; an
 - r6 is post-pilot evidence rather than a preregistered comparison; M0 remains wholly invalid, so the decision remains `narrow`.
 - Controlled-test conformance is not production support.
 - Independent whole-branch review remains a controller gate; Task 12's full check, package dry-run, result-schema validation, and diff/status accounting are complete.
+
+## Fix round 3
+
+Commit `45204acb0f8cebd6afb43d9a8d43934d098b6ea4` adds case-specific deterministic adjudication, absolute per-case deadlines, typed timeout retention, final point-in-time verifier re-reading, closed evaluator Git/CLI execution, and explicit process-containment limits. All four immutable r6 B0 records reproduce their claimed detection, so no new model execution or outcome record was created. Derived burden is 35 trace events: 32 actor commands and 3 evaluator injections. The frozen runner was renamed from the stale `run-r4.mjs` label to `run-evaluation.mjs`; immutable old trace strings were not rewritten.
+
+Final round-three check passed 310/310 core tests, 32/32 evaluation tests, and 140/140 conformance cases. The final cooperative point-in-time integrity verification retained 34/34 records with no failure; package contents remain 86 allowlisted files.

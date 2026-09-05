@@ -45,7 +45,7 @@
       "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
       "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "eligible-post-pilot-r6",
-      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
+      "status_reason": "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-b0-eval-m0-002-r1.json",
@@ -81,7 +81,7 @@
       "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
       "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "eligible-post-pilot-r6",
-      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
+      "status_reason": "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-b0-eval-m0-003-r1.json",
@@ -117,7 +117,7 @@
       "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
       "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "eligible-post-pilot-r6",
-      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
+      "status_reason": "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-b0-eval-m0-004-r1.json",
@@ -153,7 +153,7 @@
       "record_git_commit": "15778ffc77c9c1fe834fab810f5f71021dfc2c9c",
       "protocol_revision": "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
       "status": "eligible-post-pilot-r6",
-      "status_reason": "Method-frozen r6 replacement observation; still not preregistered comparative evidence."
+      "status_reason": "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."
     },
     {
       "record_path": "results/20260905-qwen-m0-eval-m0-001-r1.json",
