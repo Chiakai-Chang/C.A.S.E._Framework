@@ -18,6 +18,8 @@
 
 合併至主資料夾後另發現可重現的取出問題：Windows `core.autocrlf=true` 會把 34 份原始評估 JSON 轉為 CRLF，與已凍結的 LF 摘要不符。以 `.gitattributes` 的 `-text` 規則保存結果原始位元組，並加入啟用 autocrlf 的獨立 Git 取出回歸測試；原始 Git blobs 與完整性清單不改寫。這說明接手環境驗證可以找到原工作樹重跑測試未揭露的問題。
 
+合併與修正後，主資料夾完整檢查通過：310/310 核心測試、64/64 評估測試（含新增的換行取出測試）、140/140 conformance、34/34 外部完整性紀錄。另將提交內容全新取出至暫存目錄，啟用 autocrlf 後仍有 34/34 相符摘要。README 建置與離線 help 路徑、五份導覽文件連結及 86 檔封裝 allowlist 均已核對。此次本機合併包含 `120250c` 的文件整理與 `210b7cf` 的換行修正；未推送遠端或發布套件。
+
 維持 **narrow**：先證明一個真實 filesystem adapter，再做新的配對評估，之後才投入 skills、plugins 或多宿主協作。命名空間仍是 `.case-agent/`；框架本身的 README、MAP、CONTRIBUTING 不會由 init 寫入採用者專案。
 
 跨平台有兩個獨立問題：作業系統的檔案能力，以及 Codex／Claude Code／Pi 的宿主整合。共用檔案協定提供基礎，兩者仍需分別測試。授權與公開套件發布亦尚未決定。
