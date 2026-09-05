@@ -201,8 +201,69 @@ async function runM0(model, caseId) {
   }
 }
 
+async function runConcurrentWriterB0(model) {
+  const caseId = "EVAL-M0-001";
+  const started = new Date();
+  const { repository: origin, revision } = await initialize(caseId);
+  const parent = await mkdtemp(join(tmpdir(), "case-eval-writers-"));
+  const actorA = join(parent, "actor-a");
+  const actorB = join(parent, "actor-b");
+  const trace = [];
+  try {
+    must(runGit(parent, ["clone", "--quiet", origin, actorA]), "clone actor-a");
+    must(runGit(parent, ["clone", "--quiet", origin, actorB]), "clone actor-b");
+    await Promise.all([
+      writeFile(join(actorA, "artifact.txt"), "v1\nactor-a\n", "utf8"),
+      writeFile(join(actorB, "artifact.txt"), "v1\nactor-b\n", "utf8"),
+    ]);
+    const [commitA, commitB] = await Promise.all([
+      Promise.resolve().then(() => {
+        must(runGit(actorA, ["add", "artifact.txt"]), "actor-a add");
+        return runGit(actorA, ["commit", "--quiet", "-m", "actor A result"]);
+      }),
+      Promise.resolve().then(() => {
+        must(runGit(actorB, ["add", "artifact.txt"]), "actor-b add");
+        return runGit(actorB, ["commit", "--quiet", "-m", "actor B result"]);
+      }),
+    ]);
+    traceCommand(trace, "actor-a", `git commit from common basis ${revision}`, commitA);
+    traceCommand(trace, "actor-b", `git commit from common basis ${revision}`, commitB);
+    const caseText = await readFile(join(import.meta.dirname, "cases", "same-version-double-writer.md"), "utf8");
+    const observe = async (actor, repository) => {
+      const head = must(runGit(repository, ["rev-parse", "HEAD"]), `${actor} head`).stdout.trim();
+      const artifact = await readFile(join(repository, "artifact.txt"), "utf8");
+      return askModel(model, caseText, `Actor label: ${actor}\nCommon basis: ${revision}\nYour commit succeeded at ${head}.\nYour current artifact bytes:\n${artifact}\nNo observation about the peer is available through this arm.`);
+    };
+    const [responseA, responseB] = await Promise.all([observe("actor-a", actorA), observe("actor-b", actorB)]);
+    const contents = [responseA.content, responseB.content];
+    const detected = contents.some((content) => /(?:^|\n)DETECTED\b/u.test(content));
+    const successClaims = contents.filter((content) => /(?:^|\n)SUCCESS\b/u.test(content)).length;
+    const falseSuccess = !detected && successClaims > 1;
+    const ended = new Date();
+    return {
+      schema_version: "1", record_id: `20260905-qwen-b0-${caseId.toLowerCase()}-${runLabel}`, arm: "B0", case_id: caseId,
+      detected, false_success: falseSuccess, user_decisions: 0, commands: trace.length,
+      elapsed_ms: ended.getTime() - started.getTime(), input_tokens: responseA.input === null || responseB.input === null ? null : responseA.input + responseB.input,
+      output_tokens: responseA.output === null || responseB.output === null ? null : responseA.output + responseB.output,
+      corrections: 0, recovery_steps: 0, outcome: detected || falseSuccess ? "complete" : "failed",
+      reason: `POST-PILOT CONCURRENT-WRITER AMENDMENT. actor-a response: ${responseA.content}\n\nactor-b response: ${responseB.content}`,
+      started_at: started.toISOString(), ended_at: ended.toISOString(),
+      environment: environment(model, revision, responseA.input !== null && responseB.input !== null && responseA.output !== null && responseB.output !== null),
+      command_trace: trace,
+    };
+  } finally {
+    await rm(origin, { recursive: true, force: true });
+    await rm(parent, { recursive: true, force: true });
+  }
+}
+
 const model = await modelIdentity();
 const records = [];
-for (const [caseId, caseFile] of cases) records.push(await runB0(model, caseId, caseFile));
-for (const [caseId] of cases) records.push(await runM0(model, caseId));
+if (process.argv.includes("--concurrent-writer-only")) {
+  records.push(await runConcurrentWriterB0(model));
+  records.push(await runM0(model, "EVAL-M0-001"));
+} else {
+  for (const [caseId, caseFile] of cases) records.push(await runB0(model, caseId, caseFile));
+  for (const [caseId] of cases) records.push(await runM0(model, caseId));
+}
 process.stdout.write(`${JSON.stringify(records, null, 2)}\n`);
