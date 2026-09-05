@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/evaluation/0.1.0-preview/result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "arm",
+    "case_id",
+    "detected",
+    "false_success",
+    "user_decisions",
+    "commands",
+    "elapsed_ms",
+    "input_tokens",
+    "output_tokens",
+    "corrections",
+    "recovery_steps",
+    "outcome",
+    "reason",
+    "started_at",
+    "ended_at",
+    "environment",
+    "command_trace"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "record_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "arm": { "enum": ["B0", "M0"] },
+    "case_id": { "enum": ["EVAL-M0-001", "EVAL-M0-002", "EVAL-M0-003", "EVAL-M0-004"] },
+    "detected": { "type": "boolean" },
+    "false_success": { "type": "boolean" },
+    "user_decisions": { "type": "integer", "minimum": 0 },
+    "commands": { "type": "integer", "minimum": 0 },
+    "elapsed_ms": { "type": "integer", "minimum": 0 },
+    "input_tokens": { "type": ["integer", "null"], "minimum": 0 },
+    "output_tokens": { "type": ["integer", "null"], "minimum": 0 },
+    "corrections": { "type": "integer", "minimum": 0 },
+    "recovery_steps": { "type": "integer", "minimum": 0 },
+    "outcome": { "enum": ["complete", "failed", "timeout", "invalid"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string", "minLength": 1 },
+    "ended_at": { "type": "string", "minLength": 1 },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "node", "cli_commit", "fixture_revision", "protocol_revision", "model", "server", "sampling", "token_accounting"],
+      "properties": {
+        "os": { "type": "string", "minLength": 1 },
+        "node": { "type": "string", "minLength": 1 },
+        "cli_commit": { "type": "string", "minLength": 1 },
+        "fixture_revision": { "type": "string", "minLength": 1 },
+        "protocol_revision": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "server": { "type": "string", "minLength": 1 },
+        "sampling": { "type": "string", "minLength": 1 },
+        "token_accounting": { "enum": ["reported", "unavailable"] }
+      }
+    },
+    "command_trace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sequence", "actor", "command", "exit_code", "result"],
+        "properties": {
+          "sequence": { "type": "integer", "minimum": 1 },
+          "actor": { "type": "string", "minLength": 1 },
+          "command": { "type": "string", "minLength": 1 },
+          "exit_code": { "type": ["integer", "null"] },
+          "result": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
