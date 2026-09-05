@@ -517,19 +517,33 @@ export function adjudicateRecord(record) {
   const success = record.scoring?.verdict_transcript?.find((item) => item.verdict === "SUCCESS") ?? null;
   const evidence = verdict?.evidence.toLowerCase() ?? "";
   if (record.case_id === "EVAL-M0-001") {
-    const publishes = record.command_trace.filter((entry) => entry.command.includes("publish origin"));
+    const canonicalPublish = "git publish origin HEAD:refs/heads/published";
+    const isPublicationAttempt = (command) => command === canonicalPublish
+      || (/^git\b/iu.test(command) && /(?:\bpublish\b|\bpush\b|refs\/heads\/published)/iu.test(command));
+    const publishLike = record.command_trace.filter((entry) => isPublicationAttempt(entry.command));
+    const publishes = publishLike.filter((entry) => entry.command === canonicalPublish);
+    const actors = publishes.map((entry) => entry.actor).sort();
+    const topologyClosed = publishLike.length === 2 && publishes.length === 2
+      && actors[0] === "actor-a" && actors[1] === "actor-b"
+      && new Set(actors).size === 2
+      && publishes.every((entry) => entry.timed_out === false && Number.isInteger(entry.exit_code))
+      && publishes.filter((entry) => entry.exit_code === 0).length === 1
+      && publishes.filter((entry) => entry.exit_code !== 0).length === 1;
+    if (!topologyClosed) return { eligible: false, detected: false, false_success: false, reason: "Audited publication topology is not exactly one canonical terminal publish per actor with one winner and one loser.", burden };
     const topology = scoreConcurrentPublication(publishes, record.scoring?.verdict_transcript ?? []);
     if (topology.winners.length !== 1 || topology.losers.length !== 1) return { eligible: false, detected: false, false_success: false, reason: "Audited publication trace does not identify exactly one winner and one loser.", burden };
     const winner = publishes.find((entry) => entry.actor === topology.winners[0]);
     const loser = publishes.find((entry) => entry.actor === topology.losers[0]);
     const match = loser?.result.match(/is at ([0-9a-f]{40}) but expected ([0-9a-f]{40})/iu);
-    const relationGrounded = Boolean(loser && winner && match);
-    const loserSuccess = record.scoring?.verdict_transcript?.find((item) => item.actor === loser?.actor && item.verdict === "SUCCESS") ?? null;
-    if (loserSuccess) {
+    const relationGrounded = Boolean(loser && winner && match && match[1].toLowerCase() !== match[2].toLowerCase());
+    const loserTerminals = record.scoring?.verdict_transcript?.filter((item) => item.actor === loser?.actor && ["DETECTED", "SUCCESS", "FAILED"].includes(item.verdict)) ?? [];
+    if (loserTerminals.length !== 1) return { eligible: false, detected: false, false_success: false, reason: "The exact losing actor must have one unique terminal verdict.", burden };
+    const loserTerminal = loserTerminals[0];
+    if (loserTerminal.verdict === "SUCCESS") {
       const groundedFalseSuccess = Boolean(relationGrounded && topology.false_success);
       return { eligible: groundedFalseSuccess, detected: false, false_success: groundedFalseSuccess, reason: groundedFalseSuccess ? "SUCCESS verdict is grounded as false success by the audited losing publication conflict." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
     }
-    const loserVerdict = record.scoring?.verdict_transcript?.find((item) => item.actor === loser?.actor && item.verdict === "DETECTED") ?? null;
+    const loserVerdict = loserTerminal.verdict === "DETECTED" ? loserTerminal : null;
     const loserEvidence = loserVerdict?.evidence.toLowerCase() ?? "";
     const grounded = Boolean(relationGrounded && loserVerdict && containsRevision(loserEvidence, match[1]) && containsRevision(loserEvidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(loserEvidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Loser verdict binds both exact shared-ref revisions and the audited publication conflict." : "DETECTED evidence is not grounded in the audited loser publication conflict and both revisions.", burden };
@@ -564,28 +578,30 @@ export function adjudicateRecord(record) {
 
 export function statusForRecord(record) {
   const recordId = record.record_id ?? "unlabeled-record";
+  const suffix = recordId.match(/-(r[^-]+)$/u)?.[1] ?? null;
+  let futureLabel = null;
+  if (suffix) try { futureLabel = parseFutureRunLabel(suffix); } catch { /* schema 4 below classifies noncanonical future identity */ }
+  if (futureLabel || record.schema_version === "4") {
+    if (!futureLabel || record.schema_version !== "4" || record.scoring?.scorer_version !== "case-eval-v4.0.0") return ["invalid-method", "Future records require a canonical r7-or-later suffix, schema 4, and case-eval-v4.0.0."];
+    if (record.outcome !== "complete") return ["invalid-run", `${futureLabel} outcome ${record.outcome} is not eligible comparative evidence.`];
+    if (record.arm !== "B0") return ["invalid-run", `${futureLabel} M0 has no eligible production observation.`];
+    const adjudication = adjudicateRecord(record);
+    return adjudication.eligible
+      ? ["eligible-post-pilot", `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`]
+      : ["invalid-run", `${futureLabel} deterministic adjudication failed: ${adjudication.reason}`];
+  }
   if (recordId.endsWith("-r1")) return ["invalid-preregistered-pilot", "Retained pilot record is invalid under the recorded r1 limitations."];
   if (recordId === "20260905-qwen-b0-eval-m0-001-r2") return ["invalid-method", "One post-hoc evaluator was not two independent writer actors."];
   if (recordId === "20260905-qwen-b0-eval-m0-001-r3") return ["invalid-method", "Evaluator prewrote disconnected commits; raw actor transcript was omitted, so the manual override is not reproducible."];
   if (recordId.endsWith("-r4")) return ["invalid-provenance-runner-boundary", "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."];
-  if (record.arm === "M0" && record.outcome === "invalid") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
-  if (record.outcome !== "complete") return ["invalid-run", `${recordId.match(/-(r\d+)$/u)?.[1] ?? "run"} outcome ${record.outcome} is not eligible comparative evidence.`];
   if (record.arm === "M0") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
-  const suffix = recordId.match(/-(r[^-]+)$/u)?.[1] ?? null;
-  let futureLabel = null;
-  if (suffix) try { futureLabel = parseFutureRunLabel(suffix); } catch { /* handled below for v4-like identities */ }
-  if (futureLabel && (record.schema_version !== "4" || record.scoring?.scorer_version !== "case-eval-v4.0.0")) {
-    return ["invalid-method", "r7-or-later records require schema 4 and case-eval-v4.0.0."];
-  }
-  if (record.schema_version === "4" && !futureLabel) return ["invalid-method", "Schema 4 requires a canonical r7-or-later record ID suffix."];
+  if (record.outcome !== "complete") return ["invalid-run", `${recordId.match(/-(r\d+)$/u)?.[1] ?? "run"} outcome ${record.outcome} is not eligible comparative evidence.`];
   if (recordId.endsWith("-r5")) return ["eligible-post-pilot-r5", "Method-frozen r5 observation; still not preregistered comparative evidence."];
   if (["3", "4"].includes(record.schema_version) && record.arm === "B0") {
     const adjudication = adjudicateRecord(record);
     const label = recordId.match(/-(r\d+)$/u)?.[1] ?? "future";
     if (label === "r6" && adjudication.eligible) return ["eligible-post-pilot-r6", "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."];
-    return adjudication.eligible
-      ? ["eligible-post-pilot", `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`]
-      : ["invalid-run", `${label} deterministic adjudication failed: ${adjudication.reason}`];
+    return adjudication.eligible ? ["eligible-post-pilot", `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`] : ["invalid-run", `${label} deterministic adjudication failed: ${adjudication.reason}`];
   }
   return ["eligible-post-pilot", "Post-pilot amended observation; not preregistered comparative evidence."];
 }

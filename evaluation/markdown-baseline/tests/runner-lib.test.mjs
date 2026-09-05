@@ -3,6 +3,7 @@ import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:f
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
+import Ajv2020 from "ajv/dist/2020.js";
 
 import {
   atomicPersistRecord,
@@ -177,6 +178,19 @@ test("future eligibility rejects non-complete and generic B0 records", () => {
     assert.equal(statusForRecord({ ...generic, record_id: `future-${label}` })[0], "invalid-method");
   }
   assert.equal(statusForRecord({ ...generic, record_id: "future-r10" })[0], "invalid-run");
+});
+
+test("future status applies canonical identity before the closed three-state policy", () => {
+  const base = { schema_version: "4", record_id: "future-r7", arm: "M0", case_id: "EVAL-M0-001", outcome: "invalid", scoring: { scorer_version: "case-eval-v4.0.0" }, command_trace: [] };
+  assert.equal(statusForRecord(base)[0], "invalid-run");
+  assert.equal(statusForRecord({ ...base, outcome: "failed" })[0], "invalid-run");
+  assert.equal(statusForRecord({ ...base, outcome: "timeout" })[0], "invalid-run");
+  assert.equal(statusForRecord({ ...base, schema_version: "3" })[0], "invalid-method");
+  assert.equal(statusForRecord({ ...base, scoring: { scorer_version: "case-eval-v3.0.0" } })[0], "invalid-method");
+  assert.equal(statusForRecord({ ...base, record_id: "future-r07" })[0], "invalid-method");
+  assert.equal(statusForRecord({ ...base, record_id: "future-r1" })[0], "invalid-method");
+  assert.equal(statusForRecord({ ...base, record_id: "future-r4" })[0], "invalid-method");
+  assert.equal(statusForRecord({ ...base, schema_version: "3", record_id: "historical-r6" })[0], "invalid-production");
 });
 
 test("fresh CLI artifact ignores poisoned workspace dist and exposes a verifiable digest", async (t) => {
@@ -687,6 +701,56 @@ test("concurrent adjudication fails without exactly one winner and loser", () =>
   assert.equal(result.eligible, false);
   assert.equal(result.detected, false);
   assert.equal(result.false_success, false);
+});
+
+test("concurrent adjudication rejects every noncanonical publication topology", () => {
+  const canonical = "git publish origin HEAD:refs/heads/published";
+  const success = { actor: "actor-a", command: canonical, exit_code: 0, timed_out: false, result: "published" };
+  const conflict = { actor: "actor-b", command: canonical, exit_code: 1, timed_out: false, result: `shared ref is at ${"b".repeat(40)} but expected ${"a".repeat(40)}` };
+  const verdicts = [{ actor: "actor-b", verdict: "SUCCESS", evidence: "done" }];
+  const invalid = [
+    [success, conflict, { ...conflict }],
+    [success, conflict, { ...conflict, actor: "actor-c", command: `${canonical} --force` }],
+    [success, conflict, { ...conflict, actor: "actor-c", command: "git push origin HEAD:refs/heads/published" }],
+    [success, { ...conflict, actor: "actor-c" }],
+    [success, { ...conflict, actor: "actor-a" }],
+    [success, { ...conflict, exit_code: null }],
+    [success, { ...conflict, timed_out: true }],
+    [success, { ...conflict, command: `${canonical} --force` }],
+  ];
+  for (const publishes of invalid) {
+    const result = adjudicateRecord(concurrentRecord(verdicts, publishes));
+    assert.equal(result.eligible, false, JSON.stringify(publishes));
+    assert.equal(result.false_success, false, JSON.stringify(publishes));
+  }
+  const sameRevision = { ...conflict, result: `shared ref is at ${"a".repeat(40)} but expected ${"a".repeat(40)}` };
+  assert.equal(adjudicateRecord(concurrentRecord(verdicts, [success, sameRevision])).eligible, false);
+  const mixedCaseSameRevision = { ...conflict, result: `shared ref is at ${"A".repeat(40)} but expected ${"a".repeat(40)}` };
+  assert.equal(adjudicateRecord(concurrentRecord(verdicts, [success, mixedCaseSameRevision])).eligible, false);
+});
+
+test("concurrent adjudication requires one terminal verdict from the exact loser", () => {
+  const record = concurrentRecord([
+    { actor: "actor-b", verdict: "SUCCESS", evidence: "done" },
+    { actor: "actor-b", verdict: "DETECTED", evidence: "later contradiction" },
+  ]);
+  assert.equal(adjudicateRecord(record).eligible, false);
+});
+
+test("manifest writer output uses the same future policy and closed schema", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-future-manifest-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await mkdir(join(directory, "results"));
+  const path = join(directory, "results", "future-r7.json");
+  const record = { schema_version: "4", record_id: "future-r7", arm: "M0", outcome: "invalid", scoring: { scorer_version: "case-eval-v4.0.0" } };
+  await writeFile(path, `${JSON.stringify(record)}\n`);
+  const [status, status_reason] = statusForRecord(record);
+  const revision = "a".repeat(40);
+  const manifest = await buildIntegrityManifest([{ path, record_git_commit: "b".repeat(40), protocol_revision: revision, status, status_reason }], { root: directory, protocol_revision: revision });
+  const manifestSchema = JSON.parse(await readFile(new URL("../integrity-manifest.schema.json", import.meta.url), "utf8"));
+  const valid = new Ajv2020({ strict: true }).compile(manifestSchema);
+  assert.equal(status, "invalid-run");
+  assert.equal(valid(manifest), true, JSON.stringify(valid.errors));
 });
 
 test("external integrity manifest detects a record changed after hashing", async (t) => {

@@ -109,3 +109,13 @@ Runner and verifier now share one canonical future-label parser: `r7` and ordina
 No raw result was changed and no model was run. Selected r6 evidence, aggregates, and the `narrow` decision remain unchanged.
 
 Final round-seven verification passed 310/310 core tests, 56/56 evaluation tests, and 140/140 conformance cases. The closed integrity verifier retained 34/34 records and manifest entries with no failure. Package dry-run remains 86 allowlisted files.
+
+## Fix round 8
+
+Final review tightened concurrent topology to exactly two canonical publish trace entries, one per named actor, with no timeout/null exit and exactly one zero/nonzero result. Any extra or approximate publish, duplicate/unknown actor, same-actor contradiction, pending exit, or non-unique loser terminal verdict is ineligible. Future status selection now parses canonical identity before outcome: identity mismatch is `invalid-method`; r7+ invalid, failure, timeout, unsupported/non-B0 observation is `invalid-run`; and only complete adjudicated B0 may be `eligible-post-pilot`. An actual manifest builder/schema test binds writer output to the verifier's closed vocabulary.
+
+No raw result was changed and no model was run. Historical statuses, selected r6 evidence, aggregates, and the `narrow` decision remain unchanged.
+
+Final round-eight verification passed 310/310 core tests, 60/60 evaluation tests, and 140/140 conformance cases. The closed integrity verifier retained 34/34 records and manifest entries with no failure. Package dry-run remains 86 allowlisted files.
+
+The new independent reviewer reproduced three remaining edge cases before finalization: schema-v4 records could borrow historical `-r1`/`-r4` statuses, a third `git push` publication attempt could evade the publish counter, and a conflict claiming identical current/expected revisions could be treated as grounded. Identity-first historical isolation, a closed Git-publication-attempt predicate, and a distinct-revision requirement now reject all three, with direct red/green regressions.
