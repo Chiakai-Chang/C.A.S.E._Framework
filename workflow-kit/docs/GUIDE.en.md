@@ -4,7 +4,17 @@ C.A.S.E. helps an agent keep the goal, constraints, evidence, and next action av
 
 The kit combines an Agent Skill with a local, dependency-free Node.js tool. The skill guides the agent's behavior; the tool stores task records. Neither replaces your coding agent, runs a model server, or grants additional permissions. You do not need the repository's older M0 research implementation.
 
-## Install and start
+## Why use it, and what is actually established?
+
+A long task can leave its constraints, failed checks, and next action scattered across chat history. CASE keeps a task record in the project so another session can resume from a compact view and consult source files as needed. For example, after a CSV fix is interrupted, the next session can see that empty-input tests still fail and documentation remains unfinished, instead of rebuilding the plan from a long conversation. This is an instructional scenario, not a measured model trial.
+
+Compared with a TODO file, CASE adds consistent fields, executable state transitions, bounded resume output, and a check that all criteria have recorded passing evidence before completion. Reopening resets acceptance so old results are not silently reused. One coordinator integrates workers' outputs; it does not orchestrate different AI products automatically.
+
+These are established workflow ideas packaged together, not a claim of a new agent architecture. The tradeoff is record-keeping effort and a Node.js requirement. Skip it for short tasks or when existing notes already suffice. Success means avoided omissions, repeated explanations, and rework outweigh that effort—not more records or a higher test count.
+
+The code is inspectable and the tool tests have passed the Windows/Linux/macOS × Node 20/24 matrix. That establishes exercised tool behavior, not universal model compliance, token savings, or better task outcomes. Evidence text is not authenticated by the CLI. Your AI tool retains its permissions and may send files it reads to its model provider. Public visibility also does not supply an open-source license; licensing remains undecided. See [validation evidence](READINESS.md) and [architecture](ARCHITECTURE.md).
+
+## Installation
 
 The normal entry point is the established [Vercel Labs Skills installer](https://github.com/vercel-labs/skills), not the internal CASE installer. Run this in your working project (Node.js 20+ and Git required):
 

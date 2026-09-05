@@ -2,6 +2,10 @@
 
 完整 agent 工作流程：需求、執行、有限 context、跨 session、分工、驗收與交付。Agent Skills 格式搭配零相依 Node.js 工具，不依賴 M0 的 adapter。
 
+簡單說：agent 把目標、不能違反的限制、目前結果與下一步保存在專案裡，換對話後不必只靠聊天記憶接續。與普通 TODO 相比，額外提供固定資料欄位、精簡接續輸出及驗收記錄檢查；代價是需要維護記錄，短工作通常不必使用。
+
+工作方法由技能指引，資料由本地工具保存；模型、工具權限及真正的工作仍由 pi、Codex 等提供。程式測試已驗證操作與接續，但不能因此宣稱普遍改善模型品質或節省 token。[設計與邊界](docs/ARCHITECTURE.md) · [具體工作例](docs/WORKFLOW.md) · [可信範圍](docs/READINESS.md)
+
 ## 安裝
 
 文件導航：[English guide](docs/GUIDE.en.md) · [完整例子](docs/WORKFLOW.md) · [架構與用語](docs/ARCHITECTURE.md) · [可取用範本](docs/TEMPLATES.md) · [AI 工具與疑難排解](docs/HOSTS.md) · [驗證範圍](docs/READINESS.md)。
