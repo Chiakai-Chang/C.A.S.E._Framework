@@ -36,11 +36,13 @@ pi／Codex／Claude 的安裝路徑及呼叫方式已查核 [官方文件](HOSTS
 
 本機現有 pi 0.84.2 的 loader 嘗試因宿主缺失 `yaml` 內部模組而中止，未改動其全域安裝。隨後在本專案忽略的快取目錄隔離安裝相同版本（停用安裝 scripts），以其實際 `loadSkillsFromDir` 載入套件的 skills 目錄：恰好辨識一個 `case-workflow`，diagnostics 為空。這驗證真實 pi loader 的格式辨識，不涉及模型呼叫、全域 extensions 或完整 session 的行為評估。
 
-Node 20 是程式相容目標，當前實測 Node 為 24.19.0。已設定 Linux／Windows／macOS、Node 20／24 的 CI；尚未推送執行，因此不宣稱六組平台已通過。
+本機實測 Node 為 24.19.0。提交 `2a81bc8` 的 [遠端 CI](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/33968299883) 已在 Linux／Windows／macOS × Node 20／24 六組環境全部通過。這是工具與安裝流程驗證，不是宿主模型行為驗證。
 
 ## 仍需依使用結果判斷
 
 首次遠端 CI（d928297）：Linux／macOS 的 Node 20、24 及 Windows Node 24 通過；Windows Node 20 因測試指令的萬用字元未展開而未執行測試。已將 CI、package test 及目前操作說明同步改為明列三個測試檔，歷史紀錄中的舊指令保留。修正後結果以 GitHub Actions 對應提交為準。
+
+修正後六組皆通過，結果如上連結。CI 額外提示 checkout/setup-node v4 的動作執行環境已被平台轉為 Node 24；此非測試失敗，與 setup-node 指定的產品測試版本不同，後續維護應留意動作版本生命週期。
 
 框架完整提供上述功能；尚未聲稱普遍提高模型品質、減少 tokens、長任務零遺漏或所有宿主版本完全一致。模型遵循、實際任務品質與使用成本需要真實使用紀錄。CLI 不驗真證據、不執行任意指令、不接管權限，不提供多機同時寫入、強身分或永久稽核。
 

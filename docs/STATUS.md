@@ -16,4 +16,6 @@ M0 的 310 核心測試、140 規範案例與 34 份歷史結果只描述該研�
 
 後續優先處理實際使用發現的具體問題。不以更多規劃取代功能交付。
 
+已依授權推送 GitHub main。交付驗收見 [ACCEPTANCE](ACCEPTANCE.md)；提交 `2a81bc8` 的 Windows／Linux／macOS × Node 20／24 六組 CI 全數通過，實際結果連結見 READINESS。公開授權及 npm 發布仍未決定，不能與 Git 推送混為一談。
+
 文件收尾：目前 Kit 架構／術語、範本導航及英文指南已獨立整理；MAP 是版本化 Wiki 首頁。舊 CONTEXT 只適用 M0。Antigravity 共用路徑的採用方式與未測邊界已納入 HOSTS，沒有新增宿主實測宣稱。
