@@ -1,5 +1,7 @@
 # C.A.S.E. Agent Protocol
 
+> Historical M0 glossary only. For the current Workflow Kit, use [Architecture and terminology](workflow-kit/docs/ARCHITECTURE.md). Revision-bound offers, recipient acceptance, submissions and human-acceptance digests below are not implemented by the Kit.
+
 C.A.S.E. is a file-native work protocol for human-directed, verifiable handoff between coding agents. This glossary defines the domain language; it does not define implementation details or claim that an agent will obey the protocol.
 
 ## Work and responsibility

@@ -28,6 +28,8 @@ Windows／Node 24.19.0：`node --test workflow-kit/tests/*.test.mjs` 通過 13/1
 
 實際 npm tarball 共 11 個必要檔案；解壓至獨立目錄後，直接使用封裝內 installer 安裝兩種宿主位置、初始化、建立任務、由另一位置讀 context 及執行 doctor 均成功。沒有打包 tests、模型、node_modules、本地任務、快取或歷史研究資料。
 
+文件收尾後封裝增為 14 個檔案，新增架構、範本導航及英文指南，runtime 不變。再次執行 Kit 測試 13/13 通過，70 個本地文件連結無缺失，兩個 CLI 的 help 與文件命令核對完成。全域 npm 打包因缺少內部模組失敗，改用 Node 隨附 npm 成功，未修動全域安裝。此輪沒有新增模型／宿主行為實測。
+
 ## 宿主與平台的區別
 
 pi／Codex／Claude 的安裝路徑及呼叫方式已查核 [官方文件](HOSTS.md)。Codex、Claude 未在獨立的真實宿主 session 內驗證模型遵循；安裝檔案成功不等於已完成這種驗證。

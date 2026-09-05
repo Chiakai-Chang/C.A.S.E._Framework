@@ -4,6 +4,8 @@
 
 ## 安裝
 
+文件導航：[English guide](docs/GUIDE.en.md) · [完整例子](docs/WORKFLOW.md) · [架構與用語](docs/ARCHITECTURE.md) · [可取用範本](docs/TEMPLATES.md) · [宿主與疑難排解](docs/HOSTS.md) · [驗證範圍](docs/READINESS.md)。
+
 Node.js 20+。從本目錄執行：
 
 ```text

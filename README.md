@@ -39,6 +39,8 @@ pi／Codex 共用 `.agents/skills/case-workflow/`；Claude 使用 `.claude/skill
 
 ## 文件入口
 
+- [English guide](workflow-kit/docs/GUIDE.en.md)
+- [架構與用語](workflow-kit/docs/ARCHITECTURE.md) · [範本入口](workflow-kit/docs/TEMPLATES.md)
 - [套件使用與手動指令](workflow-kit/README.md)
 - [完整操作實例](workflow-kit/docs/WORKFLOW.md)
 - [安裝、更新、移除及疑難排解](workflow-kit/docs/HOSTS.md)
@@ -46,6 +48,10 @@ pi／Codex 共用 `.agents/skills/case-workflow/`；Claude 使用 `.claude/skill
 - [目標](docs/GOALS.md) · [現況](docs/STATUS.md) · [貢獻方式](CONTRIBUTING.md) · [全域地圖](MAP.md)
 
 ## 舊 M0 與發布
+
+[MAP.md](MAP.md) 是隨程式版本維護的 Wiki 首頁，不另維護 GitHub Wiki 副本。新使用者只需本頁與操作實例；歷史研究無需預讀。
+
+Antigravity（agy）的標準技能路徑也使用 `.agents/skills`，可用現有 `--host codex` 放置技能；這是路徑相容，不代表已經過 agy 真實任務測試，詳見 [宿主說明](workflow-kit/docs/HOSTS.md)。
 
 `workflow-kit/` 是目前產品；根目錄 `src/`、`conformance/` 與 `evaluation/markdown-baseline/` 保留 M0 完整性研究。格式不同，既有 `.case-agent/` 的衝突會被拒絕，不自動遷移或覆蓋。
 
