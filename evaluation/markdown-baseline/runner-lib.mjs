@@ -493,9 +493,14 @@ function detectedVerdict(record) {
   return record.scoring?.verdict_transcript?.find((item) => item.verdict === "DETECTED") ?? null;
 }
 
-function containsRevision(evidence, revision) {
-  const lower = evidence.toLowerCase();
-  return lower.includes(revision.toLowerCase()) || lower.includes(revision.slice(0, 7).toLowerCase());
+function containsRevision(evidence, revision, candidateRevisions) {
+  const target = revision.toLowerCase();
+  const candidates = [...new Set(candidateRevisions.map((candidate) => candidate.toLowerCase()))];
+  const tokens = evidence.toLowerCase().match(/(?<![0-9a-f])[0-9a-f]{7,40}(?![0-9a-f])/gu) ?? [];
+  return tokens.some((token) => {
+    if (token.length === 40) return token === target;
+    return target.startsWith(token) && candidates.filter((candidate) => candidate.startsWith(token)).length === 1;
+  });
 }
 
 function injectionCount(record) {
@@ -582,7 +587,8 @@ export function adjudicateRecord(record) {
     }
     const loserVerdict = loserTerminal.verdict === "DETECTED" ? loserTerminal : null;
     const loserEvidence = loserVerdict?.evidence.toLowerCase() ?? "";
-    const grounded = Boolean(relationGrounded && loserVerdict && containsRevision(loserEvidence, match[1]) && containsRevision(loserEvidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(loserEvidence));
+    const candidateRevisions = match ? [match[1], match[2]] : [];
+    const grounded = Boolean(relationGrounded && loserVerdict && containsRevision(loserEvidence, match[1], candidateRevisions) && containsRevision(loserEvidence, match[2], candidateRevisions) && /publish|ref|basis|conflict|invalidat/iu.test(loserEvidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Loser verdict binds both exact shared-ref revisions and the audited publication conflict." : "DETECTED evidence is not grounded in the audited loser publication conflict and both revisions.", burden };
   }
   const injected = artifactInjectionCount(record) === 1;
@@ -607,7 +613,8 @@ export function adjudicateRecord(record) {
     if (!verdict) {
       return { eligible: Boolean(success && relationGrounded), detected: false, false_success: Boolean(success && relationGrounded), reason: success && relationGrounded ? "SUCCESS verdict is grounded as false success by the audited stale handoff relation." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
     }
-    const grounded = Boolean(relationGrounded && containsRevision(evidence, oldRevision) && containsRevision(evidence, postRevision) && evidence.includes("artifact.txt") && evidence.includes("v1") && evidence.includes("v2") && /stale|intervening/iu.test(evidence));
+    const candidateRevisions = oldRevision && postRevision ? [oldRevision, postRevision] : [];
+    const grounded = Boolean(relationGrounded && containsRevision(evidence, oldRevision, candidateRevisions) && containsRevision(evidence, postRevision, candidateRevisions) && evidence.includes("artifact.txt") && evidence.includes("v1") && evidence.includes("v2") && /stale|intervening/iu.test(evidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Verdict binds unambiguous revision prefixes, artifact path/versions, and the audited intervening injection." : "DETECTED evidence does not bind the audited handoff basis, current revision, artifact versions, and stale relation.", burden };
   }
   return { eligible: false, detected: false, false_success: false, reason: "Unknown case.", burden };

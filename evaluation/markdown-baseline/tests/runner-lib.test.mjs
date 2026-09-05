@@ -776,6 +776,35 @@ test("digest and revision relations normalize hexadecimal case before conflict s
   assert.equal(adjudicateRecord(revisionRecord("A".repeat(40), "b".repeat(40))).eligible, true);
 });
 
+test("revision evidence accepts only full hashes or unambiguous abbreviated prefixes", () => {
+  const oldRevision = `abcdef0a${"1".repeat(32)}`;
+  const currentRevision = `abcdef0b${"2".repeat(32)}`;
+  const publishes = [
+    { actor: "actor-a", command: "git publish origin HEAD:refs/heads/published", exit_code: 0, timed_out: false, result: "published" },
+    { actor: "actor-b", command: "git publish origin HEAD:refs/heads/published", exit_code: 1, timed_out: false, result: `shared ref is at ${currentRevision} but expected ${oldRevision}` },
+  ];
+  const verdict = (evidence) => [{ actor: "actor-b", verdict: "DETECTED", evidence }];
+  for (const evidence of [
+    "publish conflict invalidates basis abcdef0",
+    "publish conflict invalidates basis abcdef0 and repeats abcdef0",
+  ]) assert.equal(adjudicateRecord(concurrentRecord(verdict(evidence), publishes)).eligible, false);
+  assert.equal(adjudicateRecord(concurrentRecord(verdict("publish conflict: basis abcdef0a invalidated by ref abcdef0b"), publishes)).eligible, true);
+
+  const stale = (evidence) => ({
+    arm: "B0", case_id: "EVAL-M0-002",
+    command_trace: [
+      { actor: "actor-b", command: "read CASE.md", result: `offer_basis: ${oldRevision}` },
+      { actor: "actor-b", command: "read artifact.txt", result: "v1" },
+      { actor: "evaluator-injection", command: "inject frozen intervening artifact v2", result: "v2" },
+      { actor: "actor-b", command: "read artifact.txt", result: "v2" },
+      { actor: "actor-b", command: "git rev-parse HEAD", result: currentRevision },
+    ],
+    scoring: { verdict_transcript: [{ actor: "actor-b", verdict: "DETECTED", evidence }] },
+  });
+  assert.equal(adjudicateRecord(stale("artifact.txt v1 stale after intervening v2 at abcdef0")).eligible, false);
+  assert.equal(adjudicateRecord(stale("artifact.txt v1 stale after intervening v2: abcdef0a to abcdef0b")).eligible, true);
+});
+
 test("concurrent adjudication requires one terminal verdict from the exact loser", () => {
   const record = concurrentRecord([
     { actor: "actor-b", verdict: "SUCCESS", evidence: "done" },
