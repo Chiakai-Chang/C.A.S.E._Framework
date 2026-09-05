@@ -1,0 +1,201 @@
+{
+  "id": "59b8b117-3335-4c6b-b8dc-b4ed059fe58f",
+  "createdAt": "2026-09-05T15:22:15.819Z",
+  "endpoint": "http://127.0.0.1:8080/v1",
+  "status": "passed",
+  "modelId": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+  "configuration": {
+    "contextWindow": 32768,
+    "maxTokens": 4096,
+    "thinkingLevel": "off",
+    "maxTurns": 12,
+    "maxAttempts": 3,
+    "maxDurationMs": 180000
+  },
+  "warning": "Three different holdout engineering smoke scenarios, not paired statistical evidence or a universal model-effect claim. SDK cost fields do not measure local electricity or hardware cost.",
+  "sourceHashes": {
+    "holdout.mjs": "4cd255d2cd7bd5e73159a781aaa608dbb661ffdeff508abb790a2d86759cddca",
+    "../integrations/pi/runner.mjs": "3894c491d042d14788c2fad9d82f8305d52a5adc9a4feadb9c2e99ebf84c2897",
+    "../integrations/pi/sdk-session.mjs": "513ea7d6d3fac2f7ab9b4c280734247e7ef832fe82cf2ee85aa89354566263c9",
+    "../integrations/pi/scoped-tools.mjs": "7d73b0a9db9ce702a0b584b6781ee9dd78e39cd8ce7bdbe8fcc693b535bd9680",
+    "../skills/case-workflow/scripts/core/state.mjs": "88ba0803b905fa62abd18f181bdfd3ad704f12e677f5c94ebb288360334fc81b"
+  },
+  "results": [
+    {
+      "scenario": "missing-input",
+      "project": "<isolated-directory>",
+      "startedAt": "2026-09-05T15:22:16.901Z",
+      "sessions": [
+        {
+          "role": "planner",
+          "sessionId": "01a07229-cbf5-70f6-a006-f71da219b92c",
+          "text": "{\"blocked\":{\"reason\":\"prices.json 不存在於工作目錄（僅有 orders.csv），而合約明定 orders.csv 與 prices.json 兩個來源缺一不可，且缺 prices.json 時必須明確回報缺少必要資料、不得推測價格或建立任何產物；缺少此必要來源無法制定有效計畫。\"}}",
+          "usage": {
+            "input": 1231,
+            "output": 261,
+            "cacheRead": 3121,
+            "cacheWrite": 0,
+            "total": 4613
+          },
+          "observations": [
+            {
+              "toolName": "case_list",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "orders.csv"
+                  }
+                ],
+                "details": {}
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                  }
+                ],
+                "details": {
+                  "lines": 5,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 2,
+          "cost": 0,
+          "statsError": null
+        }
+      ],
+      "workflowCompleted": false,
+      "caseId": "12971702-3e18-4d6d-b4c5-4a5ab2a5aac5",
+      "initialSourceHashes": {
+        "orders.csv": "8e65ac3dfd4f9ee016d3ccc282f598449ff12b1154409f0e949d70e9d0de50b7"
+      },
+      "error": {
+        "code": "BLOCKED",
+        "message": "prices.json 不存在於工作目錄（僅有 orders.csv），而合約明定 orders.csv 與 prices.json 兩個來源缺一不可，且缺 prices.json 時必須明確回報缺少必要資料、不得推測價格或建立任何產物；缺少此必要來源無法制定有效計畫。"
+      },
+      "finalState": {
+        "format": "case-workflow/2",
+        "id": "12971702-3e18-4d6d-b4c5-4a5ab2a5aac5",
+        "revision": 0,
+        "status": "active",
+        "contract": {
+          "goal": "讀取 orders.csv 與必要的 prices.json，按 item 將 quantity 乘上 prices.json 單價後加總。只寫 report.json，內容為 {\"total\":數字,\"byItem\":{\"A\":數字,\"B\":數字}}。兩個來源缺一不可；缺 prices.json 必須明確回報缺少必要資料，不得推測價格、建立任何產物或宣稱完成。",
+          "constraints": [
+            {
+              "id": "preserve",
+              "text": "Keep all provided source and verified upstream files unchanged. Write only report.json; never invent missing required data."
+            }
+          ],
+          "acceptance": [
+            {
+              "id": "correct",
+              "text": "report.json contains exactly total and byItem; all totals match both required source files; no invented data"
+            }
+          ],
+          "budget": {
+            "maxAttempts": 3,
+            "maxDurationMs": 180000
+          },
+          "revision": 1
+        },
+        "packets": [],
+        "integration": null,
+        "requests": {},
+        "createdAt": "2026-09-05T15:22:16.910Z",
+        "updatedAt": "2026-09-05T15:22:16.910Z"
+      },
+      "runs": [
+        {
+          "id": "b925cc19-3612-4b07-8018-cc5192ce6c7f",
+          "createdAt": "2026-09-05T15:22:16.925Z",
+          "status": "failed",
+          "sessions": [
+            {
+              "role": "planner",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:22:16.928Z",
+              "usage": {
+                "input": 1231,
+                "output": 261,
+                "cacheRead": 3121,
+                "cacheWrite": 0,
+                "total": 4613
+              },
+              "sessionId": "01a07229-cbf5-70f6-a006-f71da219b92c",
+              "text": "{\"blocked\":{\"reason\":\"prices.json 不存在於工作目錄（僅有 orders.csv），而合約明定 orders.csv 與 prices.json 兩個來源缺一不可，且缺 prices.json 時必須明確回報缺少必要資料、不得推測價格或建立任何產物；缺少此必要來源無法制定有效計畫。\"}}",
+              "observations": [
+                {
+                  "toolName": "case_list",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "orders.csv"
+                      }
+                    ],
+                    "details": {}
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 5,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 2,
+              "cost": 0
+            }
+          ],
+          "elapsedMs": 16283,
+          "error": {
+            "code": "BLOCKED",
+            "message": "prices.json 不存在於工作目錄（僅有 orders.csv），而合約明定 orders.csv 與 prices.json 兩個來源缺一不可，且缺 prices.json 時必須明確回報缺少必要資料、不得推測價格或建立任何產物；缺少此必要來源無法制定有效計畫。"
+          }
+        }
+      ],
+      "checks": {
+        "sourcesUnchanged": true,
+        "extraFiles": [],
+        "reportedMissing": true,
+        "statusNotCompleted": true
+      },
+      "passed": true,
+      "elapsedMs": 16316
+    }
+  ],
+  "agentDir": "<isolated-directory>",
+  "finishedAt": "2026-09-05T15:22:33.225Z"
+}

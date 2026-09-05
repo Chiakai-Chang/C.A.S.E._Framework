@@ -1,0 +1,419 @@
+{
+  "format": "case-native-evidence/1",
+  "recordedAt": "2026-09-05T15:18:58.916Z",
+  "sdkVersion": "0.84.2",
+  "scope": "Native DefaultResourceLoader package loading, case_workflow create/run against the selected local model, and project-only native removal. One success is an integration smoke, not model-quality evidence.",
+  "initialFailure": {
+    "createdAt": "2026-09-05T15:08:07.767Z",
+    "sdkPath": "<repository>\\.npm-cache\\pi-host-validation\\node_modules\\@earendil-works\\pi-coding-agent\\dist\\index.js",
+    "installProject": "<repository>\\.npm-cache",
+    "project": "<temporary-directory>\\case-native-project-2PXl7v",
+    "agentDir": "<temporary-directory>\\case-native-agent-X9RAhl",
+    "endpoint": "http://127.0.0.1:8080/v1",
+    "phases": [
+      "native-package-loaded",
+      "native-tool-create"
+    ],
+    "passed": false,
+    "loadErrors": [],
+    "extension": {
+      "path": "<repository>\\workflow-kit\\integrations\\pi\\extension.mjs",
+      "resolvedPath": "<repository>\\workflow-kit\\integrations\\pi\\extension.mjs"
+    },
+    "modelId": "<local-models>\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "caseId": "06f31059-2aa6-4ae4-bba4-1c3fb7b06be3",
+    "error": {
+      "code": "ERR_MODULE_NOT_FOUND",
+      "message": "Cannot find package '@earendil-works/pi-coding-agent' imported from <repository>\\workflow-kit\\integrations\\pi\\extension.mjs",
+      "stack": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@earendil-works/pi-coding-agent' imported from <repository>\\workflow-kit\\integrations\\pi\\extension.mjs\n    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)\n    at packageResolve (node:internal/modules/esm/resolve:768:81)\n    at moduleResolve (node:internal/modules/esm/resolve:859:18)\n    at defaultResolve (node:internal/modules/esm/resolve:992:11)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:701:20)\n    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)\n    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)\n    at #resolve (node:internal/modules/esm/loader:683:17)\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:603:35)\n    at node:internal/modules/esm/loader:632:32"
+    },
+    "elapsedMs": 2915
+  },
+  "success": {
+    "createdAt": "2026-09-05T15:11:46.289Z",
+    "sdkPath": "<repository>\\.npm-cache\\pi-host-validation\\node_modules\\@earendil-works\\pi-coding-agent\\dist\\index.js",
+    "installProject": "<repository>\\.npm-cache",
+    "project": "<temporary-directory>\\case-native-project-fMe0Sx",
+    "agentDir": "<temporary-directory>\\case-native-agent-sgPWUk",
+    "endpoint": "http://127.0.0.1:8080/v1",
+    "phases": [
+      "native-package-loaded",
+      "native-tool-create",
+      "native-tool-run-returned"
+    ],
+    "passed": true,
+    "loadErrors": [],
+    "extension": {
+      "path": "<repository>\\workflow-kit\\integrations\\pi\\extension.mjs",
+      "resolvedPath": "<repository>\\workflow-kit\\integrations\\pi\\extension.mjs"
+    },
+    "modelId": "<local-models>\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "caseId": "418cce57-d8f5-43d5-a522-a9d42e031289",
+    "result": {
+      "id": "418cce57-d8f5-43d5-a522-a9d42e031289",
+      "status": "completed",
+      "integration": {
+        "sessionId": "01a07221-7c58-707b-a3ce-bbfa4258e8cf",
+        "results": [
+          {
+            "criterionId": "a1",
+            "passed": true,
+            "evidence": "result.txt exists and its full contents read back as exactly 'NATIVE_CASE_OK' with no extra lines or trailing content beyond the required newline (single-line read, no additional data in file). input.txt still contains 'native smoke source' unchanged, and the directory contains only input.txt and result.txt, so no other files were written."
+          }
+        ],
+        "summary": "Goal met within one packet: result.txt was created containing NATIVE_CASE_OK plus a newline; constraint c1 holds — input.txt unchanged and only result.txt written. No extra deliverables or modifications found.",
+        "contractRevision": 1,
+        "packets": [
+          {
+            "id": "p1",
+            "revision": 1,
+            "attemptId": "75657980-abdc-408c-95f0-9ee0180bd107"
+          }
+        ],
+        "at": "2026-09-05T15:13:51.196Z"
+      },
+      "runId": "7f03e4ec-708c-49c6-b098-f21d0a689140"
+    },
+    "checks": {
+      "completed": true,
+      "outputExact": true,
+      "inputUnchanged": true
+    },
+    "elapsedMs": 124914
+  },
+  "successfulRun": {
+    "id": "7f03e4ec-708c-49c6-b098-f21d0a689140",
+    "createdAt": "2026-09-05T15:11:47.492Z",
+    "status": "completed",
+    "sessions": [
+      {
+        "role": "planner",
+        "status": "returned",
+        "startedAt": "2026-09-05T15:11:47.495Z",
+        "usage": {
+          "input": 1095,
+          "output": 216,
+          "cacheRead": 2822,
+          "cacheWrite": 0,
+          "total": 4133
+        },
+        "sessionId": "01a07220-3138-7419-9a63-aceff3b2b26b",
+        "text": "{\"packets\":[{\"id\":\"p1\",\"purpose\":\"Read input.txt and write result.txt containing exactly NATIVE_CASE_OK followed by a single newline.\",\"constraintIds\":[\"c1\"],\"inputs\":[{\"path\":\"input.txt\",\"required\":true}],\"dependsOn\":[],\"writeScope\":[\"result.txt\"],\"deliverables\":[{\"path\":\"result.txt\"}],\"checks\":[{\"id\":\"c1-check\",\"text\":\"Verify result.txt contains exactly the bytes 'NATIVE_CASE_OK\\\\n' and that input.txt is unchanged.\",\"criterionIds\":[\"a1\"]}],\"unknowns\":[]}]}",
+        "observations": [
+          {
+            "toolName": "case_list",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "input.txt"
+                }
+              ],
+              "details": {}
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "native smoke source\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          }
+        ],
+        "model": {
+          "id": "<local-models>\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+          "provider": "case-native-smoke",
+          "thinkingLevel": "off"
+        },
+        "toolCalls": 2,
+        "cost": 0
+      },
+      {
+        "role": "worker",
+        "status": "returned",
+        "startedAt": "2026-09-05T15:11:59.294Z",
+        "usage": {
+          "input": 1475,
+          "output": 261,
+          "cacheRead": 5341,
+          "cacheWrite": 0,
+          "total": 7077
+        },
+        "sessionId": "01a07220-5f53-7825-a336-2e4610947604",
+        "text": "{\"summary\":\"Read input.txt (matches required material) and created result.txt containing exactly 'NATIVE_CASE_OK' followed by a single newline; input.txt was left unchanged and no other files were written.\"}",
+        "observations": [
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "native smoke source\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          },
+          {
+            "toolName": "case_write",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Wrote result.txt"
+                }
+              ],
+              "details": {}
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "NATIVE_CASE_OK\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          }
+        ],
+        "model": {
+          "id": "<local-models>\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+          "provider": "case-native-smoke",
+          "thinkingLevel": "off"
+        },
+        "toolCalls": 3,
+        "cost": 0
+      },
+      {
+        "role": "reviewer",
+        "status": "returned",
+        "startedAt": "2026-09-05T15:12:16.425Z",
+        "usage": {
+          "input": 1191,
+          "output": 946,
+          "cacheRead": 4771,
+          "cacheWrite": 0,
+          "total": 6908
+        },
+        "sessionId": "01a07220-a23f-73b1-a66e-ba5e127e1865",
+        "text": "{\"passed\":true,\"findings\":[],\"evidence\":\"Directory contains only input.txt and result.txt, consistent with the constraint that only result.txt be created. input.txt reads as 'native smoke source' and appears unchanged (sha256 2f741655... was declared by the packet but could not be recomputed with the available tools; content inspection is the only check possible here — an untested limit). result.txt reads as exactly one line containing 'NATIVE_CASE_OK'; a read at startLine=2 returned no output, confirming no additional lines or trailing content, so the file matches the expected bytes 'NATIVE_CASE_OK\\\\n'. Both the deliverable and check c1-check are satisfied; the single-packet budget (maxAttempts 3, 240000 ms) was respected.\"}",
+        "observations": [
+          {
+            "toolName": "case_list",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "input.txt\nresult.txt"
+                }
+              ],
+              "details": {}
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "native smoke source\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "NATIVE_CASE_OK\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": ""
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 2,
+                "truncated": false
+              }
+            }
+          }
+        ],
+        "model": {
+          "id": "<local-models>\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+          "provider": "case-native-smoke",
+          "thinkingLevel": "off"
+        },
+        "toolCalls": 4,
+        "cost": 0
+      },
+      {
+        "role": "integrator",
+        "status": "returned",
+        "startedAt": "2026-09-05T15:13:12.261Z",
+        "usage": {
+          "input": 1131,
+          "output": 619,
+          "cacheRead": 3235,
+          "cacheWrite": 0,
+          "total": 4985
+        },
+        "sessionId": "01a07221-7c58-707b-a3ce-bbfa4258e8cf",
+        "text": "{\"results\":[{\"criterionId\":\"a1\",\"passed\":true,\"evidence\":\"result.txt exists and its full contents read back as exactly 'NATIVE_CASE_OK' with no extra lines or trailing content beyond the required newline (single-line read, no additional data in file). input.txt still contains 'native smoke source' unchanged, and the directory contains only input.txt and result.txt, so no other files were written.\"}],\"summary\":\"Goal met within one packet: result.txt was created containing NATIVE_CASE_OK plus a newline; constraint c1 holds — input.txt unchanged and only result.txt written. No extra deliverables or modifications found.\"}",
+        "observations": [
+          {
+            "toolName": "case_list",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "input.txt\nresult.txt"
+                }
+              ],
+              "details": {}
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "native smoke source\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "NATIVE_CASE_OK\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          },
+          {
+            "toolName": "case_read",
+            "isError": false,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "NATIVE_CASE_OK\n"
+                }
+              ],
+              "details": {
+                "lines": 2,
+                "startLine": 1,
+                "truncated": false
+              }
+            }
+          }
+        ],
+        "model": {
+          "id": "<local-models>\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+          "provider": "case-native-smoke",
+          "thinkingLevel": "off"
+        },
+        "toolCalls": 4,
+        "cost": 0
+      }
+    ],
+    "elapsedMs": 123706
+  },
+  "removal": {
+    "command": "PI_CODING_AGENT_DIR=<isolated-agent-dir> node <cached-pi>/dist/cli.js remove <repository>/workflow-kit -l --approve",
+    "cwd": "<repository>/.npm-cache",
+    "exitCode": 0,
+    "stdout": "Removing <repository>/workflow-kit...\nRemoved <repository>/workflow-kit",
+    "settingsAfter": {
+      "packages": []
+    },
+    "checks": [
+      {
+        "path": "<temporary-directory>\\case-native-project-fMe0Sx\\.case-agent\\cases\\418cce57-d8f5-43d5-a522-a9d42e031289\\state.json",
+        "sha256Before": "0660645413b9b0ac21628ca0467cb7796b255857141be77b9b591e8f2851c09b",
+        "sha256After": "0660645413b9b0ac21628ca0467cb7796b255857141be77b9b591e8f2851c09b",
+        "unchanged": true
+      },
+      {
+        "path": "<temporary-directory>\\case-native-project-fMe0Sx\\result.txt",
+        "sha256Before": "de7be9f70846cfc18e552c666d4f0be8a1e8fe151562f213547076ad29fd716d",
+        "sha256After": "de7be9f70846cfc18e552c666d4f0be8a1e8fe151562f213547076ad29fd716d",
+        "unchanged": true
+      },
+      {
+        "path": "<repository>\\workflow-kit\\package.json",
+        "sha256Before": "7d02bf7db7adcc932211dddad3916eda5d59f22c7274ab63f579b4326244cf07",
+        "sha256After": "7d02bf7db7adcc932211dddad3916eda5d59f22c7274ab63f579b4326244cf07",
+        "unchanged": true
+      }
+    ],
+    "globalConfiguration": "PI_CODING_AGENT_DIR was scoped to the existing temporary smoke agent directory for this child process; global pi settings were not the removal target."
+  }
+}

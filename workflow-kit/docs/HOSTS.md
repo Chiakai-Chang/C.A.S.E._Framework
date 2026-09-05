@@ -1,6 +1,20 @@
 # 安裝與維護
 
-## 一般安裝：使用既有技能安裝器
+## pi v2：原生本機套件安裝
+
+已在隔離專案以 pi 0.84.2 安裝本機 checkout，實際 loader 註冊 `case_workflow` 工具與 `/case` 指令，載入無錯誤。先取得包含 v2 的本機版本，在實際工作專案執行（換成自己的 checkout 絕對路徑）：
+
+```text
+pi install -l "D:/MyProject/C.A.S.E._Framework/workflow-kit"
+```
+
+這會在專案設定引用該目錄，不複製套件；保留 checkout 路徑。核心需 Node.js 20+，本次 pi 0.84.2 需 Node.js 22.19+。SDK 由 pi 提供，套件以 optional peer dependency 宣告；本地 CLI 不需 SDK。重啟／重新載入 pi 後使用 [v2 指南](V2.md)。只裝技能不會有 `/case`，不要同時疊裝同名 skill。
+
+更新本機 checkout 後重新載入 pi；移除使用 `pi remove -l "D:/MyProject/C.A.S.E._Framework/workflow-kit"`，不要改用下方 Node installer 管理 pi package。這是 pi 套件管理方式；移除與模型端到端實測狀態見 [READINESS](READINESS.md)。未刊登 registry 套件，也未驗證此 repository 根目錄的 Git 遠端安裝。
+
+## 可攜技能：使用既有技能安裝器
+
+下列 main URL 屬既有 v1 發行；本輪 `2.0.0-preview.1` 尚未合併或推送，請勿將該 URL 當作已提供新 extension 的版本。
 
 在實際工作專案執行（需要 Node.js 20+ 與 Git）：
 
@@ -16,7 +30,7 @@ npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/wor
 
 ## 原生機制與目前限制
 
-pi 官方支援 `pi install`，已下載 repository 時可用 `pi install ./workflow-kit`（個人設定）或 `pi install -l ./workflow-kit`（專案設定）。這是官方套件語法與目前 manifest 相符，尚非本輪實測。暫不推薦對本 repo 根目錄直接 Git 安裝：它仍是 M0 研究套件，會帶入研究用相依套件。[pi 官方套件文件](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)
+pi 的本機專案範圍安裝已按上節實測。暫不推薦對本 repo 根目錄直接 Git 安裝：它仍是 M0 研究套件，會帶入研究用相依套件。[pi 官方套件文件](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)
 
 Codex 也可使用其 `$skill-installer`，指定本技能 GitHub 資料夾。Claude Code 的 plugin marketplace 是另一種標準方式，但本 repo 尚未提供 marketplace，不能用不存在的 plugin 指令安裝。單一技能目前無需為此多建一套框架。
 

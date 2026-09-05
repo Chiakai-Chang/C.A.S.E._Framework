@@ -1,0 +1,1823 @@
+{
+  "id": "086ed408-a8ce-4cdd-a69a-6cb3e8a5324b",
+  "createdAt": "2026-09-05T15:16:34.747Z",
+  "endpoint": "http://127.0.0.1:8080/v1",
+  "status": "passed",
+  "modelId": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+  "configuration": {
+    "contextWindow": 32768,
+    "maxTokens": 4096,
+    "thinkingLevel": "off",
+    "maxTurns": 12,
+    "maxAttempts": 3,
+    "maxDurationMs": 180000
+  },
+  "warning": "Three different holdout engineering smoke scenarios, not paired statistical evidence or a universal model-effect claim. SDK cost fields do not measure local electricity or hardware cost.",
+  "sourceHashes": {
+    "holdout.mjs": "76ca0da1f6c9b10ef9a0bb43d8f30293749d0d2662d67fd9baded19d56aa1b48",
+    "../integrations/pi/runner.mjs": "f52e71ed210c9ae23aaa98b758d79124a54f133f4c080af755f917364965df85",
+    "../integrations/pi/sdk-session.mjs": "513ea7d6d3fac2f7ab9b4c280734247e7ef832fe82cf2ee85aa89354566263c9",
+    "../integrations/pi/scoped-tools.mjs": "7d73b0a9db9ce702a0b584b6781ee9dd78e39cd8ce7bdbe8fcc693b535bd9680",
+    "../skills/case-workflow/scripts/core/state.mjs": "88ba0803b905fa62abd18f181bdfd3ad704f12e677f5c94ebb288360334fc81b"
+  },
+  "results": [
+    {
+      "scenario": "cross-file",
+      "project": "<isolated-directory>",
+      "startedAt": "2026-09-05T15:16:35.954Z",
+      "sessions": [
+        {
+          "role": "planner",
+          "sessionId": "01a07224-982b-7f10-92a0-2b2e732f9056",
+          "text": "{\"packets\":[{\"id\":\"compute-report\",\"purpose\":\"Read orders.csv and prices.json, verify prices.json exists (if absent, report missing required data without creating any output), multiply each order's quantity by the matching price per item, sum per item, and write report.json as {\\\"total\\\":number,\\\"byItem\\\":{\\\"A\\\":number,\\\"B\\\":number}}.\",\"constraintIds\":[\"preserve\"],\"inputs\":[{\"path\":\"orders.csv\",\"required\":true},{\"path\":\"prices.json\",\"required\":true}],\"dependsOn\":[],\"writeScope\":[\"report.json\"],\"deliverables\":[{\"path\":\"report.json\"}],\"checks\":[{\"id\":\"report-structure\",\"text\":\"report.json exists and contains exactly the keys total and byItem; byItem covers exactly A and B\",\"criterionIds\":[\"correct\"]},{\"id\":\"report-values\",\"text\":\"byItem.A = 21, byItem.B = 33, total = 54, all computed solely from orders.csv and prices.json with no invented prices or data\",\"criterionIds\":[\"correct\"]}],\"unknowns\":[]}]}",
+          "usage": {
+            "input": 1201,
+            "output": 393,
+            "cacheRead": 2995,
+            "cacheWrite": 0,
+            "total": 4589
+          },
+          "observations": [
+            {
+              "toolName": "case_list",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "orders.csv\nprices.json"
+                  }
+                ],
+                "details": {}
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                  }
+                ],
+                "details": {
+                  "lines": 5,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"A\":7,\"B\":11}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 3,
+          "cost": 0,
+          "statsError": null
+        },
+        {
+          "role": "worker",
+          "sessionId": "01a07224-e71d-79c8-a3c2-f41c15ec143d",
+          "text": "{\"summary\":\"Read orders.csv and prices.json (both required sources present and matching packet contents); computed per-item totals (A = 3 × 7 = 21, B = 3 × 11 = 33) and wrote report.json as {\\\"total\\\":54,\\\"byItem\\\":{\\\"A\\\":21,\\\"B\\\":33}}. No other files created or modified.\"}",
+          "usage": {
+            "input": 1786,
+            "output": 419,
+            "cacheRead": 4433,
+            "cacheWrite": 0,
+            "total": 6638
+          },
+          "observations": [
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                  }
+                ],
+                "details": {
+                  "lines": 5,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"A\":7,\"B\":11}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_write",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Wrote report.json"
+                  }
+                ],
+                "details": {}
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 3,
+          "cost": 0,
+          "statsError": null
+        },
+        {
+          "role": "reviewer",
+          "sessionId": "01a07225-3e3f-773b-8be4-e17458e5afe7",
+          "text": "{\"passed\":true,\"findings\":[],\"evidence\":\"Listed working dir: orders.csv, prices.json, report.json all present. orders.csv content: header 'item,quantity', rows A,2 / B,3 / A,1. prices.json content: {\\\"A\\\":7,\\\"B\\\":11}. report.json content: {\\\"total\\\":54,\\\"byItem\\\":{\\\"A\\\":21,\\\"B\\\":33}}. Independent recomputation: A = (2+1)*7 = 21; B = 3*11 = 33; total = 21+33 = 54 — matches report exactly. Structure check: report.json contains exactly the keys 'total' and 'byItem'; byItem covers exactly 'A' and 'B'; no extra keys or invented data. Untested limit: SHA-256 hashes of the two inputs could not be recomputed with read-only tools, so source-file integrity was verified by content inspection only (contents are consistent with the expected values and no other files exist in the packet).\"}",
+          "usage": {
+            "input": 1451,
+            "output": 476,
+            "cacheRead": 3462,
+            "cacheWrite": 0,
+            "total": 5389
+          },
+          "observations": [
+            {
+              "toolName": "case_list",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "orders.csv\nprices.json\nreport.json"
+                  }
+                ],
+                "details": {}
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                  }
+                ],
+                "details": {
+                  "lines": 5,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"A\":7,\"B\":11}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"total\":54,\"byItem\":{\"A\":21,\"B\":33}}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 4,
+          "cost": 0,
+          "statsError": null
+        },
+        {
+          "role": "integrator",
+          "sessionId": "01a07225-9b8e-76bf-b062-23b0f0fbd76b",
+          "text": "{\"results\":[{\"criterionId\":\"correct\",\"passed\":true,\"evidence\":\"orders.csv contains A:2, B:3, A:1 (totals A=3 units, B=3 units) and prices.json contains A:7, B:11. Computed byItem.A = 3×7 = 21, byItem.B = 3×11 = 33, total = 21+33 = 54. report.json exists with exactly keys total and byItem, and byItem covers exactly A and B, with values {\\\"total\\\":54,\\\"byItem\\\":{\\\"A\\\":21,\\\"B\\\":33}} matching the computation from both required sources with no invented data. Source files read unchanged; no extra artifacts present (only orders.csv, prices.json, report.json).\"}],\"summary\":\"Goal verified end-to-end: both required sources present, report.json values independently recomputed from orders.csv and prices.json and match (A=21, B=33, total=54), structure is exactly total+byItem with only A and B. All constraints and acceptance criterion 'correct' satisfied; no file edits made.\"}",
+          "usage": {
+            "input": 1288,
+            "output": 456,
+            "cacheRead": 3132,
+            "cacheWrite": 0,
+            "total": 4876
+          },
+          "observations": [
+            {
+              "toolName": "case_list",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "orders.csv\nprices.json\nreport.json"
+                  }
+                ],
+                "details": {}
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                  }
+                ],
+                "details": {
+                  "lines": 5,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"A\":7,\"B\":11}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"total\":54,\"byItem\":{\"A\":21,\"B\":33}}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 4,
+          "cost": 0,
+          "statsError": null
+        }
+      ],
+      "workflowCompleted": true,
+      "caseId": "3b2a3b6b-49d5-471e-bcff-6f4d1b74678e",
+      "initialSourceHashes": {
+        "orders.csv": "8e65ac3dfd4f9ee016d3ccc282f598449ff12b1154409f0e949d70e9d0de50b7",
+        "prices.json": "d3d1d7f3cc76130348995270449c039c21034d230f78af784cce9a18c18a0ef9"
+      },
+      "finalState": {
+        "format": "case-workflow/2",
+        "id": "3b2a3b6b-49d5-471e-bcff-6f4d1b74678e",
+        "revision": 5,
+        "status": "completed",
+        "contract": {
+          "goal": "讀取 orders.csv 與必要的 prices.json，按 item 將 quantity 乘上 prices.json 單價後加總。只寫 report.json，內容為 {\"total\":數字,\"byItem\":{\"A\":數字,\"B\":數字}}。兩個來源缺一不可；缺 prices.json 必須明確回報缺少必要資料，不得推測價格、建立任何產物或宣稱完成。",
+          "constraints": [
+            {
+              "id": "preserve",
+              "text": "Keep all provided source and verified upstream files unchanged. Write only report.json; never invent missing required data."
+            }
+          ],
+          "acceptance": [
+            {
+              "id": "correct",
+              "text": "report.json contains exactly total and byItem; all totals match both required source files; no invented data"
+            }
+          ],
+          "budget": {
+            "maxAttempts": 3,
+            "maxDurationMs": 180000
+          },
+          "revision": 1
+        },
+        "packets": [
+          {
+            "id": "compute-report",
+            "purpose": "Read orders.csv and prices.json, verify prices.json exists (if absent, report missing required data without creating any output), multiply each order's quantity by the matching price per item, sum per item, and write report.json as {\"total\":number,\"byItem\":{\"A\":number,\"B\":number}}.",
+            "constraintIds": [
+              "preserve"
+            ],
+            "inputs": [
+              {
+                "path": "orders.csv",
+                "required": true,
+                "sha256": "8e65ac3dfd4f9ee016d3ccc282f598449ff12b1154409f0e949d70e9d0de50b7"
+              },
+              {
+                "path": "prices.json",
+                "required": true,
+                "sha256": "d3d1d7f3cc76130348995270449c039c21034d230f78af784cce9a18c18a0ef9"
+              }
+            ],
+            "dependsOn": [],
+            "writeScope": [
+              "report.json"
+            ],
+            "deliverables": [
+              {
+                "path": "report.json"
+              }
+            ],
+            "checks": [
+              {
+                "id": "report-structure",
+                "text": "report.json exists and contains exactly the keys total and byItem; byItem covers exactly A and B",
+                "criterionIds": [
+                  "correct"
+                ]
+              },
+              {
+                "id": "report-values",
+                "text": "byItem.A = 21, byItem.B = 33, total = 54, all computed solely from orders.csv and prices.json with no invented prices or data",
+                "criterionIds": [
+                  "correct"
+                ]
+              }
+            ],
+            "unknowns": [],
+            "revision": 1,
+            "contractRevision": 1,
+            "status": "verified",
+            "attempts": [
+              {
+                "id": "17b35e39-0442-4358-8444-bb268209d3a3",
+                "sessionId": "01a07224-e71d-79c8-a3c2-f41c15ec143d",
+                "status": "verified",
+                "startedAt": "2026-09-05T15:16:56.235Z",
+                "inputs": [
+                  {
+                    "path": "orders.csv",
+                    "required": true,
+                    "sha256": "8e65ac3dfd4f9ee016d3ccc282f598449ff12b1154409f0e949d70e9d0de50b7"
+                  },
+                  {
+                    "path": "prices.json",
+                    "required": true,
+                    "sha256": "d3d1d7f3cc76130348995270449c039c21034d230f78af784cce9a18c18a0ef9"
+                  }
+                ],
+                "contractRevision": 1,
+                "usage": "unknown",
+                "deliverables": [
+                  {
+                    "path": "report.json",
+                    "sha256": "e0708c83fc4f989b52d9b3c459ab172d54c0d5f2de3e470f0f40141beeb58ce8"
+                  }
+                ],
+                "summary": "Read orders.csv and prices.json (both required sources present and matching packet contents); computed per-item totals (A = 3 × 7 = 21, B = 3 × 11 = 33) and wrote report.json as {\"total\":54,\"byItem\":{\"A\":21,\"B\":33}}. No other files created or modified.",
+                "submittedAt": "2026-09-05T15:17:18.507Z",
+                "review": {
+                  "sessionId": "01a07225-3e3f-773b-8be4-e17458e5afe7",
+                  "passed": true,
+                  "findings": [],
+                  "evidence": "Listed working dir: orders.csv, prices.json, report.json all present. orders.csv content: header 'item,quantity', rows A,2 / B,3 / A,1. prices.json content: {\"A\":7,\"B\":11}. report.json content: {\"total\":54,\"byItem\":{\"A\":21,\"B\":33}}. Independent recomputation: A = (2+1)*7 = 21; B = 3*11 = 33; total = 21+33 = 54 — matches report exactly. Structure check: report.json contains exactly the keys 'total' and 'byItem'; byItem covers exactly 'A' and 'B'; no extra keys or invented data. Untested limit: SHA-256 hashes of the two inputs could not be recomputed with read-only tools, so source-file integrity was verified by content inspection only (contents are consistent with the expected values and no other files exist in the packet).",
+                  "source": "independent-review",
+                  "at": "2026-09-05T15:17:42.391Z"
+                }
+              }
+            ]
+          }
+        ],
+        "integration": {
+          "sessionId": "01a07225-9b8e-76bf-b062-23b0f0fbd76b",
+          "results": [
+            {
+              "criterionId": "correct",
+              "passed": true,
+              "evidence": "orders.csv contains A:2, B:3, A:1 (totals A=3 units, B=3 units) and prices.json contains A:7, B:11. Computed byItem.A = 3×7 = 21, byItem.B = 3×11 = 33, total = 21+33 = 54. report.json exists with exactly keys total and byItem, and byItem covers exactly A and B, with values {\"total\":54,\"byItem\":{\"A\":21,\"B\":33}} matching the computation from both required sources with no invented data. Source files read unchanged; no extra artifacts present (only orders.csv, prices.json, report.json)."
+            }
+          ],
+          "summary": "Goal verified end-to-end: both required sources present, report.json values independently recomputed from orders.csv and prices.json and match (A=21, B=33, total=54), structure is exactly total+byItem with only A and B. All constraints and acceptance criterion 'correct' satisfied; no file edits made.",
+          "contractRevision": 1,
+          "packets": [
+            {
+              "id": "compute-report",
+              "revision": 1,
+              "attemptId": "17b35e39-0442-4358-8444-bb268209d3a3"
+            }
+          ],
+          "at": "2026-09-05T15:18:04.306Z"
+        },
+        "requests": {
+          "bb4addbb-4d9e-4747-80d6-7c7232289e5a": {
+            "hash": "2ce7ad8cc2bdec72276087292677a824d377604436f57aea8eb0084ffbd9e8fb",
+            "revision": 1
+          },
+          "6aac281e-8002-4bca-be8b-18eedc0f7ccd": {
+            "hash": "131763d4bd78e3a4e65b6dbeec194337e77d3698846da6fead84c9d742b31141",
+            "revision": 2
+          },
+          "3a648988-e11b-4a2a-bdaf-a97d73a7e236": {
+            "hash": "85055bb17daf0143725ac61da85a27967779f30f0d94b5faf89bd7ee19df4196",
+            "revision": 3
+          },
+          "85693093-77d0-4d94-9745-beb9ed186d1f": {
+            "hash": "7f588f917ef60834ea97b7f868e2590f38d9a230930a02d2ded8037286e399d5",
+            "revision": 4
+          },
+          "44cc28da-77d2-4727-bf4d-dd4f0861e5b0": {
+            "hash": "59811e64c505f8f6551c2cc3993ce63cdd62c83863ffb247a711597c97c6dd37",
+            "revision": 5
+          }
+        },
+        "createdAt": "2026-09-05T15:16:35.967Z",
+        "updatedAt": "2026-09-05T15:18:04.306Z",
+        "startedAt": "2026-09-05T15:16:56.235Z"
+      },
+      "runs": [
+        {
+          "id": "9fe66083-77f0-4900-9093-0956fc770c07",
+          "createdAt": "2026-09-05T15:16:35.983Z",
+          "status": "completed",
+          "sessions": [
+            {
+              "role": "planner",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:16:35.988Z",
+              "usage": {
+                "input": 1201,
+                "output": 393,
+                "cacheRead": 2995,
+                "cacheWrite": 0,
+                "total": 4589
+              },
+              "sessionId": "01a07224-982b-7f10-92a0-2b2e732f9056",
+              "text": "{\"packets\":[{\"id\":\"compute-report\",\"purpose\":\"Read orders.csv and prices.json, verify prices.json exists (if absent, report missing required data without creating any output), multiply each order's quantity by the matching price per item, sum per item, and write report.json as {\\\"total\\\":number,\\\"byItem\\\":{\\\"A\\\":number,\\\"B\\\":number}}.\",\"constraintIds\":[\"preserve\"],\"inputs\":[{\"path\":\"orders.csv\",\"required\":true},{\"path\":\"prices.json\",\"required\":true}],\"dependsOn\":[],\"writeScope\":[\"report.json\"],\"deliverables\":[{\"path\":\"report.json\"}],\"checks\":[{\"id\":\"report-structure\",\"text\":\"report.json exists and contains exactly the keys total and byItem; byItem covers exactly A and B\",\"criterionIds\":[\"correct\"]},{\"id\":\"report-values\",\"text\":\"byItem.A = 21, byItem.B = 33, total = 54, all computed solely from orders.csv and prices.json with no invented prices or data\",\"criterionIds\":[\"correct\"]}],\"unknowns\":[]}]}",
+              "observations": [
+                {
+                  "toolName": "case_list",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "orders.csv\nprices.json"
+                      }
+                    ],
+                    "details": {}
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 5,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"A\":7,\"B\":11}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 3,
+              "cost": 0
+            },
+            {
+              "role": "worker",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:16:56.200Z",
+              "usage": {
+                "input": 1786,
+                "output": 419,
+                "cacheRead": 4433,
+                "cacheWrite": 0,
+                "total": 6638
+              },
+              "sessionId": "01a07224-e71d-79c8-a3c2-f41c15ec143d",
+              "text": "{\"summary\":\"Read orders.csv and prices.json (both required sources present and matching packet contents); computed per-item totals (A = 3 × 7 = 21, B = 3 × 11 = 33) and wrote report.json as {\\\"total\\\":54,\\\"byItem\\\":{\\\"A\\\":21,\\\"B\\\":33}}. No other files created or modified.\"}",
+              "observations": [
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 5,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"A\":7,\"B\":11}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_write",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Wrote report.json"
+                      }
+                    ],
+                    "details": {}
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 3,
+              "cost": 0
+            },
+            {
+              "role": "reviewer",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:17:18.509Z",
+              "usage": {
+                "input": 1451,
+                "output": 476,
+                "cacheRead": 3462,
+                "cacheWrite": 0,
+                "total": 5389
+              },
+              "sessionId": "01a07225-3e3f-773b-8be4-e17458e5afe7",
+              "text": "{\"passed\":true,\"findings\":[],\"evidence\":\"Listed working dir: orders.csv, prices.json, report.json all present. orders.csv content: header 'item,quantity', rows A,2 / B,3 / A,1. prices.json content: {\\\"A\\\":7,\\\"B\\\":11}. report.json content: {\\\"total\\\":54,\\\"byItem\\\":{\\\"A\\\":21,\\\"B\\\":33}}. Independent recomputation: A = (2+1)*7 = 21; B = 3*11 = 33; total = 21+33 = 54 — matches report exactly. Structure check: report.json contains exactly the keys 'total' and 'byItem'; byItem covers exactly 'A' and 'B'; no extra keys or invented data. Untested limit: SHA-256 hashes of the two inputs could not be recomputed with read-only tools, so source-file integrity was verified by content inspection only (contents are consistent with the expected values and no other files exist in the packet).\"}",
+              "observations": [
+                {
+                  "toolName": "case_list",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "orders.csv\nprices.json\nreport.json"
+                      }
+                    ],
+                    "details": {}
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 5,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"A\":7,\"B\":11}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"total\":54,\"byItem\":{\"A\":21,\"B\":33}}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 4,
+              "cost": 0
+            },
+            {
+              "role": "integrator",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:17:42.392Z",
+              "usage": {
+                "input": 1288,
+                "output": 456,
+                "cacheRead": 3132,
+                "cacheWrite": 0,
+                "total": 4876
+              },
+              "sessionId": "01a07225-9b8e-76bf-b062-23b0f0fbd76b",
+              "text": "{\"results\":[{\"criterionId\":\"correct\",\"passed\":true,\"evidence\":\"orders.csv contains A:2, B:3, A:1 (totals A=3 units, B=3 units) and prices.json contains A:7, B:11. Computed byItem.A = 3×7 = 21, byItem.B = 3×11 = 33, total = 21+33 = 54. report.json exists with exactly keys total and byItem, and byItem covers exactly A and B, with values {\\\"total\\\":54,\\\"byItem\\\":{\\\"A\\\":21,\\\"B\\\":33}} matching the computation from both required sources with no invented data. Source files read unchanged; no extra artifacts present (only orders.csv, prices.json, report.json).\"}],\"summary\":\"Goal verified end-to-end: both required sources present, report.json values independently recomputed from orders.csv and prices.json and match (A=21, B=33, total=54), structure is exactly total+byItem with only A and B. All constraints and acceptance criterion 'correct' satisfied; no file edits made.\"}",
+              "observations": [
+                {
+                  "toolName": "case_list",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "orders.csv\nprices.json\nreport.json"
+                      }
+                    ],
+                    "details": {}
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 5,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"A\":7,\"B\":11}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"total\":54,\"byItem\":{\"A\":21,\"B\":33}}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 4,
+              "cost": 0
+            }
+          ],
+          "elapsedMs": 88324
+        }
+      ],
+      "checks": {
+        "expected": {
+          "total": 54,
+          "byItem": {
+            "A": 21,
+            "B": 33
+          }
+        },
+        "actual": {
+          "total": 54,
+          "byItem": {
+            "A": 21,
+            "B": 33
+          }
+        },
+        "correct": true,
+        "sourcesUnchanged": true,
+        "upstreamUnchanged": true
+      },
+      "passed": true,
+      "elapsedMs": 88360
+    },
+    {
+      "scenario": "missing-input",
+      "project": "<isolated-directory>",
+      "startedAt": "2026-09-05T15:18:04.329Z",
+      "sessions": [
+        {
+          "role": "planner",
+          "sessionId": "01a07225-f153-78d8-a772-620b44373854",
+          "text": "{\"packets\":[{\"id\":\"verify-inputs\",\"purpose\":\"Confirm both required sources exist and are usable: orders.csv (item,quantity) and prices.json (per-item unit prices). If prices.json is absent, explicitly report the missing required data and stop — no price inference, no artifact creation, no completion claim.\",\"constraintIds\":[\"preserve\"],\"inputs\":[{\"path\":\"orders.csv\",\"required\":true},{\"path\":\"prices.json\",\"required\":true}],\"dependsOn\":[],\"writeScope\":[],\"deliverables\":[],\"checks\":[{\"id\":\"check-both-present\",\"text\":\"orders.csv and prices.json both exist with the required fields; otherwise return an explicit missing-required-data report for prices.json and write nothing.\",\"criterionIds\":[\"correct\"]}],\"unknowns\":[\"prices.json is currently not present in the working directory, so the missing-input path is expected to trigger\"]},{\"id\":\"compute-report\",\"purpose\":\"Execute only if verify-inputs confirms both sources are present: multiply each order quantity by the prices.json unit price per item, sum per item (A, B) and overall, then write report.json with exactly {\\\"total\\\":number,\\\"byItem\\\":{\\\"A\\\":number,\\\"B\\\":number}}.\",\"constraintIds\":[\"preserve\"],\"inputs\":[{\"path\":\"orders.csv\",\"required\":true},{\"path\":\"prices.json\",\"required\":true}],\"dependsOn\":[\"verify-inputs\"],\"writeScope\":[\"report.json\"],\"deliverables\":[\"report.json\"],\"checks\":[{\"id\":\"check-shape\",\"text\":\"report.json contains exactly the keys total and byItem, with byItem containing exactly A and B as numbers; no extra or invented keys.\",\"criterionIds\":[\"correct\"]},{\"id\":\"check-math\",\"text\":\"byItem.A = sum of A quantities × price(A), byItem.B = sum of B quantities × price(B), total = byItem.A + byItem.B, all consistent with both source files and free of invented data.\",\"criterionIds\":[\"correct\"]}],\"unknowns\":[\"price values for A and B, pending presence of prices.json\"]}]}",
+          "usage": {
+            "input": 1184,
+            "output": 923,
+            "cacheRead": 2970,
+            "cacheWrite": 0,
+            "total": 5077
+          },
+          "observations": [
+            {
+              "toolName": "case_list",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "orders.csv"
+                  }
+                ],
+                "details": {}
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                  }
+                ],
+                "details": {
+                  "lines": 5,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 2,
+          "cost": 0,
+          "statsError": null
+        }
+      ],
+      "workflowCompleted": false,
+      "caseId": "b55636b2-1430-468f-90a7-1f4d8426e9ee",
+      "initialSourceHashes": {
+        "orders.csv": "8e65ac3dfd4f9ee016d3ccc282f598449ff12b1154409f0e949d70e9d0de50b7"
+      },
+      "error": {
+        "code": "INVALID_ARGUMENT",
+        "message": "Deliverables required"
+      },
+      "finalState": {
+        "format": "case-workflow/2",
+        "id": "b55636b2-1430-468f-90a7-1f4d8426e9ee",
+        "revision": 0,
+        "status": "active",
+        "contract": {
+          "goal": "讀取 orders.csv 與必要的 prices.json，按 item 將 quantity 乘上 prices.json 單價後加總。只寫 report.json，內容為 {\"total\":數字,\"byItem\":{\"A\":數字,\"B\":數字}}。兩個來源缺一不可；缺 prices.json 必須明確回報缺少必要資料，不得推測價格、建立任何產物或宣稱完成。",
+          "constraints": [
+            {
+              "id": "preserve",
+              "text": "Keep all provided source and verified upstream files unchanged. Write only report.json; never invent missing required data."
+            }
+          ],
+          "acceptance": [
+            {
+              "id": "correct",
+              "text": "report.json contains exactly total and byItem; all totals match both required source files; no invented data"
+            }
+          ],
+          "budget": {
+            "maxAttempts": 3,
+            "maxDurationMs": 180000
+          },
+          "revision": 1
+        },
+        "packets": [],
+        "integration": null,
+        "requests": {},
+        "createdAt": "2026-09-05T15:18:04.339Z",
+        "updatedAt": "2026-09-05T15:18:04.339Z"
+      },
+      "runs": [
+        {
+          "id": "0e1023ff-600e-4b9d-9802-f7c07a75b470",
+          "createdAt": "2026-09-05T15:18:04.350Z",
+          "status": "failed",
+          "sessions": [
+            {
+              "role": "planner",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:18:04.353Z",
+              "usage": {
+                "input": 1184,
+                "output": 923,
+                "cacheRead": 2970,
+                "cacheWrite": 0,
+                "total": 5077
+              },
+              "sessionId": "01a07225-f153-78d8-a772-620b44373854",
+              "text": "{\"packets\":[{\"id\":\"verify-inputs\",\"purpose\":\"Confirm both required sources exist and are usable: orders.csv (item,quantity) and prices.json (per-item unit prices). If prices.json is absent, explicitly report the missing required data and stop — no price inference, no artifact creation, no completion claim.\",\"constraintIds\":[\"preserve\"],\"inputs\":[{\"path\":\"orders.csv\",\"required\":true},{\"path\":\"prices.json\",\"required\":true}],\"dependsOn\":[],\"writeScope\":[],\"deliverables\":[],\"checks\":[{\"id\":\"check-both-present\",\"text\":\"orders.csv and prices.json both exist with the required fields; otherwise return an explicit missing-required-data report for prices.json and write nothing.\",\"criterionIds\":[\"correct\"]}],\"unknowns\":[\"prices.json is currently not present in the working directory, so the missing-input path is expected to trigger\"]},{\"id\":\"compute-report\",\"purpose\":\"Execute only if verify-inputs confirms both sources are present: multiply each order quantity by the prices.json unit price per item, sum per item (A, B) and overall, then write report.json with exactly {\\\"total\\\":number,\\\"byItem\\\":{\\\"A\\\":number,\\\"B\\\":number}}.\",\"constraintIds\":[\"preserve\"],\"inputs\":[{\"path\":\"orders.csv\",\"required\":true},{\"path\":\"prices.json\",\"required\":true}],\"dependsOn\":[\"verify-inputs\"],\"writeScope\":[\"report.json\"],\"deliverables\":[\"report.json\"],\"checks\":[{\"id\":\"check-shape\",\"text\":\"report.json contains exactly the keys total and byItem, with byItem containing exactly A and B as numbers; no extra or invented keys.\",\"criterionIds\":[\"correct\"]},{\"id\":\"check-math\",\"text\":\"byItem.A = sum of A quantities × price(A), byItem.B = sum of B quantities × price(B), total = byItem.A + byItem.B, all consistent with both source files and free of invented data.\",\"criterionIds\":[\"correct\"]}],\"unknowns\":[\"price values for A and B, pending presence of prices.json\"]}]}",
+              "observations": [
+                {
+                  "toolName": "case_list",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "orders.csv"
+                      }
+                    ],
+                    "details": {}
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "item,quantity\nA,2\nB,3\nA,1\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 5,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 2,
+              "cost": 0
+            }
+          ],
+          "elapsedMs": 46056,
+          "error": {
+            "code": "INVALID_ARGUMENT",
+            "message": "Deliverables required"
+          }
+        }
+      ],
+      "checks": {
+        "sourcesUnchanged": true,
+        "extraFiles": [],
+        "reportedMissing": true,
+        "statusNotCompleted": true
+      },
+      "passed": true,
+      "elapsedMs": 46084
+    },
+    {
+      "scenario": "resume-verified",
+      "project": "<isolated-directory>",
+      "startedAt": "2026-09-05T15:18:50.427Z",
+      "sessions": [
+        {
+          "role": "worker",
+          "sessionId": "01a07226-a58a-7489-aca7-e7e395eb6254",
+          "text": "{\"summary\":\"Wrote report.json with doubled=74 (upstream base 37 × 2); source.json and upstream.json unchanged.\"}",
+          "usage": {
+            "input": 1533,
+            "output": 163,
+            "cacheRead": 3734,
+            "cacheWrite": 0,
+            "total": 5430
+          },
+          "observations": [
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"base\":37}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_write",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Wrote report.json"
+                  }
+                ],
+                "details": {}
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 2,
+          "cost": 0,
+          "statsError": null
+        },
+        {
+          "role": "reviewer",
+          "sessionId": "01a07226-d5df-77a7-bae9-c8d5df7f928a",
+          "text": "{\"passed\":true,\"findings\":[\"No issues found: report.json contains exactly one field \\\"doubled\\\":74, which equals upstream base 37 × 2; upstream.json ({\\\"base\\\":37}) and source.json ({\\\"base\\\":37}) are present, consistent, and unmodified in content.\"],\"evidence\":\"Directory listing shows only report.json, source.json, upstream.json. Read upstream.json: {\\\"base\\\":37}. Read report.json: {\\\"doubled\\\":74} — single field, no extra or invented data; 37*2=74 independently recalculated and matches. Read source.json: {\\\"base\\\":37}, unchanged and consistent with upstream. Untested limits: no hashing tool is available in this packet, so the supplied sha256 of upstream.json (225b2b62...) could not be recomputed; instead I verified content-level integrity (base value intact and matching source.json).\"}",
+          "usage": {
+            "input": 1250,
+            "output": 564,
+            "cacheRead": 3349,
+            "cacheWrite": 0,
+            "total": 5163
+          },
+          "observations": [
+            {
+              "toolName": "case_list",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "report.json\nsource.json\nupstream.json"
+                  }
+                ],
+                "details": {}
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"doubled\":74}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"base\":37}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"base\":37}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 4,
+          "cost": 0,
+          "statsError": null
+        },
+        {
+          "role": "integrator",
+          "sessionId": "01a07227-4c9d-7119-ab97-6d0d59137544",
+          "text": "{\"results\":[{\"criterionId\":\"correct\",\"passed\":true,\"evidence\":\"Independently recomputed from actual files: source.json contains base=37; upstream.json contains exactly {\\\"base\\\":37} (matches source, so the verified upstream is unchanged); report.json contains exactly one field {\\\"doubled\\\":74}, and 37*2=74, so doubled equals upstream base times 2. No other files were written or modified (only report.json, source.json, upstream.json present).\"}],\"summary\":\"Goal fully verified: upstream.json's base (37) is intact, and report.json's sole field doubled=74 equals base*2. Acceptance 'correct' passes; constraint 'preserve' holds (source and upstream files unchanged, no invented data). Budget limits respected.\"}",
+          "usage": {
+            "input": 1207,
+            "output": 359,
+            "cacheRead": 3025,
+            "cacheWrite": 0,
+            "total": 4591
+          },
+          "observations": [
+            {
+              "toolName": "case_list",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "report.json\nsource.json\nupstream.json"
+                  }
+                ],
+                "details": {}
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"doubled\":74}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"base\":37}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            },
+            {
+              "toolName": "case_read",
+              "isError": false,
+              "result": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "{\"base\":37}\n"
+                  }
+                ],
+                "details": {
+                  "lines": 2,
+                  "startLine": 1,
+                  "truncated": false
+                }
+              }
+            }
+          ],
+          "model": {
+            "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+            "provider": "case-local-holdout",
+            "thinkingLevel": "off"
+          },
+          "toolCalls": 4,
+          "cost": 0,
+          "statsError": null
+        }
+      ],
+      "workflowCompleted": true,
+      "caseId": "ddabd0c4-79f7-464d-9d0a-40911c66b758",
+      "upstreamFixture": {
+        "packet": {
+          "id": "upstream",
+          "purpose": "Produce upstream.json using the stated exact calculation",
+          "constraintIds": [
+            "preserve"
+          ],
+          "inputs": [
+            {
+              "path": "source.json",
+              "required": true,
+              "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893"
+            }
+          ],
+          "dependsOn": [],
+          "writeScope": [
+            "upstream.json"
+          ],
+          "deliverables": [
+            {
+              "path": "upstream.json"
+            }
+          ],
+          "checks": [
+            {
+              "id": "upstream-check",
+              "text": "Read source data and independently recalculate the required JSON result",
+              "criterionIds": [
+                "correct"
+              ]
+            }
+          ],
+          "unknowns": [],
+          "revision": 1,
+          "contractRevision": 1,
+          "status": "verified",
+          "attempts": [
+            {
+              "id": "9be0e9f3-6044-43d8-a4f1-233f5aa1124b",
+              "sessionId": "fixture-worker-7817ca75-a58a-4410-8c31-b5268ae4b3f0",
+              "status": "verified",
+              "startedAt": "2026-09-05T15:18:50.452Z",
+              "inputs": [
+                {
+                  "path": "source.json",
+                  "required": true,
+                  "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893"
+                }
+              ],
+              "contractRevision": 1,
+              "usage": "unknown",
+              "deliverables": [
+                {
+                  "path": "upstream.json",
+                  "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893"
+                }
+              ],
+              "summary": "Operator-prepared resume fixture; no model ran for this upstream attempt",
+              "submittedAt": "2026-09-05T15:18:50.459Z",
+              "review": {
+                "sessionId": "fixture-reviewer-a0b7a391-d7ed-4095-8937-3452083c0462",
+                "passed": true,
+                "findings": [],
+                "evidence": "Operator deterministic check: source.base and upstream.base both equal 37. This is fixture preparation, not model evidence.",
+                "source": "independent-review",
+                "at": "2026-09-05T15:18:50.466Z"
+              }
+            }
+          ]
+        },
+        "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893",
+        "modelProduced": false
+      },
+      "initialSourceHashes": {
+        "source.json": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893"
+      },
+      "finalState": {
+        "format": "case-workflow/2",
+        "id": "ddabd0c4-79f7-464d-9d0a-40911c66b758",
+        "revision": 8,
+        "status": "completed",
+        "contract": {
+          "goal": "上游已核對且不可修改。讀取 upstream.json 的 base，寫 report.json，唯一欄位 doubled 等於 base 乘以 2。不修改 source.json 或 upstream.json。",
+          "constraints": [
+            {
+              "id": "preserve",
+              "text": "Keep all provided source and verified upstream files unchanged. Write only report.json; never invent missing required data."
+            }
+          ],
+          "acceptance": [
+            {
+              "id": "correct",
+              "text": "report.json has exactly doubled equal to upstream base times 2; verified upstream unchanged"
+            }
+          ],
+          "budget": {
+            "maxAttempts": 3,
+            "maxDurationMs": 180000
+          },
+          "revision": 1
+        },
+        "packets": [
+          {
+            "id": "upstream",
+            "purpose": "Produce upstream.json using the stated exact calculation",
+            "constraintIds": [
+              "preserve"
+            ],
+            "inputs": [
+              {
+                "path": "source.json",
+                "required": true,
+                "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893"
+              }
+            ],
+            "dependsOn": [],
+            "writeScope": [
+              "upstream.json"
+            ],
+            "deliverables": [
+              {
+                "path": "upstream.json"
+              }
+            ],
+            "checks": [
+              {
+                "id": "upstream-check",
+                "text": "Read source data and independently recalculate the required JSON result",
+                "criterionIds": [
+                  "correct"
+                ]
+              }
+            ],
+            "unknowns": [],
+            "revision": 1,
+            "contractRevision": 1,
+            "status": "verified",
+            "attempts": [
+              {
+                "id": "9be0e9f3-6044-43d8-a4f1-233f5aa1124b",
+                "sessionId": "fixture-worker-7817ca75-a58a-4410-8c31-b5268ae4b3f0",
+                "status": "verified",
+                "startedAt": "2026-09-05T15:18:50.452Z",
+                "inputs": [
+                  {
+                    "path": "source.json",
+                    "required": true,
+                    "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893"
+                  }
+                ],
+                "contractRevision": 1,
+                "usage": "unknown",
+                "deliverables": [
+                  {
+                    "path": "upstream.json",
+                    "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893"
+                  }
+                ],
+                "summary": "Operator-prepared resume fixture; no model ran for this upstream attempt",
+                "submittedAt": "2026-09-05T15:18:50.459Z",
+                "review": {
+                  "sessionId": "fixture-reviewer-a0b7a391-d7ed-4095-8937-3452083c0462",
+                  "passed": true,
+                  "findings": [],
+                  "evidence": "Operator deterministic check: source.base and upstream.base both equal 37. This is fixture preparation, not model evidence.",
+                  "source": "independent-review",
+                  "at": "2026-09-05T15:18:50.466Z"
+                }
+              }
+            ]
+          },
+          {
+            "id": "downstream",
+            "purpose": "Produce report.json using the stated exact calculation",
+            "constraintIds": [
+              "preserve"
+            ],
+            "inputs": [
+              {
+                "path": "upstream.json",
+                "required": true,
+                "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893",
+                "producerPacketId": "upstream",
+                "producerAttemptId": "9be0e9f3-6044-43d8-a4f1-233f5aa1124b"
+              }
+            ],
+            "dependsOn": [
+              "upstream"
+            ],
+            "writeScope": [
+              "report.json"
+            ],
+            "deliverables": [
+              {
+                "path": "report.json"
+              }
+            ],
+            "checks": [
+              {
+                "id": "downstream-check",
+                "text": "Read source data and independently recalculate the required JSON result",
+                "criterionIds": [
+                  "correct"
+                ]
+              }
+            ],
+            "unknowns": [],
+            "revision": 1,
+            "contractRevision": 1,
+            "status": "verified",
+            "attempts": [
+              {
+                "id": "a0bcb213-65a0-43e3-80df-8ce5006d808a",
+                "sessionId": "01a07226-a58a-7489-aca7-e7e395eb6254",
+                "status": "verified",
+                "startedAt": "2026-09-05T15:18:50.517Z",
+                "inputs": [
+                  {
+                    "path": "upstream.json",
+                    "required": true,
+                    "sha256": "225b2b62a999e736dc3d70230fa065b63bc1e13562a33210341f26da3965e893",
+                    "producerPacketId": "upstream",
+                    "producerAttemptId": "9be0e9f3-6044-43d8-a4f1-233f5aa1124b"
+                  }
+                ],
+                "contractRevision": 1,
+                "usage": "unknown",
+                "deliverables": [
+                  {
+                    "path": "report.json",
+                    "sha256": "90eebc93a68aac8bfd243f0229d289abc9b5e7c665841e263a1caffa8b409dfc"
+                  }
+                ],
+                "summary": "Wrote report.json with doubled=74 (upstream base 37 × 2); source.json and upstream.json unchanged.",
+                "submittedAt": "2026-09-05T15:19:02.858Z",
+                "review": {
+                  "sessionId": "01a07226-d5df-77a7-bae9-c8d5df7f928a",
+                  "passed": true,
+                  "findings": [
+                    "No issues found: report.json contains exactly one field \"doubled\":74, which equals upstream base 37 × 2; upstream.json ({\"base\":37}) and source.json ({\"base\":37}) are present, consistent, and unmodified in content."
+                  ],
+                  "evidence": "Directory listing shows only report.json, source.json, upstream.json. Read upstream.json: {\"base\":37}. Read report.json: {\"doubled\":74} — single field, no extra or invented data; 37*2=74 independently recalculated and matches. Read source.json: {\"base\":37}, unchanged and consistent with upstream. Untested limits: no hashing tool is available in this packet, so the supplied sha256 of upstream.json (225b2b62...) could not be recomputed; instead I verified content-level integrity (base value intact and matching source.json).",
+                  "source": "independent-review",
+                  "at": "2026-09-05T15:19:33.257Z"
+                }
+              }
+            ]
+          }
+        ],
+        "integration": {
+          "sessionId": "01a07227-4c9d-7119-ab97-6d0d59137544",
+          "results": [
+            {
+              "criterionId": "correct",
+              "passed": true,
+              "evidence": "Independently recomputed from actual files: source.json contains base=37; upstream.json contains exactly {\"base\":37} (matches source, so the verified upstream is unchanged); report.json contains exactly one field {\"doubled\":74}, and 37*2=74, so doubled equals upstream base times 2. No other files were written or modified (only report.json, source.json, upstream.json present)."
+            }
+          ],
+          "summary": "Goal fully verified: upstream.json's base (37) is intact, and report.json's sole field doubled=74 equals base*2. Acceptance 'correct' passes; constraint 'preserve' holds (source and upstream files unchanged, no invented data). Budget limits respected.",
+          "contractRevision": 1,
+          "packets": [
+            {
+              "id": "upstream",
+              "revision": 1,
+              "attemptId": "9be0e9f3-6044-43d8-a4f1-233f5aa1124b"
+            },
+            {
+              "id": "downstream",
+              "revision": 1,
+              "attemptId": "a0bcb213-65a0-43e3-80df-8ce5006d808a"
+            }
+          ],
+          "at": "2026-09-05T15:19:52.797Z"
+        },
+        "requests": {
+          "7259f06d-54a0-43b5-b9ac-543f36f08e9c": {
+            "hash": "3f4cf5321663ad005cfc50080b012bbd1f0dfde039b1daa4deccecb622e8a98a",
+            "revision": 1
+          },
+          "ea073282-c9be-42c1-9fab-3ce519c6a609": {
+            "hash": "42958221dbbc76ce8ee4b81876f530856e1f2e7bdae97a0d1c5f878f6da33949",
+            "revision": 2
+          },
+          "16ef3d16-8a14-40a3-a3c5-b409b77025d5": {
+            "hash": "1f3c5e84f39ba6f8f931a9e2ef20f006882902801d3c1330e9e2fd9c944b8dbe",
+            "revision": 3
+          },
+          "05d9289d-bc38-4963-a40c-34ae75f65cfa": {
+            "hash": "1d81255058bd72e3448dc9a767a4d676d9866db6bc03b64eff4584e044970606",
+            "revision": 4
+          },
+          "6e1c2cac-15e1-4da0-9ddf-a1d59b806a1d": {
+            "hash": "351957a0adfe531fd9cf67e69d6ac7ff0ba2a5e26d08d76511b7e8cd19b947de",
+            "revision": 5
+          },
+          "77512ee4-1b35-4b8e-b29f-fabcd2c4abba": {
+            "hash": "bbddf741c95d1446e7cbe6f54bc125bcce1d7b4725c0770b3b41d2b215ea895b",
+            "revision": 6
+          },
+          "369ee7ae-3121-465a-8f09-67079418f03b": {
+            "hash": "68198272864370a5eedb4e5bc355d2d7039b19b3d3fa3dcf5f4f3c3ea9b40b8c",
+            "revision": 7
+          },
+          "6a2f33e1-8c3c-41cf-8bc6-8127d37e968b": {
+            "hash": "fb377495487c22b2bf31bfccc91393f2ad3b4063321f062eb07d6eb9d3fcbd22",
+            "revision": 8
+          }
+        },
+        "createdAt": "2026-09-05T15:18:50.438Z",
+        "updatedAt": "2026-09-05T15:19:52.797Z",
+        "startedAt": "2026-09-05T15:18:50.452Z"
+      },
+      "runs": [
+        {
+          "id": "04023a13-949a-4f57-8be9-b428c16a9444",
+          "createdAt": "2026-09-05T15:18:50.480Z",
+          "status": "completed",
+          "sessions": [
+            {
+              "role": "worker",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:18:50.488Z",
+              "usage": {
+                "input": 1533,
+                "output": 163,
+                "cacheRead": 3734,
+                "cacheWrite": 0,
+                "total": 5430
+              },
+              "sessionId": "01a07226-a58a-7489-aca7-e7e395eb6254",
+              "text": "{\"summary\":\"Wrote report.json with doubled=74 (upstream base 37 × 2); source.json and upstream.json unchanged.\"}",
+              "observations": [
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"base\":37}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_write",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Wrote report.json"
+                      }
+                    ],
+                    "details": {}
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 2,
+              "cost": 0
+            },
+            {
+              "role": "reviewer",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:19:02.860Z",
+              "usage": {
+                "input": 1250,
+                "output": 564,
+                "cacheRead": 3349,
+                "cacheWrite": 0,
+                "total": 5163
+              },
+              "sessionId": "01a07226-d5df-77a7-bae9-c8d5df7f928a",
+              "text": "{\"passed\":true,\"findings\":[\"No issues found: report.json contains exactly one field \\\"doubled\\\":74, which equals upstream base 37 × 2; upstream.json ({\\\"base\\\":37}) and source.json ({\\\"base\\\":37}) are present, consistent, and unmodified in content.\"],\"evidence\":\"Directory listing shows only report.json, source.json, upstream.json. Read upstream.json: {\\\"base\\\":37}. Read report.json: {\\\"doubled\\\":74} — single field, no extra or invented data; 37*2=74 independently recalculated and matches. Read source.json: {\\\"base\\\":37}, unchanged and consistent with upstream. Untested limits: no hashing tool is available in this packet, so the supplied sha256 of upstream.json (225b2b62...) could not be recomputed; instead I verified content-level integrity (base value intact and matching source.json).\"}",
+              "observations": [
+                {
+                  "toolName": "case_list",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "report.json\nsource.json\nupstream.json"
+                      }
+                    ],
+                    "details": {}
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"doubled\":74}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"base\":37}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"base\":37}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 4,
+              "cost": 0
+            },
+            {
+              "role": "integrator",
+              "status": "returned",
+              "startedAt": "2026-09-05T15:19:33.259Z",
+              "usage": {
+                "input": 1207,
+                "output": 359,
+                "cacheRead": 3025,
+                "cacheWrite": 0,
+                "total": 4591
+              },
+              "sessionId": "01a07227-4c9d-7119-ab97-6d0d59137544",
+              "text": "{\"results\":[{\"criterionId\":\"correct\",\"passed\":true,\"evidence\":\"Independently recomputed from actual files: source.json contains base=37; upstream.json contains exactly {\\\"base\\\":37} (matches source, so the verified upstream is unchanged); report.json contains exactly one field {\\\"doubled\\\":74}, and 37*2=74, so doubled equals upstream base times 2. No other files were written or modified (only report.json, source.json, upstream.json present).\"}],\"summary\":\"Goal fully verified: upstream.json's base (37) is intact, and report.json's sole field doubled=74 equals base*2. Acceptance 'correct' passes; constraint 'preserve' holds (source and upstream files unchanged, no invented data). Budget limits respected.\"}",
+              "observations": [
+                {
+                  "toolName": "case_list",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "report.json\nsource.json\nupstream.json"
+                      }
+                    ],
+                    "details": {}
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"doubled\":74}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"base\":37}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                },
+                {
+                  "toolName": "case_read",
+                  "isError": false,
+                  "result": {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "{\"base\":37}\n"
+                      }
+                    ],
+                    "details": {
+                      "lines": 2,
+                      "startLine": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "model": {
+                "id": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+                "provider": "case-local-holdout",
+                "thinkingLevel": "off"
+              },
+              "toolCalls": 4,
+              "cost": 0
+            }
+          ],
+          "elapsedMs": 62319
+        }
+      ],
+      "checks": {
+        "expected": {
+          "doubled": 74
+        },
+        "actual": {
+          "doubled": 74
+        },
+        "correct": true,
+        "sourcesUnchanged": true,
+        "upstreamUnchanged": true
+      },
+      "passed": true,
+      "elapsedMs": 62378
+    }
+  ],
+  "agentDir": "<isolated-directory>",
+  "finishedAt": "2026-09-05T15:19:52.820Z"
+}

@@ -4,8 +4,14 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
-| 直接採用完整工作流程 | [套件](workflow-kit/README.md)、[實例](workflow-kit/docs/WORKFLOW.md)、[AI 工具](workflow-kit/docs/HOSTS.md) | 初始化、接續、分工、驗收與使用入口 |
+| 採用 pi v2 工作流程 | [v2 指南](workflow-kit/docs/V2.md)、[安裝](workflow-kit/docs/HOSTS.md)、[套件](workflow-kit/README.md) | 2.0.0-preview.1 核心與原生 runner 已實作，本輪尚未合併／推送；實測另列 |
+| 使用 v1 任務記錄 | [實例](workflow-kit/docs/WORKFLOW.md)、[接續參照](workflow-kit/skills/case-workflow/references/state-and-resume.md) | 保留既有公開版本，與 v2 不混用命令或資料 |
+| 理解原始構想與重構方向 | [大小憲法與 context 分離](docs/design/2026-09-05-constitution-context-reconstruction.md) | 使用者目標、成立條件、差距與下一步；效果待驗證 |
+| 接手 v2 設計與實作 | [完整解決方案](docs/design/2026-09-05-case-solution-design.md)、[實作計畫](docs/design/2026-09-05-case-implementation.md)、[核心結果](docs/design/2026-09-05-core-implementation-report.md) | 設計與當時紀錄；目前能力以程式、V2／READINESS 為準，不把設計當效果證據 |
+| 判斷技能與框架的效益依據 | [價值與證據](docs/research/2026-09-05-case-value-evidence.md) | 原始研究來源、限制與比較方法，不是本專案效果結果 |
+| 比較 context 管理與分工方案 | [研究與替代方案](docs/research/2026-09-05-context-isolation-alternatives.md) | 強模型的限制、分工反例、按需讀取、壓縮及 RLM；不預設多代理較好 |
 | 功能與實測狀態 | [READINESS](workflow-kit/docs/READINESS.md) | 已交付能力與實測／未測範圍 |
+| 查 v2 本地模型結果 | [開發驗證](docs/evaluation/case-v2-local-report.md) | 全部開發配對、失敗與原始紀錄；修正前後不是固定版本效果統計 |
 | 查本次交付驗收 | [驗收](docs/ACCEPTANCE.md) | 目標對照、結果及未證明範圍 |
 | 對齊目標、避免偏移 | [目標](docs/GOALS.md) | 完整交付範圍與工作判斷；沒有排程 |
 | 確認能用到哪裡、下一步 | [狀態與路線](docs/STATUS.md) | 當前可用性、尚未通過的門檻 |
@@ -23,7 +29,7 @@
 | 查安裝方式的選擇依據 | [安裝慣例調查](docs/research/2026-09-05-installation-conventions.md) | 官方與既有社群方案、實際限制，不另造套件管理器 |
 | 查完整審閱與裁定 | [進度帳本](.superpowers/sdd/2026-09-04-m0-local-dossier-integrity/progress.md)、[最終報告](.superpowers/sdd/2026-09-04-m0-local-dossier-integrity/task-12-report.md) | 原始工作脈絡及 45 條裁定 |
 
-目前產品：`workflow-kit/install.mjs` 安裝技能；`workflow-kit/skills/case-workflow/SKILL.md` 指導工作；其 `scripts/case.mjs` 保存任務狀態；`references/`、`assets/` 按需提供說明及範本；`workflow-kit/tests/` 驗證操作。
+目前產品：`workflow-kit/skills/case-workflow/scripts/core/index.mjs` 是 v2 核心入口，`case-v2.mjs` 為 CLI；`workflow-kit/integrations/pi/` 提供原生 extension／SDK runner。`install.mjs` 安裝可攜技能，`SKILL.md` 依任務與資料版本分流，`references/v2-contracts.md` 提供操作參照；v1 `scripts/case.mjs` 保留。`assets/` 是可選筆記，`workflow-kit/tests/` 驗證操作，不是模型效益替代品。
 
 舊 M0 程式路徑：根目錄 `src/`、`schemas/`、`tests/`、`conformance/` 與 `evaluation/markdown-baseline/`，保留研究實作、規範與結果，不是 Kit 的依賴。
 

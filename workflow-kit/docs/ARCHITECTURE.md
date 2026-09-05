@@ -2,7 +2,15 @@
 
 本頁只描述 Workflow Kit；根目錄 M0 的 revision、submission、accept 等規則不適用。先使用 [完整例子](WORKFLOW.md)，需要理解責任或接手開發時再讀本頁。
 
-## 四個部分各做什麼
+## v2 共用核心與整合
+
+[v2 指南](V2.md) 說明新流程；以下 v1 詞彙與操作仍供舊任務使用。v2 的 `scripts/core/index.mjs` 匯出 `createStore(project)`，提供 init、migrate、create、get、list、dispatch、context 及 run artifacts 保存；`case-v2.mjs` 和 pi extension 共用狀態規則。v1 `case.mjs` 保留，兩種格式不混寫。
+
+卷宗契約保存目標、限制、驗收與預算，工作包保存材料版本、相依、寫入範圍、產物及 checks。核心處理 revision／requestId、SHA256 與狀態轉移；pi SDK 整合負責新 session、限定工具、取消、用量及依序執行。核對 session 與 worker 分開，全域 integrate 不只相信包的 pass。詳情按需讀[契約參照](../skills/case-workflow/references/v2-contracts.md)。
+
+v2 權威資料在 `.case-agent/cases/<UUID>/state.json`，run 紀錄在 `artifacts/`；v1 `tasks/` 遷移後保留歷史。核心無額外 runtime 相依，pi 以既有 SDK 執行；新 session 和工具路徑檢查不是 OS sandbox、身分認證或防竄改。Codex／Claude／Antigravity 尚無本套件的自動 session 整合。
+
+## v1 四個部分各做什麼
 
 | 部分 | 負責 | 不負責 |
 |---|---|---|
@@ -15,7 +23,7 @@
 
 使用者給需求 → agent 按技能執行實際工作 → CLI 保存必要狀態 → 新 session／另一AI 工具讀狀態及來源 → 繼續工作與交付。產物仍存於原專案，不塞進任務摘要。
 
-## 安裝與資料
+## 可攜技能安裝與 v1 資料
 
 ```text
 採用者專案/
@@ -31,7 +39,7 @@
 
 Antigravity 的當前標準路徑亦為 `.agents/skills`，相容範圍見 [HOSTS](HOSTS.md)。不同AI 工具分享同一 project 和 task ID，並非自動互傳訊息或同時協調執行。
 
-## 目前產品的詞彙
+## v1 詞彙
 
 | 名稱 | 在 Kit 中的確切意思 |
 |---|---|
@@ -44,7 +52,7 @@ Antigravity 的當前標準路徑亦為 `.agents/skills`，相容範圍見 [HOST
 | finish | 所有條件已記錄 pass 才設為完成；不代表獨立審查或人類批准 |
 | reopen | 因缺陷重新開案，重置驗收，要求重新核對 |
 
-## 狀態與責任
+## v1 狀態與責任
 
 新任務為 active；遇阻礙可 checkpoint 為 blocked，解除後可回到 active。所有條件通過才 finish；完成後修改需 reopen。目標變更建立新任務，引用舊 ID，不改寫舊驗收讓它通過。
 

@@ -1,5 +1,7 @@
 # 範本入口
 
+以下是可選的敘述筆記；v2 契約／工作包的機器欄位由 agent 依[契約參照](../skills/case-workflow/references/v2-contracts.md) 整理，不能把筆記範本直接當成 v2 action JSON。
+
 範本是給 agent 按需取用的參考，不是使用者必填表單。直接說需求即可，agent 應從既有要求整理目標與驗收。短問答與一次小修改不必 init。
 
 完整可複製的 [工作筆記範本](../skills/case-workflow/assets/task-notes.md) 隨技能安裝，包含：

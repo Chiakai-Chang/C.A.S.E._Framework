@@ -2,7 +2,13 @@
 
 更新：2026-09-05。讓使用者透過 pi 等 AI agent，在有限 context 與跨 session／agent 交接後，以合理成本完成符合驗收條件的工作，降低監督、重述與抉擇負擔。
 
-當前交付是完整的 [Workflow Kit](../workflow-kit/README.md)：任務全流程、按需載入與接續、分工整合、證據與驗收、初始化及AI 工具入口、更新／移除、範本、實例及操作測試。功能對照見 [READINESS](../workflow-kit/docs/READINESS.md)。
+主要目標是讓本地模型把工作做好，不是寫論文。研究與實戰知識妥善保存，是為了可追溯、可修正及後續理解，不以研究產出取代產品效益。
+
+本次重新確認的完整流程為：全域目標與限制（大憲法）→ 規劃 → 有界工作包（小憲法）→ 獨立 context 執行 → 核對 → 全域整合 → 回饋與接續。方向與下一步見[重構決策](design/2026-09-05-constitution-context-reconstruction.md)。context 分離是待驗證的改善方法，不是品質保證。
+
+目前 [Workflow Kit](../workflow-kit/README.md) 的 `2.0.0-preview.1` 已實作 v2 契約核心與 pi 自動 context 流程，涵蓋規劃、工作包執行、不同 session 核對、整合及失敗保存。實測範圍見 [READINESS](../workflow-kit/docs/READINESS.md)；本輪分支尚未合併或推送。先前 v1 驗收與 CI 不代表 v2 或所有設計驗收已通過。
+
+設計依據見[完整解決方案](design/2026-09-05-case-solution-design.md)：共用核心、可攜技能與薄整合層，按任務選擇直接完成、分階段接續或工作包分工。目前 pi 有原生 runner；Codex、Claude Code 與 Antigravity 使用可攜技能／核心協作，尚無本套件的原生自動 session 整合。主要交付是本地模型的正確成果及誠實比較，不以記錄工具可用代替工作品質。
 
 舊的「先做 production adapter」與後來「先限縮到 P1 pilot」均已被使用者的完整交付要求取代。M0 規格與證據保留，不作目前套件的可用性前置條件。先交付完整流程，再依使用回饋改善；功能完成不等於已證明模型品質提升。
 

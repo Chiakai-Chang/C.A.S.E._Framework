@@ -2,9 +2,44 @@
 
 C.A.S.E. helps an agent keep the goal, constraints, evidence, and next action available across long tasks and session changes. Use it for work that benefits from saved state; answer a simple question or fix a small typo directly.
 
-The kit combines an Agent Skill with a local, dependency-free Node.js tool. The skill guides the agent's behavior; the tool stores task records. Neither replaces your coding agent, runs a model server, or grants additional permissions. You do not need the repository's older M0 research implementation.
+The kit combines an Agent Skill with a local, dependency-free Node.js core. The v2 preview also includes a pi extension that uses pi's SDK for fresh sessions. It does not run a model server or grant additional permissions. You do not need the repository's older M0 research implementation.
 
-## Why use it, and what is actually established?
+## V2 preview: contracts and fresh sessions
+
+Use direct work for short tasks, v1 records for lightweight staged continuation, and v2 when versioned contracts and bounded work packets help. Packet work is sequential by default; additional sessions have a cost. See the [Chinese v2 guide](V2.md) and [agent reference](../skills/case-workflow/references/v2-contracts.md). The remaining command walkthrough below is explicitly v1.
+
+For pi, obtain a local checkout containing v2 and run this from the target project, replacing the source path:
+
+```text
+pi install -l "D:/MyProject/C.A.S.E._Framework/workflow-kit"
+```
+
+Native local installation with pi 0.84.2 and actual SDK loading registered the `case_workflow` tool and `/case` command without loader errors in an isolated project. Native create/run also completed on the real local model in 124.914 seconds with four role sessions, byte-exact output and unchanged input. Native removal also succeeded: CASE was removed from project package settings while case records, deliverables and source-kit SHA256 hashes stayed unchanged. Evidence is in the repository's `docs/evaluation/case-v2-native-evidence.json`; see [READINESS](READINESS.md). The core requires Node 20+; pi 0.84.2 requires Node 22.19+. The package declares the SDK as an optional peer dependency supplied by pi. Local installation references the checkout instead of copying it: retain that path, reload after updates, and manage removal with `pi remove -l` using the same path. Do not mix this with a skill-only installer or install duplicate skills. Remote Git installation of this repository root and registry publication are not established routes.
+
+Select the intended model in pi first; for local work verify that its provider is local. Explain the requested outcome normally. The agent creates a contract through `case_workflow` with operation `create`, then runs its returned case ID. The contract has `goal`, `constraints:[{id,text}]`, `acceptance:[{id,text}]`, and `budget:{maxAttempts,maxDurationMs}`. The agent derives these fields from the request; the user need not fill out a form. The installed reference contains a complete JSON example.
+
+```text
+/case list
+/case show <id>
+/case run <id>
+/case stop
+```
+
+There is no `/case create` command; creation is a tool operation. Planner, worker, reviewer and integrator use separate sessions with the selected model. Worker conversation is not copied into review; pi still loads project instructions. Only workers have scoped file writes. This is not an OS sandbox. The normal extension exposes no arbitrary shell and configures no executable checks; use existing authorized tools for actual tests, or have an integrator configure trusted SDK `checks`. File inspection and model assertions do not mean a test command ran. Other AI tools can use the portable core, but this kit has no automatic session integration for Codex, Claude Code or Antigravity.
+
+V2 uses `scripts/case-v2.mjs`: `init`, `create --data <contract.json>`, `get --case <id>`, `list`, `dispatch`, and `context --case <id> --packet <packetId>`; all require `--project <project>`. Action JSON is submitted with the current `--revision` and a unique `--request`. Reuse a request ID only for an identical retry. See `--help` and the reference for actions. Do not manually edit authoritative state.
+
+The authoritative record is `.case-agent/cases/<UUID>/state.json`; run artifacts preserve responses, session/model information, usage and tool observations. Missing costs stay unknown/null. Inputs and submitted deliverables are bound to SHA256 versions. Submission is not verification: a different review session checks actual artifacts, and integration must pass every global criterion. Required context is never silently truncated: `maxChars` is a character budget, and excess returns `CONTEXT_TOO_LARGE` so the packet/material can be reduced.
+
+On interruption, inspect state and artifacts, confirm the old process stopped, and check partial side effects before retrying. `/case stop` requests cancellation. Valid verified packets can be retained on resume; retrying an upstream packet invalidates downstream verification. Contract changes use `revise` then a new `plan`, conservatively invalidating prior packet and integration passes without resetting cumulative budgets. Repeated findings and bounded repair attempts stop the runner; do not conceal failures through unbounded retries.
+
+V1 `case.mjs` remains available. Existing `case-workflow/1` data requires explicit upgrade intent and `case-v2.mjs migrate --project <project>` after all writers stop. Migration verifies a backup outside `.case-agent` before switching the manifest; preserve its returned backupPath. Legacy tasks remain history, not independent v2 acceptance. Create a new linked case for resumed work. V1 rejection after migration is intentional. Skill updates and removal do not delete cases.
+
+One real local-model CSV smoke succeeded in both modes, but repeated runs also exposed a separated integrator returning an invalid acceptance ID; the core refused completion. All five development pairs and the failure are preserved in the repository's `docs/evaluation/case-v2-local-report.md`; they span implementation changes and are not fixed-version statistics. One pair after format guidance changes passed independent artifact checks in both modes: single context took 23.538 seconds and 6069 SDK total tokens, separated execution took 115.405 seconds and 21198. This simple task showed added cost without a demonstrated quality benefit. Latest local regression: 61/61 tests passed. This is not evidence of universal quality or cost improvements, nor completion of all planned acceptance. Historical v1 CI and package counts below do not establish v2 cross-platform coverage.
+
+Three additional holdouts ran once each: cross-file aggregation passed (88.360 seconds), missing required prices stopped safely without invented output (46.084 seconds), and continuation preserved verified upstream work (62.378 seconds). Raw evidence is in the repository's `docs/evaluation/case-v2-holdout-evidence.json`. The upstream fixture was deterministic test preparation, not a prior model output or a killed-process recovery test. The missing-data run still returned an empty-deliverable plan and an unclear INVALID_ARGUMENT error; a subsequent regression-tested change accepts planner `{blocked:{reason}}` with a non-empty reason, reports BLOCKED and starts no worker. The original model result remains unchanged. These probes do not establish all planned effectiveness criteria.
+
+## V1: why use it, and what is actually established?
 
 A long task can leave its constraints, failed checks, and next action scattered across chat history. CASE keeps a task record in the project so another session can resume from a compact view and consult source files as needed. For example, after a CSV fix is interrupted, the next session can see that empty-input tests still fail and documentation remains unfinished, instead of rebuilding the plan from a long conversation. This is an instructional scenario, not a measured model trial.
 
@@ -14,7 +49,9 @@ These are established workflow ideas packaged together, not a claim of a new age
 
 The code is inspectable and the tool tests have passed the Windows/Linux/macOS × Node 20/24 matrix. That establishes exercised tool behavior, not universal model compliance, token savings, or better task outcomes. Evidence text is not authenticated by the CLI. Your AI tool retains its permissions and may send files it reads to its model provider. Public visibility also does not supply an open-source license; licensing remains undecided. See [validation evidence](READINESS.md) and [architecture](ARCHITECTURE.md).
 
-## Installation
+## Portable skill installation
+
+The public `main` URL below is the existing v1 release, not the unmerged/unpushed `2.0.0-preview.1` changes. Use the local v2 checkout for the new integration.
 
 The normal entry point is the established [Vercel Labs Skills installer](https://github.com/vercel-labs/skills), not the internal CASE installer. Run this in your working project (Node.js 20+ and Git required):
 

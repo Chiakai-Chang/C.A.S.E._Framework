@@ -1,6 +1,8 @@
-# C.A.S.E. Workflow Kit 1.0
+# C.A.S.E. Workflow Kit
 
-完整 agent 工作流程：需求、執行、有限 context、跨 session、分工、驗收與交付。Agent Skills 格式搭配零相依 Node.js 工具，不依賴 M0 的 adapter。
+協助 agent 保存目標、執行、跨 session 接續、核對與交付。可攜技能與零相依 Node.js 核心之外，v2 預覽加入版本化契約、工作包及 pi 新 session 整合，不依賴 M0 的 adapter。
+
+需要 pi 自動規劃、執行、核對與整合，從 [v2 指南](docs/V2.md) 開始。以下技能安裝及手動命令保留 v1 記錄流程；只安裝 skill 不會安裝 pi extension。v1 資料必須顯式遷移才供 v2 使用，不能混寫。
 
 簡單說：agent 把目標、不能違反的限制、目前結果與下一步保存在專案裡，換對話後不必只靠聊天記憶接續。與普通 TODO 相比，額外提供固定資料欄位、精簡接續輸出及驗收記錄檢查；代價是需要維護記錄，短工作通常不必使用。
 
@@ -10,7 +12,7 @@
 
 文件導航：[English guide](docs/GUIDE.en.md) · [完整例子](docs/WORKFLOW.md) · [架構與用語](docs/ARCHITECTURE.md) · [可取用範本](docs/TEMPLATES.md) · [AI 工具與疑難排解](docs/HOSTS.md) · [驗證範圍](docs/READINESS.md)。
 
-一般使用者請在工作專案使用現成的技能安裝器（Node.js 20+、Git）：
+以下公開 main URL 是既有 v1 發行，不代表尚未合併／推送的 `2.0.0-preview.1` 已上線。pi v2 使用 [HOSTS](docs/HOSTS.md) 的本機 checkout 安裝。既有可攜技能在工作專案使用現成安裝器（Node.js 20+、Git）：
 
 ```text
 npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy
@@ -26,9 +28,9 @@ node install.mjs --project "D:/Projects/MyProject" --host pi
 
 可選 pi、codex、claude、all。pi／Codex 共用 `.agents/skills/case-workflow/`，Claude 使用 `.claude/skills/case-workflow/`。在目標專案使用 pi 的 `/skill:case-workflow`、Codex 的 `$case-workflow` 或 Claude 的 `/case-workflow`，附上工作要求。
 
-見 [AI 工具與更新／移除](docs/HOSTS.md)。技能包含需要的 scripts、references、assets，安裝後不需原 repository 或網路即可執行本地工具。pi 也可由 package loader 使用本目錄的 `pi.skills` 清單；專案安裝器是主要驗證路徑。
+見 [AI 工具與更新／移除](docs/HOSTS.md)。技能包含需要的 scripts、references、assets，安裝後不需原 repository 或網路即可執行本地工具。pi package 另含 extension，SDK 由 pi 提供，已測版本為 0.84.2；安裝驗證範圍見該頁。
 
-## 手動操作
+## v1 手動操作
 
 可不安裝，直接從本目錄使用工具。project 換成存在的目錄；task ID 使用 `new` 回傳值。
 
@@ -50,7 +52,7 @@ node skills/case-workflow/scripts/case.mjs doctor --project "D:/Projects/MyProje
 
 所有 criteria 都需 recorded pass，否則 finish 失敗。CLI 不替你執行測試或驗真證據。失敗、handoff、reopen 與分工見 [完整實例](docs/WORKFLOW.md)。
 
-## 資料與限制
+## v1 資料與共同限制
 
 資料只在 `.case-agent/workflow.json` 與 `.case-agent/tasks/<id>.json`。context 是精簡視圖，show 是完整當前狀態；事件只留最近 30 筆。重要證據留在來源檔，不把事件當永久稽核。文字欄位最多 2,000 字元、驗收與約束各最多 20 項；大量內容以引用保存。
 
@@ -67,4 +69,4 @@ node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mj
 npm pack --dry-run
 ```
 
-不需 npm install。封裝含 skills、installer、README、docs 與 package metadata，不含 tests、模型、依賴、任務資料或快取。見 [功能與驗證範圍](docs/READINESS.md)。package 目前 private，授權及 registry 發布尚未決定。
+本地 CLI 不需 npm install。封裝含 skills、pi integration、installer、README、docs 與 package metadata，不含 tests、模型、node_modules、任務資料或快取；pi 執行使用 pi 提供的 SDK（optional peer dependency）。見 [功能與驗證範圍](docs/READINESS.md)。package 目前 private，授權及 registry 發布尚未決定。

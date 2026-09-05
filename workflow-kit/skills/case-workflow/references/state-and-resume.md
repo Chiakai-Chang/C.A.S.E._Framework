@@ -1,5 +1,7 @@
 # 狀態與跨 session 接續
 
+本頁適用 `case-workflow/1`；`case-workflow/2` 使用 [v2 契約與接續](v2-contracts.md)，不要混用 checkpoint、finish 或 reopen。
+
 `<cli>` 是實際載入技能目錄下的 `scripts/case.mjs`，`<project>` 是工作專案，`<id>` 取自 `new` 回傳。以下各列放在 `node "<cli>"` 後，再加 `--project "<project>"`；命令必須在選項之前，例如 `node "<cli>" context --task "<id>" --project "<project>"`。
 
 | 命令尾端 | 意義 |

@@ -14,7 +14,7 @@
 
 命令、旗標、JSON 欄位、格式識別碼及檔名是介面，不因翻譯而改名。中文文件沿用現有路徑，不為語系重新搬動整個專案。其他語言以 `GUIDE.en.md` 等清楚標記，從 README 互相導航；新增語言不複製一套程式或資料規格。
 
-目前英文指南對應 Kit README、HOSTS、WORKFLOW、ARCHITECTURE、TEMPLATES 與 READINESS 中的使用說明，不是歷史研究的完整翻譯。技術內容必須一致，無需逐句直譯。翻譯若未同步，明確標記缺漏並連到最新中文來源，不讓過期說明冒充現況。
+目前英文指南對應 Kit README、HOSTS、V2、WORKFLOW、ARCHITECTURE、TEMPLATES 與 READINESS 中的使用說明，不是歷史研究的完整翻譯。技術內容必須一致，無需逐句直譯。翻譯若未同步，明確標記缺漏並連到最新中文來源，不讓過期說明冒充現況。
 
 發生衝突時：使用者已確認的目標以 [GOALS](GOALS.md) 為準；程式描述目前實際行為，文件描述應有用途，兩者不一致要確認並修正，不能直接認定任一方永遠正確。[READINESS](../workflow-kit/docs/READINESS.md) 是實測範圍的集中記錄，翻譯不得擴大宣稱。舊 M0 規格只管 M0。
 
@@ -25,7 +25,9 @@
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
 | 目標、交付邊界：根目錄 `docs/GOALS.md` | 根 README、STATUS、MAP；Kit README、ARCHITECTURE、技能入口 | 確認是否改變使用承諾，不拿舊計畫當新需求 |
-| 任務命令、欄位、狀態：`skills/case-workflow/scripts/case.mjs` | 程式 help、`references/state-and-resume.md`、SKILL、README、WORKFLOW、ARCHITECTURE、GUIDE.en | workflow 與 journey 測試；成功、失敗及接續行為 |
+| v2 契約、版本、遷移與狀態：`skills/case-workflow/scripts/core/`、`case-v2.mjs` | help、`references/v2-contracts.md`、SKILL、V2、ARCHITECTURE、READINESS、GUIDE.en | core-v2 與相關整合測試；來源過期、全域驗收、revision、預算與資料升級 |
+| pi 原生 session 與工具：`integrations/pi/` | `extension.mjs` 靜態 SDK 入口與 `extension-core.mjs` 注入介面、package 的 pi／peer metadata、HOSTS、V2、READINESS、GUIDE.en | runner／tools／SDK／extension 與 package 測試；原生載入和真實模型結果分開 |
+| v1 任務命令、欄位、狀態：`skills/case-workflow/scripts/case.mjs` | 程式 help、`references/state-and-resume.md`、SKILL、README、WORKFLOW、ARCHITECTURE、GUIDE.en | workflow 與 journey 測試；成功、失敗及接續行為 |
 | 安裝位置、更新、移除：`install.mjs` | help、HOSTS、兩份 README、GUIDE.en、ARCHITECTURE、封裝設定 | install 與 journey 測試；共用目錄、備份及既有檔案保留 |
 | 工作方法、分工、驗收：`skills/case-workflow/SKILL.md` 與 `references/` | `assets/task-notes.md`、WORKFLOW、TEMPLATES、GUIDE.en；涉及新命令時回查 CLI | 技能與情境核對；工具行為變更才增加對應測試 |
 | 範本：`skills/case-workflow/assets/task-notes.md` | TEMPLATES、協作 reference、WORKFLOW、英文範本段落 | 欄位與工具能力一致，不強制重複記錄 |
@@ -41,3 +43,11 @@
 Kit 變更跑 `node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs`；純文件小修核對來源、連結與命令。若交付壓縮套件，從最新內容重新打包，避免下載檔仍是舊版。只有觸及 M0 才跑 M0 完整套件。保留歷史記錄與原始證據，不為符合新文字而覆寫舊結果。
 
 新增模組、語言或改變責任邊界時更新本表與 MAP。沒有關聯的文件不必為了「同步」而改動；不新增排程或固定審閱輪數。
+
+## 保存知識，但不讓紀錄取代工作
+
+主要目標始終是本地模型的實際工作品質，不是寫論文。重要設計決策記錄日期、使用者需求、採用理由、其他選擇與未知事項；研究記錄可追溯來源及適用限制，清楚區分假設、觀察與結論。從 MAP 按需導航，不把全部研究變成 agent 必讀材料。
+
+實驗保存使用版本、模型與設定、任務及驗收方法、原始輸出／工具結果的位置、成本、失敗與無效樣本；公開前移除密鑰與私人資料。不要求保存模型隱藏推理或所有聊天。沒有原始證據時明示限制，不補寫成已測事實。
+
+結論可滾動修正：新增修正理由與新證據，標示取代哪個判斷，不覆寫過去結果。只為有意義的決策、實驗或可重用教訓留紀錄，不為每次工具操作、例行復盤或未改變結論的討論新增文件。

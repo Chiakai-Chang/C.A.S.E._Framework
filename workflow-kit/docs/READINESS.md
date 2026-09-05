@@ -2,6 +2,22 @@
 
 日期：2026-09-05。這份表核對完整交付，不以 M0 測試數或未執行的模型比較代稱產品效果。
 
+## v2 預覽的新增範圍
+
+[v2 指南](V2.md) 為新入口。共用核心已提供版本化契約、來源／產物 SHA256、相依工作包、不同 session 核對、全域整合、預算及顯式 v1 遷移；pi runner 使用新 session 依序規劃、執行、核對與整合。核心與 runner 的行為測試不等於模型效果驗收。
+
+pi 0.84.2 的 `pi install -l <本機checkout>/workflow-kit` 已在隔離專案成功，實際 SDK loader 從該專案設定找到 extension，註冊 `case_workflow` 及 `/case`，errors 為空。原生 create/run 也已在真實本地模型完成：124.914 秒，四個角色 session，產物逐 byte 符合且來源未改。原生 remove 成功後，專案套件清單不再登錄 CASE，卷宗、產物與來源套件 SHA256 前後一致；證據在 repository 的 `docs/evaluation/case-v2-native-evidence.json`。核心需 Node 20+，該 pi 版本需 Node 22.19+；其他工具目前只有技能／核心入口，未建立其自動 session 整合。
+
+真實本地模型 CSV 的單 context／分離流程已有 smoke 成功，但重複配對也觀察到分離流程的 integrator 回覆了不合法驗收 ID，核心拒絕結案。開發期五組配對及失敗已保存在 repository 的 `docs/evaluation/case-v2-local-report.md` 與原始紀錄，不能將修正前後混成固定版本統計。格式指引修正後一組，單 context 23.538 秒／SDK total tokens 6069，分離 115.405 秒／21198，兩者獨立產物核對通過；這個簡單工作未顯示分離的品質收益。不能宣稱普遍提升品質、節省成本或完成所有設計驗收。一般 extension 沒有任意 shell 或預設可執行測試清單，工具讀取核對與真正執行測試應分列。
+
+本輪 `npm test --prefix workflow-kit` 最新 61/61 通過，涵蓋核心、舊 Kit、runner、限定工具、SDK、原生入口及封裝；這是本機行為回歸，不代替遠端矩陣或模型效果研究。
+
+額外三個 holdout 各執行一次：跨檔案資料彙整通過（88.360 秒）、缺必要價格檔安全停止且未捏造產物（46.084 秒）、保留已核對上游的接續通過（62.378 秒）。原始紀錄在 repository 的 `docs/evaluation/case-v2-holdout-evidence.json`；上游是確定性測試準備，不是模型先前成果或殺程序恢復。缺料案原始回覆雖指出缺檔，卻形成空產物包，得到不清楚的 INVALID_ARGUMENT；後續補上 `{blocked:{reason}}` 出口，以非空原因回報 BLOCKED 且不派 worker。該修正由回歸測試核對，不改寫原始模型結果。這些有限探測不代表長 context、跨模型及設計全部效益驗收通過。
+
+## v1 已交付能力與歷史驗證
+
+以下測試數、跨平台 CI、tarball 檔案數及 loader 記錄屬先前 v1 交付，不能視為目前 v2 套件的同等驗收；保留歷史證據。
+
 | 使用者需要 | 已交付入口 | 驗證／邊界 |
 |---|---|---|
 | 需求、目標、約束、驗收及直接執行 | SKILL；new | CLI 驗證必填資料；agent 仍需理解真實需求 |
