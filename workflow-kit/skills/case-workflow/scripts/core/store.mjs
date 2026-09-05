@@ -6,6 +6,7 @@ import { safe, json, write, locked, need, fail, text, fingerprint, jsonValue } f
 import { contract } from './contracts.mjs';
 import { transition } from './state.mjs';
 import { context as buildContext } from './context.mjs';
+import { preparePolicy, assertProjectAligned, inheritProject } from './project-policy.mjs';
 const FORMAT = 'case-workflow/2';
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 export function createStore(directory) {
@@ -39,6 +40,24 @@ export function createStore(directory) {
         return state;
     }
     const api = {
+        project() {
+            const manifest = owned();
+            return { policy: manifest.projectPolicy ?? null, history: manifest.projectHistory ?? [] };
+        },
+        setProject(input, { expectedRevision, reason } = {}) {
+            owned();
+            need(Number.isSafeInteger(expectedRevision) && expectedRevision >= 0, 'Project expectedRevision required');
+            return locked(root, () => {
+                const manifest = owned();
+                if ((manifest.projectPolicy?.revision ?? 0) !== expectedRevision)
+                    fail('REVISION_CONFLICT', 'Project consensus revision changed');
+                const policy = preparePolicy(project, input, expectedRevision + 1, reason);
+                if (manifest.projectPolicy) (manifest.projectHistory ??= []).push(manifest.projectPolicy);
+                manifest.projectPolicy = policy;
+                write(path.join(root, 'workflow.json'), manifest);
+                return policy;
+            });
+        },
         init() {
             if (fs.existsSync(root)) {
                 owned();
@@ -64,7 +83,7 @@ export function createStore(directory) {
             return locked(root, () => {
                 const id = randomUUID(), now = new Date().toISOString();
                 const state = {
-                    format: FORMAT, id, revision: 0, status: 'active', contract: contract(input), packets: [], integration: null, requests: {}, createdAt: now, updatedAt: now
+                    format: FORMAT, id, revision: 0, status: 'active', contract: contract(inheritProject(project, input, owned().projectPolicy)), packets: [], integration: null, requests: {}, createdAt: now, updatedAt: now
                 };
                 fs.mkdirSync(location(id));
                 fs.mkdirSync(path.join(location(id), 'artifacts'));
@@ -91,7 +110,11 @@ export function createStore(directory) {
                 }
                 if (expectedRevision !== state.revision)
                     fail('REVISION_CONFLICT', 'Revision has changed');
-                transition(project, state, structuredClone(action));
+                const nextAction = structuredClone(action);
+                const policy = owned().projectPolicy;
+                if (action.type === 'revise') nextAction.contract = inheritProject(project, action.contract, policy, state.contract.project);
+                else if (!['cancel', 'block'].includes(action.type)) assertProjectAligned(project, policy, state.contract.project);
+                transition(project, state, nextAction);
                 state.revision++;
                 state.updatedAt = new Date().toISOString();
                 Object.defineProperty(state.requests, requestId, {
@@ -102,7 +125,9 @@ export function createStore(directory) {
             });
         },
         context(id, packetId, options) {
-            return buildContext(project, read(id), packetId, options);
+            const state = read(id);
+            assertProjectAligned(project, owned().projectPolicy, state.contract.project);
+            return buildContext(project, state, packetId, options);
         },
         saveRun(id, runId, record) {
             read(id);

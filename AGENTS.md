@@ -6,8 +6,10 @@
 
 擴大工作、反覆修補或交付時，檢查是否仍改善成果品質、必要脈絡、接續或使用者負擔。用判斷調整下一步；只有決策改變才簡記。不建立排程。
 
+重要變更完成或交付復盤時，按 `docs/MAINTENANCE.md` 的「原始構想參照」回看 CASE 的起心動念與分層協作脈絡，避免把工具實作當成框架目標。原案供參考，不照抄、不凌駕目前使用者要求；按需讀取，不每次重讀全部歷史。
+
 主要文件與溝通使用臺灣慣用的正體中文（zh-TW），英文等語言為對應版本；命令、路徑與資料欄位不翻譯。修改前依 `docs/MAINTENANCE.md` 確認主要定義位置及受影響的程式、技能、範本、文件、翻譯與測試，同步處理實際相關處；不機械式改動所有文件。
 
-修改 kit 跑 `node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs`；文件小修核對來源與連結。只有觸及 M0 才跑其完整套件。保留失敗與未知成本，不宣稱未驗證的AI 工具／模型效果。
+修改 kit 跑 `npm test --prefix workflow-kit`（全部 kit 測試；新增檔時同步 package 清單）；文件小修核對來源與連結。只有觸及 M0 才跑其完整套件。保留失敗與未知成本，不宣稱未驗證的 AI 工具／模型效果。
 
 此檔只指導本 repository，不由 init 或 installer 複製到採用者專案。

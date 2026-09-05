@@ -6,7 +6,7 @@ import { createStore } from './core/index.mjs';
 import { need, fail } from './core/io.mjs';
 export function run(args) {
     if (args.length === 1 && ['--help', '-h'].includes(args[0]))
-        return 'CASE v2: init | migrate | create --data FILE | get --case ID | list | dispatch --case ID --data FILE --revision N --request ID | context --case ID --packet ID [--max-chars N]\nEvery command requires --project PATH. JSON action/contract files are read as data.\n';
+        return 'CASE v2: init | migrate | project | set-project --data FILE --revision N --reason TEXT | create --data FILE | get --case ID | list | dispatch --case ID --data FILE --revision N --request ID | context --case ID --packet ID [--max-chars N]\nEvery command requires --project PATH. JSON action/contract files are read as data. set-project requires user-authorized consensus; it does not edit existing instruction files.\n';
     const [command, ...rest] = args, opts = {};
     for (let i = 0; i < rest.length; i += 2) {
         need(rest[i]?.startsWith('--') && rest[i + 1] && !Object.hasOwn(opts, rest[i]), 'Invalid options');
@@ -15,7 +15,7 @@ export function run(args) {
     need(opts['--project'], '--project required');
     const store = createStore(opts['--project']);
     const flags = {
-        init: [], migrate: [], create: ['--data'], get: ['--case'], show: ['--case'], list: [], dispatch: ['--case', '--data', '--revision', '--request'], context: ['--case', '--packet', '--max-chars']
+        init: [], migrate: [], project: [], 'set-project': ['--data', '--revision', '--reason'], create: ['--data'], get: ['--case'], show: ['--case'], list: [], dispatch: ['--case', '--data', '--revision', '--request'], context: ['--case', '--packet', '--max-chars']
     };
     need(Object.hasOwn(flags, command), 'Unknown command');
     need(Object.keys(opts).every(k => k === '--project' || flags[command].includes(k)), 'Unknown option');
@@ -23,6 +23,8 @@ export function run(args) {
     switch (command) {
         case 'init': return store.init();
         case 'migrate': return store.migrate();
+        case 'project': return store.project();
+        case 'set-project': return store.setProject(data(), { expectedRevision: Number(opts['--revision']), reason: opts['--reason'] });
         case 'create': return store.create(data());
         case 'get':
         case 'show': return store.get(opts['--case']);

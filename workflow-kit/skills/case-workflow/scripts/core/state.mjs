@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { fail, need, text, digest, evidence } from './io.mjs';
 import { contract, plan } from './contracts.mjs';
+import { amendPlan, attemptCount } from './amendments.mjs';
 export function fresh(project, packet, outputs = false, submitting = false) {
     const a = packet.attempts.at(-1);
     const submittedVersion = ['submitted', 'verified'].includes(packet.status);
@@ -41,7 +42,7 @@ export function transition(project, state, a) {
     need(a && text(a.type), 'Action required');
     if (state.status === 'cancelled' || state.status === 'completed' && a.type !== 'revise')
         fail('INVALID_TRANSITION', 'Case is terminal');
-    if (['start', 'submit', 'review', 'integrate'].includes(a.type) && state.startedAt && Date.now() - Date.parse(state.startedAt) >= state.contract.budget.maxDurationMs)
+    if (['start', 'submit', 'review', 'integrate', 'amend_plan'].includes(a.type) && state.startedAt && Date.now() - Date.parse(state.startedAt) >= state.contract.budget.maxDurationMs)
         fail('BUDGET_EXCEEDED', 'Case duration budget exhausted');
     const p = state.packets.find(p => p.id === a.packetId);
     const last = p?.attempts.at(-1);
@@ -58,6 +59,10 @@ export function transition(project, state, a) {
                 state.packetHistory.push(state.packets);
             }
             state.packets = plan(project, state, a.packets);
+            state.planWriteScope = state.contract.writeScope ?? state.packets.flatMap(p => p.writeScope);
+            break;
+        case 'amend_plan':
+            amendPlan(project, state, a, fresh);
             break;
         case 'start':
             requirePacket('ready');
@@ -73,7 +78,7 @@ export function transition(project, state, a) {
                 fresh(project, dep, true);
             }
             fresh(project, p);
-            if ([...state.packets, ...(state.packetHistory ?? []).flat()].reduce((n, x) => n + x.attempts.length, 0) >= state.contract.budget.maxAttempts || state.startedAt && Date.now() - Date.parse(state.startedAt) >= state.contract.budget.maxDurationMs)
+            if (attemptCount(state) >= state.contract.budget.maxAttempts || state.startedAt && Date.now() - Date.parse(state.startedAt) >= state.contract.budget.maxDurationMs)
                 fail('BUDGET_EXCEEDED', 'Case budget exhausted');
             state.startedAt ??= new Date().toISOString();
             p.status = 'running';
@@ -132,6 +137,11 @@ export function transition(project, state, a) {
             if (last?.status === 'running') {
                 last.status = 'interrupted';
                 last.reason = a.reason;
+                if (a.feedback) {
+                    need(['blocked', 'changeRequest'].includes(a.feedback.kind) && text(a.feedback.reason), 'Invalid worker feedback');
+                    last.feedback = structuredClone(a.feedback);
+                    last.status = 'blocked';
+                }
             }
             invalidate(state, p.id, a.reason);
             break;

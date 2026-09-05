@@ -7,6 +7,9 @@
 | 採用 pi v2 工作流程 | [v2 指南](workflow-kit/docs/V2.md)、[安裝](workflow-kit/docs/HOSTS.md)、[套件](workflow-kit/README.md) | 2.0.0-preview.1 核心與原生 runner 已實作，本輪尚未合併／推送；實測另列 |
 | 使用 v1 任務記錄 | [實例](workflow-kit/docs/WORKFLOW.md)、[接續參照](workflow-kit/skills/case-workflow/references/state-and-resume.md) | 保留既有公開版本，與 v2 不混用命令或資料 |
 | 理解原始構想與重構方向 | [大小憲法與 context 分離](docs/design/2026-09-05-constitution-context-reconstruction.md) | 使用者目標、成立條件、差距與下一步；效果待驗證 |
+| 研究如何補回完整分層協作 | [修正方向](docs/research/2026-09-05-layered-cooperation-direction.md)、[一手來源](docs/research/2026-09-05-layered-cooperation-sources.md) | 原始版本對照、保留與補齊建議；歷史研究提案，後續實作與限制見下列 |
+| 核對分層回饋實測 | [實作與失敗報告](docs/evaluation/case-feedback-report.md)、[證據](docs/evaluation/case-feedback-development-evidence.json) | 110 項測試通過，四次本機模型探測失敗；機制與效果分開判讀 |
+| 接續分層回饋實作 | [計畫與記錄](docs/design/2026-09-05-feedback-implementation.md) | 專案共識、計畫修正、必要材料與實際檢查；現行操作見 V2／技能參照，實測見 READINESS |
 | 接手 v2 設計與實作 | [完整解決方案](docs/design/2026-09-05-case-solution-design.md)、[實作計畫](docs/design/2026-09-05-case-implementation.md)、[核心結果](docs/design/2026-09-05-core-implementation-report.md) | 設計與當時紀錄；目前能力以程式、V2／READINESS 為準，不把設計當效果證據 |
 | 判斷技能與框架的效益依據 | [價值與證據](docs/research/2026-09-05-case-value-evidence.md) | 原始研究來源、限制與比較方法，不是本專案效果結果 |
 | 比較 context 管理與分工方案 | [研究與替代方案](docs/research/2026-09-05-context-isolation-alternatives.md) | 強模型的限制、分工反例、按需讀取、壓縮及 RLM；不預設多代理較好 |

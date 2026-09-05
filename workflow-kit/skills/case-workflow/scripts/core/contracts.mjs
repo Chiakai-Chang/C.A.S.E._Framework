@@ -1,4 +1,9 @@
-import { need, text, resolveMaterial, digest, jsonValue } from './io.mjs';
+import path from 'node:path';
+import { fail, need, text, resolveMaterial, digest, jsonValue } from './io.mjs';
+export function scopeContains(project, parent, child) {
+    const relative = path.relative(resolveMaterial(project, parent), resolveMaterial(project, child));
+    return relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith('..' + path.sep));
+}
 const unique = items => new Set(items).size === items.length;
 function ids(items) {
     need(Array.isArray(items) && items.every(i => i && text(i.id) && text(i.text)) && unique(items.map(i => i.id)), 'Invalid IDs');
@@ -9,6 +14,8 @@ export function contract(input, revision = 1) {
     ids(input.constraints);
     ids(input.acceptance);
     need(input.acceptance.length > 0, 'Acceptance required');
+    if (Object.hasOwn(input, 'writeScope'))
+        need(Array.isArray(input.writeScope) && input.writeScope.every(text), 'Invalid contract writeScope');
     need(input.budget && Number.isSafeInteger(input.budget.maxAttempts) && input.budget.maxAttempts > 0 && Number.isSafeInteger(input.budget.maxDurationMs) && input.budget.maxDurationMs > 0, 'Positive budgets required');
     return { ...structuredClone(input), revision };
 }
@@ -23,6 +30,11 @@ export function plan(project, state, packets) {
         need(p.constraintIds.every(id => state.contract.constraints.some(c => c.id === id)), 'Unknown constraint');
         need(unique(p.dependsOn) && p.dependsOn.every(id => allIds.includes(id) && id !== p.id), 'Invalid dependency');
         p.writeScope.forEach(name => resolveMaterial(project, name));
+        if (state.contract.writeScope) {
+            state.contract.writeScope.forEach(name => resolveMaterial(project, name));
+            if (!p.writeScope.every(name => state.contract.writeScope.some(scope => scopeContains(project, scope, name))))
+                fail('WRITE_SCOPE_EXCEEDED', 'Packet exceeds contract write scope');
+        }
         need(p.deliverables.length > 0 && unique(p.deliverables.map(d => d.path)), 'Deliverables required');
         for (const d of p.deliverables) {
             resolveMaterial(project, d.path);
@@ -35,6 +47,7 @@ export function plan(project, state, packets) {
         }
         const inputs = p.inputs.map(i => {
             need(i && typeof i.required === 'boolean', 'Input required flag missing');
+            need(i.delivery === undefined || ['inline', 'indexed'].includes(i.delivery), 'Invalid input delivery');
             resolveMaterial(project, i.path);
             const producers = packets.filter(candidate => p.dependsOn.includes(candidate.id) && candidate.deliverables?.some(d => d.path === i.path));
             need(producers.length <= 1, 'Input has ambiguous producers');

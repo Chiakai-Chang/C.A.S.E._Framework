@@ -121,7 +121,7 @@ test('integration format repair uses a fresh session and preserves the rejected 
     assert.equal(JSON.parse(saved[0].text).results.length, 2);
     assert.equal(saved[0].validationError.code, 'ACCEPTANCE_INCOMPLETE');
 });
-for (const criterionId of ['a', 'wrong-id']) test(`failed integration stops without format retry even for criterion ${criterionId}`, async t => {
+for (const criterionId of ['a', 'wrong-id']) test(`failed integration returns to planner without format retry even for criterion ${criterionId}`, async t => {
     const { createStore } = await import('../skills/case-workflow/scripts/core/index.mjs');
     const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-integration-rejected-')));
     t.after(() => fs.rmSync(project, { recursive: true, force: true }));
@@ -142,15 +142,15 @@ for (const criterionId of ['a', 'wrong-id']) test(`failed integration stops with
         roles.push(request.role);
         const sessionId = `integrator-${roles.length}`;
         await request.onStart(sessionId);
-        return { sessionId, text: roles.length === 1 ? rejectedText : JSON.stringify({ results: [{ criterionId: 'a', passed: true, evidence: 'second opinion' }], summary: 'accepted' }), usage: { input: 10, output: 5 } };
-    } }), { code: 'INTEGRATION_REJECTED' });
-    assert.deepEqual(roles, ['integrator']);
+        return { sessionId, text: roles.length === 1 ? rejectedText : JSON.stringify({ blocked: {reason:'External acceptance source missing'} }), usage: { input: 10, output: 5 } };
+    } }), { code: 'BLOCKED' });
+    assert.deepEqual(roles, ['integrator','planner']);
     assert.deepEqual(store.get(state.id), state);
     assert.equal(fs.readFileSync(path.join(project, 'out'), 'utf8'), 'incorrect');
     const run = store.listRuns(state.id)[0];
     assert.equal(run.status, 'failed');
-    assert.equal(run.error.code, 'INTEGRATION_REJECTED');
-    assert.match(run.error.message, /failed acceptance/i);
+    assert.equal(run.error.code, 'BLOCKED');
+    assert.match(run.error.message, /External acceptance source/);
     assert.equal(run.sessions[0].text, rejectedText);
     assert.equal(run.sessions[0].usage.input, 10);
     assert.equal(run.sessions[0].validationError.code, 'INTEGRATION_REJECTED');

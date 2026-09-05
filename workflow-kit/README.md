@@ -1,10 +1,10 @@
 # C.A.S.E. Workflow Kit
 
-協助 agent 保存目標、執行、跨 session 接續、核對與交付。可攜技能與零相依 Node.js 核心之外，v2 預覽加入版本化契約、工作包及 pi 新 session 整合，不依賴 M0 的 adapter。
+讓 agent 在有限 context 下，把工作交辦清楚、回報缺口、補做並接續成果。專案共識、整體計畫與工作包分層；可攜技能提供方法，本地核心保存版本，pi 整合自動建立新的規劃、執行與核對 context。
 
 需要 pi 自動規劃、執行、核對與整合，從 [v2 指南](docs/V2.md) 開始。以下技能安裝及手動命令保留 v1 記錄流程；只安裝 skill 不會安裝 pi extension。v1 資料必須顯式遷移才供 v2 使用，不能混寫。
 
-簡單說：agent 把目標、不能違反的限制、目前結果與下一步保存在專案裡，換對話後不必只靠聊天記憶接續。與普通 TODO 相比，額外提供固定資料欄位、精簡接續輸出及驗收記錄檢查；代價是需要維護記錄，短工作通常不必使用。
+例如整理訂單與退貨報告：報告執行者發現缺少前置整理結果，可交回規劃者補包；無關且已核對的成果保留。真正缺外部資料才停下，整體驗收不通過則補做，不能只改一個「完成」標記。短工作直接做，不強制拆包或建立共識文件。
 
 工作方法由技能指引，資料由本地工具保存；模型、工具權限及真正的工作仍由 pi、Codex 等提供。程式測試已驗證操作與接續，但不能因此宣稱普遍改善模型品質或節省 token。[設計與邊界](docs/ARCHITECTURE.md) · [具體工作例](docs/WORKFLOW.md) · [可信範圍](docs/READINESS.md)
 
@@ -65,7 +65,7 @@ BUSY 時先確認工作是否仍在進行。只有全部寫者停止且資料檢
 ## 驗證與打包
 
 ```text
-node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs
+npm test
 npm pack --dry-run
 ```
 

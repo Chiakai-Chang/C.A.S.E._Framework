@@ -8,7 +8,11 @@
 
 卷宗契約保存目標、限制、驗收與預算，工作包保存材料版本、相依、寫入範圍、產物及 checks。核心處理 revision／requestId、SHA256 與狀態轉移；pi SDK 整合負責新 session、限定工具、取消、用量及依序執行。核對 session 與 worker 分開，全域 integrate 不只相信包的 pass。詳情按需讀[契約參照](../skills/case-workflow/references/v2-contracts.md)。
 
-v2 權威資料在 `.case-agent/cases/<UUID>/state.json`，run 紀錄在 `artifacts/`；v1 `tasks/` 遷移後保留歷史。核心無額外 runtime 相依，pi 以既有 SDK 執行；新 session 和工具路徑檢查不是 OS sandbox、身分認證或防竄改。Codex／Claude／Antigravity 尚無本套件的自動 session 整合。
+v2 權威資料在 `.case-agent/cases/<UUID>/state.json`，run 紀錄在 `artifacts/`；v1 `tasks/` 遷移後保留歷史。既有 manifest 可選 `projectPolicy`／`projectHistory` 保存跨卷宗共識，store 的 `project`／`setProject` 管查詢與明示修訂，create 繼承快照。沒有新增根目錄檔名或第二份可編輯狀態。核心無額外 runtime 相依，pi 以既有 SDK 執行；新 session 和工具路徑檢查不是 OS sandbox、身分認證或防竄改。Codex／Claude／Antigravity 尚無本套件的自動 session 整合。
+
+`amendments.mjs` 驗證契約不變的計畫修正，依語意、來源／產物版本、相依與寫入重疊判斷哪些成果可保留；packetHistory 保存被替換嘗試，預算依 attempt ID 去重。`runner.mjs` 將 worker changeRequest、重複核對缺陷及整體失敗送回 planner，run 保存 pendingFeedback，跨次啟動也不能跳過尚未補做的缺口。
+
+`approved-checks.mjs` 將人類確認過的命令／引數凍結，pi 原生命令負責確認；runner 在核對／整合前執行並保存實際結果，不允許模型覆蓋失敗。沒有啟動外部命令的權限身分隔離：同使用者權限的程式仍可改資料，需強隔離時由外部沙箱提供。
 
 ## v1 四個部分各做什麼
 
@@ -60,4 +64,4 @@ Workers 回報指定產物與證據，協調者核對後更新資料。交接前
 
 ## 開發者入口
 
-`install.mjs` 管安裝；`skills/case-workflow/scripts/case.mjs` 管任務；`tests/install.test.mjs`、`workflow.test.mjs`、`journey.test.mjs` 分別驗證安裝、狀態及安裝後接續。修改 Kit 跑 `node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs`（repository 根目錄）。只有改 M0 才需要舊完整套件。
+`install.mjs` 管安裝；`skills/case-workflow/scripts/case.mjs` 管 v1，`core/` 與 pi integration 管 v2；`tests/` 驗證安裝、狀態、回饋、共識、工具與接續。修改 Kit 跑 `npm test --prefix workflow-kit`（repository 根目錄）。只有改 M0 才需要舊完整套件。
