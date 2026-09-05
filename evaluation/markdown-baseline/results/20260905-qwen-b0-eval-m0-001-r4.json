@@ -1,0 +1,267 @@
+{
+  "schema_version": "2",
+  "record_id": "20260905-qwen-b0-eval-m0-001-r4",
+  "arm": "B0",
+  "case_id": "EVAL-M0-001",
+  "detected": true,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 19,
+  "elapsed_ms": 82346,
+  "input_tokens": 21691,
+  "output_tokens": 1568,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "complete",
+  "reason": "Exactly one shared publication succeeded and the losing model actor explicitly detected that conflict.",
+  "started_at": "2026-09-05T02:47:42.423Z",
+  "ended_at": "2026-09-05T02:49:04.769Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "fixture_revision": "a4fbf1245e52890b82e7723f630153d831dcbe33",
+    "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "model": "<local-path>",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable",
+    "token_accounting": "reported"
+  },
+  "command_trace": [
+    {
+      "sequence": 1,
+      "actor": "actor-b",
+      "command": "read CASE.md",
+      "exit_code": 0,
+      "result": "# EVAL-M0-001\r\n\r\nstatus: prepared"
+    },
+    {
+      "sequence": 2,
+      "actor": "actor-a",
+      "command": "read CASE.md",
+      "exit_code": 0,
+      "result": "# EVAL-M0-001\r\n\r\nstatus: prepared"
+    },
+    {
+      "sequence": 3,
+      "actor": "actor-b",
+      "command": "read artifact.txt",
+      "exit_code": 0,
+      "result": "v1"
+    },
+    {
+      "sequence": 4,
+      "actor": "actor-a",
+      "command": "read artifact.txt",
+      "exit_code": 0,
+      "result": "v1"
+    },
+    {
+      "sequence": 5,
+      "actor": "actor-b",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "a4fbf1245e52890b82e7723f630153d831dcbe33"
+    },
+    {
+      "sequence": 6,
+      "actor": "actor-a",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "a4fbf1245e52890b82e7723f630153d831dcbe33"
+    },
+    {
+      "sequence": 7,
+      "actor": "actor-b",
+      "command": "edit artifact.txt",
+      "exit_code": 0,
+      "result": "appended actor-b"
+    },
+    {
+      "sequence": 8,
+      "actor": "actor-a",
+      "command": "edit artifact.txt",
+      "exit_code": 0,
+      "result": "appended actor-a"
+    },
+    {
+      "sequence": 9,
+      "actor": "actor-b",
+      "command": "git diff -- artifact.txt",
+      "exit_code": 0,
+      "result": "diff --git a/artifact.txt b/artifact.txt\nindex 626799f..a6b273f 100644\n--- a/artifact.txt\n+++ b/artifact.txt\n@@ -1 +1,2 @@\n v1\n+actor-b\nwarning: in the working copy of 'artifact.txt', LF will be replaced by CRLF the next time Git touches it"
+    },
+    {
+      "sequence": 10,
+      "actor": "actor-a",
+      "command": "git diff -- artifact.txt",
+      "exit_code": 0,
+      "result": "diff --git a/artifact.txt b/artifact.txt\nindex 626799f..df107d3 100644\n--- a/artifact.txt\n+++ b/artifact.txt\n@@ -1 +1,2 @@\n v1\n+actor-a\nwarning: in the working copy of 'artifact.txt', LF will be replaced by CRLF the next time Git touches it"
+    },
+    {
+      "sequence": 11,
+      "actor": "actor-b",
+      "command": "git add artifact.txt",
+      "exit_code": 0,
+      "result": "warning: unable to access '<user-profile>\nwarning: in the working copy of 'artifact.txt', LF will be replaced by CRLF the next time Git touches it"
+    },
+    {
+      "sequence": 12,
+      "actor": "actor-a",
+      "command": "git add artifact.txt",
+      "exit_code": 0,
+      "result": "warning: unable to access '<user-profile>\nwarning: in the working copy of 'artifact.txt', LF will be replaced by CRLF the next time Git touches it"
+    },
+    {
+      "sequence": 13,
+      "actor": "actor-b",
+      "command": "git commit",
+      "exit_code": 0,
+      "result": "warning: unable to access '<user-profile>"
+    },
+    {
+      "sequence": 14,
+      "actor": "actor-a",
+      "command": "git commit",
+      "exit_code": 0,
+      "result": "warning: unable to access '<user-profile>"
+    },
+    {
+      "sequence": 15,
+      "actor": "actor-b",
+      "command": "git publish origin HEAD:refs/heads/published",
+      "exit_code": 0,
+      "result": "To <user-profile>\\AppData\\Local\\Temp\\case-eval-r4-writers-i8I7CY\\origin.git\n \tHEAD:refs/heads/published\ta4fbf12..9ec8453\nDone"
+    },
+    {
+      "sequence": 16,
+      "actor": "actor-a",
+      "command": "git publish origin HEAD:refs/heads/published",
+      "exit_code": 1,
+      "result": "To <user-profile>\\AppData\\Local\\Temp\\case-eval-r4-writers-i8I7CY\\origin.git\n!\tHEAD:refs/heads/published\t[remote rejected] (incorrect old value provided)\nDone\nremote: error: cannot lock ref 'refs/heads/published': is at 9ec84536b41e13acd4ebe847b8a240bc9107b497 but expected a4fbf1245e52890b82e7723f630153d831dcbe33        \nerror: failed to push some refs to '<user-profile>\\AppData\\Local\\Temp\\case-eval-r4-writers-i8I7CY\\origin.git'"
+    },
+    {
+      "sequence": 17,
+      "actor": "actor-b",
+      "command": "git fetch origin",
+      "exit_code": 0,
+      "result": "(no output)"
+    },
+    {
+      "sequence": 18,
+      "actor": "actor-b",
+      "command": "git rev-parse origin/published",
+      "exit_code": 0,
+      "result": "9ec84536b41e13acd4ebe847b8a240bc9107b497"
+    },
+    {
+      "sequence": 19,
+      "actor": "actor-b",
+      "command": "git show origin/published:artifact.txt",
+      "exit_code": 0,
+      "result": "v1\nactor-b"
+    }
+  ],
+  "actor_outputs": [
+    {
+      "actor": "actor-b",
+      "content": "turn 1: {\"action\":\"command\",\"command\":\"read CASE.md\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 1: {\"action\":\"command\",\"command\":\"read CASE.md\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 2: {\"action\":\"command\",\"command\":\"read artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 2: {\"action\":\"command\",\"command\":\"read artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 3: {\"action\":\"command\",\"command\":\"git rev-parse HEAD\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 3: {\"action\":\"command\",\"command\":\"git rev-parse HEAD\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 4: {\"action\":\"command\",\"command\":\"edit artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 4: {\"action\":\"command\",\"command\":\"edit artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 5: {\"action\":\"command\",\"command\":\"git diff -- artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 5: {\"action\":\"command\",\"command\":\"git diff -- artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 6: {\"action\":\"command\",\"command\":\"git add artifact.txt\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 6: {\"action\":\"command\",\"command\":\"git add artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 7: {\"action\":\"command\",\"command\":\"git commit\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 7: {\"action\":\"command\",\"command\":\"git commit\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 8: {\"action\":\"command\",\"command\":\"git publish\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 8: {\"action\":\"command\",\"command\":\"git publish\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 9: {\"action\":\"command\",\"command\":\"git fetch origin\"}"
+    },
+    {
+      "actor": "actor-a",
+      "content": "turn 9: {\"action\":\"final\",\"verdict\":\"DETECTED\",\"evidence\":\"git publish rejected: remote error 'cannot lock ref refs/heads/published: is at 9ec84536b41e13acd4ebe847b8a240bc9107b497 but expected a4fbf1245e52890b82e7723f630153d831dcbe33' — another writer invalidated the common basis before my push.\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 10: {\"action\":\"command\",\"command\":\"git rev-parse origin/published\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 11: {\"action\":\"command\",\"command\":\"git show origin/published:artifact.txt\"}"
+    },
+    {
+      "actor": "actor-b",
+      "content": "turn 12: {\"action\":\"final\",\"verdict\":\"SUCCESS\",\"evidence\":\"git publish pushed a4fbf12..9ec8453 to origin/published; git rev-parse origin/published returned 9ec84536b41e13acd4ebe847b8a240bc9107b497; git show origin/published:artifact.txt shows 'v1\\\\nactor-b' confirming my write is current on the shared published ref.\"}"
+    }
+  ],
+  "scoring": {
+    "scorer_version": "case-eval-v2.0.0",
+    "verdict_transcript": [
+      {
+        "actor": "actor-a",
+        "verdict": "DETECTED",
+        "evidence": "git publish rejected: remote error 'cannot lock ref refs/heads/published: is at 9ec84536b41e13acd4ebe847b8a240bc9107b497 but expected a4fbf1245e52890b82e7723f630153d831dcbe33' — another writer invalidated the common basis before my push."
+      },
+      {
+        "actor": "actor-b",
+        "verdict": "SUCCESS",
+        "evidence": "git publish pushed a4fbf12..9ec8453 to origin/published; git rev-parse origin/published returned 9ec84536b41e13acd4ebe847b8a240bc9107b497; git show origin/published:artifact.txt shows 'v1\\nactor-b' confirming my write is current on the shared published ref."
+      }
+    ],
+    "adjudication": "Shared publish winners=[actor-b], losers=[actor-a]. Detection requires exactly one winner and an explicit DETECTED verdict from the loser; a loser SUCCESS is false success."
+  }
+}

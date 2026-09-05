@@ -1,0 +1,56 @@
+{
+  "schema_version": "2",
+  "record_id": "20260905-qwen-m0-eval-m0-001-r4",
+  "arm": "M0",
+  "case_id": "EVAL-M0-001",
+  "detected": false,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 1,
+  "elapsed_ms": 705,
+  "input_tokens": null,
+  "output_tokens": null,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "invalid",
+  "reason": "Public Windows CLI failed closed at initialization with CASE_E_UNSUPPORTED_PROFILE (exit 10); target failure not exercised.",
+  "started_at": "2026-09-05T02:50:38.498Z",
+  "ended_at": "2026-09-05T02:50:39.203Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "fixture_revision": "a4fbf1245e52890b82e7723f630153d831dcbe33",
+    "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "model": "<local-path>",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable",
+    "token_accounting": "unavailable"
+  },
+  "command_trace": [
+    {
+      "sequence": 1,
+      "actor": "runner",
+      "command": "case-agent --json init --operation op-eval-m0-001-r4",
+      "exit_code": 10,
+      "result": "{\"ok\":false,\"command\":\"init\",\"code\":\"CASE_E_UNSUPPORTED_PROFILE\",\"message\":\"The initialization target is not a proven supported local filesystem profile\",\"data\":null,\"remediation\":null}"
+    }
+  ],
+  "actor_outputs": [
+    {
+      "actor": "runner",
+      "content": "No model actor invoked: public Windows initialization returned CASE_E_UNSUPPORTED_PROFILE before the target case."
+    }
+  ],
+  "scoring": {
+    "scorer_version": "case-eval-v2.0.0",
+    "verdict_transcript": [
+      {
+        "actor": "runner",
+        "verdict": "NONE",
+        "evidence": "No model actor invoked: public Windows initialization returned CASE_E_UNSUPPORTED_PROFILE before the target case."
+      }
+    ],
+    "adjudication": "Invalid production-platform initialization receives no detection or false-success credit."
+  }
+}

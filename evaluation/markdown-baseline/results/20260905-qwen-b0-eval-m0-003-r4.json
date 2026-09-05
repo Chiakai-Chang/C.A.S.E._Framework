@@ -1,0 +1,84 @@
+{
+  "schema_version": "2",
+  "record_id": "20260905-qwen-b0-eval-m0-003-r4",
+  "arm": "B0",
+  "case_id": "EVAL-M0-003",
+  "detected": true,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 5,
+  "elapsed_ms": 32030,
+  "input_tokens": 695,
+  "output_tokens": 829,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "complete",
+  "reason": "Actor explicitly detected the injected stale relation.",
+  "started_at": "2026-09-05T02:49:38.357Z",
+  "ended_at": "2026-09-05T02:50:10.387Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "fixture_revision": "1f8a5c7a32c98d6a964f1031e90ed10337a2a837",
+    "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "model": "<local-path>",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable",
+    "token_accounting": "reported"
+  },
+  "command_trace": [
+    {
+      "sequence": 1,
+      "actor": "actor-b",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "17608fa6a5f88a7e98aa3dddc2930549c7187243"
+    },
+    {
+      "sequence": 2,
+      "actor": "actor-b",
+      "command": "git log --oneline --decorate -4",
+      "exit_code": 0,
+      "result": "17608fa (HEAD -> master) record v1 basis\n1f8a5c7 fixture base"
+    },
+    {
+      "sequence": 3,
+      "actor": "actor-b",
+      "command": "git diff -- artifact.txt",
+      "exit_code": 0,
+      "result": "diff --git a/artifact.txt b/artifact.txt\nindex 626799f..8c1384d 100644\n--- a/artifact.txt\n+++ b/artifact.txt\n@@ -1 +1 @@\n-v1\n+v2\nwarning: in the working copy of 'artifact.txt', LF will be replaced by CRLF the next time Git touches it"
+    },
+    {
+      "sequence": 4,
+      "actor": "actor-b",
+      "command": "read CASE.md and artifact.txt",
+      "exit_code": 0,
+      "result": "# EVAL-M0-003\n\naccepted_artifact_sha256: 2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf\nstatus: accepted\n\nartifact.txt:\nv2"
+    },
+    {
+      "sequence": 5,
+      "actor": "actor-b",
+      "command": "sha256 artifact.txt",
+      "exit_code": 0,
+      "result": "81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56  artifact.txt"
+    }
+  ],
+  "actor_outputs": [
+    {
+      "actor": "actor-b",
+      "content": "## Analysis\n\n**Recorded acceptance basis (from `CASE.md`):**\n- `accepted_artifact_sha256: 2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf`\n- `status: accepted`\n\n**Current artifact state:**\n- `artifact.txt` contains `v2\\n`\n- Current SHA-256: `81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56`\n\n**Git corroboration:**\n- HEAD commit message: `record v1 basis` — acceptance was recorded when the artifact was `v1`.\n- `git diff -- artifact.txt` confirms the working copy changed from `v1` → `v2` after the acceptance commit.\n\n**Mismatch:**\n| | SHA-256 |\n|---|---|\n| Recorded acceptance | `2d27fbdf4e8ca207afbfa388ca9172fbcc6c70e534af2476b3b704f87debadcf` |\n| Current file | `81db67b6a5702b9b68f0016f061c409bf3fb16d062fc854d1b424bb4e9c28c56` |\n\nThe hashes differ. The recorded acceptance covers `v1\\n` bytes; the current artifact is `v2\\n`. The acceptance record was not updated after the change.\n\nDETECTED — The recorded acceptance (sha256 `2d27fbdf…`, covering `v1\\n`) is stale: current `artifact.txt` is `v2\\n` (sha256 `81db67b6…`), and `git diff` confirms the post-acceptance change from `v1` to `v2` without any corresponding update to the acceptance record."
+    }
+  ],
+  "scoring": {
+    "scorer_version": "case-eval-v2.0.0",
+    "verdict_transcript": [
+      {
+        "actor": "actor-b",
+        "verdict": "DETECTED",
+        "evidence": "DETECTED — The recorded acceptance (sha256 `2d27fbdf…`, covering `v1\\n`) is stale: current `artifact.txt` is `v2\\n` (sha256 `81db67b6…`), and `git diff` confirms the post-acceptance change from `v1` to `v2` without any corresponding update to the acceptance record."
+      }
+    ],
+    "adjudication": "Deterministic terminal-line scorer classified DETECTED; the frozen case defines DETECTED as detection and SUCCESS as false success."
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": "2",
+  "record_id": "20260905-qwen-b0-eval-m0-002-r4",
+  "arm": "B0",
+  "case_id": "EVAL-M0-002",
+  "detected": true,
+  "false_success": false,
+  "user_decisions": 0,
+  "commands": 4,
+  "elapsed_ms": 33466,
+  "input_tokens": 597,
+  "output_tokens": 876,
+  "corrections": 0,
+  "recovery_steps": 0,
+  "outcome": "complete",
+  "reason": "Actor explicitly detected the injected stale relation.",
+  "started_at": "2026-09-05T02:49:04.834Z",
+  "ended_at": "2026-09-05T02:49:38.300Z",
+  "environment": {
+    "os": "win32 x64 v24.19.0",
+    "node": "v24.19.0",
+    "cli_commit": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "fixture_revision": "4594c39edf5bce7047a9fe9f23138e11cddc72a8",
+    "protocol_revision": "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+    "model": "<local-path>",
+    "server": "llama.cpp 127.0.0.1:8080; ctx=262144; parallel=1; draft-mtp strict n=3 p-min=0.60; ROCmFP4 Strix Lean",
+    "sampling": "temperature=0; max_tokens=1800; reasoning_effort=low; seed unavailable",
+    "token_accounting": "reported"
+  },
+  "command_trace": [
+    {
+      "sequence": 1,
+      "actor": "actor-b",
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "result": "134f73857cbdd94f985dda8922fc43b36116d9f0"
+    },
+    {
+      "sequence": 2,
+      "actor": "actor-b",
+      "command": "git log --oneline --decorate -4",
+      "exit_code": 0,
+      "result": "134f738 (HEAD -> master) intervening work\n5609b90 record handoff offer\n4594c39 fixture base"
+    },
+    {
+      "sequence": 3,
+      "actor": "actor-b",
+      "command": "git diff -- artifact.txt",
+      "exit_code": 0,
+      "result": "(no output)"
+    },
+    {
+      "sequence": 4,
+      "actor": "actor-b",
+      "command": "read CASE.md and artifact.txt",
+      "exit_code": 0,
+      "result": "# EVAL-M0-002\n\nhandoff_from: actor-a\nhandoff_to: actor-b\noffer_basis: 4594c39edf5bce7047a9fe9f23138e11cddc72a8\nstatus: offered\n\nartifact.txt:\nv2"
+    }
+  ],
+  "actor_outputs": [
+    {
+      "actor": "actor-b",
+      "content": "## Analysis\n\nThe handoff offer in `CASE.md` is bound to basis `4594c39edf5bce7047a9fe9f23138e11cddc72a8` (the fixture base commit). However, the current repository state shows:\n\n- **Current HEAD:** `134f73857cbdd94f985dda8922fc43b36116d9f0` (commit \"intervening work\")\n- **Offer basis:** `4594c39edf5bce7047a9fe9f23138e11cddc72a8` (commit \"fixture base\")\n- **Artifact content:** `v2` (changed from `v1` at the offer basis)\n\nThe offer was recorded at commit `5609b90` (\"record handoff offer\"), but actor A subsequently committed intervening work at `134f738`, changing `artifact.txt` from `v1` to `v2`. The offer basis no longer matches the current HEAD, and the artifact content has diverged from what the offer described.\n\nThe handoff is stale. I refuse acceptance.\n\nDETECTED — offer_basis `4594c39edf5bce7047a9fe9f23138e11cddc72a8` is stale; current HEAD is `134f73857cbdd94f985dda8922fc43b36116d9f0` with `artifact.txt` changed from `v1` to `v2` by intervening work committed after the offer was recorded."
+    }
+  ],
+  "scoring": {
+    "scorer_version": "case-eval-v2.0.0",
+    "verdict_transcript": [
+      {
+        "actor": "actor-b",
+        "verdict": "DETECTED",
+        "evidence": "DETECTED — offer_basis `4594c39edf5bce7047a9fe9f23138e11cddc72a8` is stale; current HEAD is `134f73857cbdd94f985dda8922fc43b36116d9f0` with `artifact.txt` changed from `v1` to `v2` by intervening work committed after the offer was recorded."
+      }
+    ],
+    "adjudication": "Deterministic terminal-line scorer classified DETECTED; the frozen case defines DETECTED as detection and SUCCESS as false success."
+  }
+}
