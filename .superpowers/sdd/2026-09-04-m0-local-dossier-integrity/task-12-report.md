@@ -40,9 +40,11 @@ The authorized server was started three times from the unmodified batch. After e
 - direct bundled npm `run typecheck` — success, zero errors.
 - first direct bundled npm `test` — 310 tests, 308 passed, 2 failure entries caused by one stale expected total (139 versus 140); this was the expected red evidence for the count correction.
 - fresh direct bundled npm `run check` after the fix — typecheck passed; 310 tests passed with zero failures, skipped, or todo; conformance passed 140/140 with no uncovered direction.
+- final direct bundled npm `run check` after r4 — typecheck passed; 310/310 core tests and 15/15 offline evaluation tests passed with zero failures, skipped, or todo; conformance passed 140/140 with no uncovered direction.
 - direct bundled npm `run conformance` after the fix — 140 total, 140 passed, 0 failed, no uncovered direction.
 - AJV 2020 plus semantic validation of every committed result — 26 total, 26 valid, 0 invalid; external integrity manifest 26/26 with no digest/blob/commit mismatch.
-- direct bundled npm `pack --dry-run --json` — 86 entries; 143,772 packed bytes; 777,996 unpacked bytes; shasum `20a8dd6763672671ff8f8b2fabe34e8472ea9e88`; prohibited categories absent.
+- final direct bundled npm `pack --dry-run --json` — 86 entries; 143,799 packed bytes; 778,110 unpacked bytes; shasum `13f071f42efc3c403642376f695bcd717846e6ea`; prohibited categories absent.
+- `git diff --check 55c8c47cb7639c4106af6016f41ce8c4c3c6afc7..HEAD` — clean after removing seven historical EOF blank lines.
 
 ## Package file list
 

@@ -83,7 +83,7 @@ The deterministic controlled-test corpus now passes 140 cases and includes the c
 
 `case-agent --help` is a real bundled process surface executed before platform initialization. Its conformance binding closes `M0-OFFLINE-008` by checking actual public output and read-only behavior. Help and README state the exact command surface, local data footprint, identity/recovery limits, and unsupported profiles.
 
-The package dry run reported 86 entries, 143,772 packed bytes, and 777,996 unpacked bytes. The complete allowlisted file set is:
+The final package dry run reported 86 entries, 143,799 packed bytes, and 778,110 unpacked bytes. The complete allowlisted file set is:
 
 - `README.md` and `package.json`;
 - nine schemas: `checks`, `decision`, `definitions`, `dossier`, `handoff`, `manifest`, `observed-evidence`, `result`, and `submission` (`schemas/*.schema.json`);
@@ -93,7 +93,7 @@ The package dry run reported 86 entries, 143,772 packed bytes, and 777,996 unpac
 - each of `.d.ts`, `.js`, and `.js.map` for storage modules `atomic`, `guard`, `paths`, and `store`;
 - each of `.d.ts`, `.js`, and `.js.map` for workflow modules `decision`, `dossier`, `evidence`, `handoff`, `init`, and `submission`.
 
-No tests, evaluation records, caches, secrets, local dossiers, conformance fixtures, or generated tarball appear in the dry-run list. Dry-run shasum: `20a8dd6763672671ff8f8b2fabe34e8472ea9e88`.
+No tests, evaluation records, caches, secrets, local dossiers, conformance fixtures, or generated tarball appear in the dry-run list. Final dry-run shasum: `13f071f42efc3c403642376f695bcd717846e6ea`.
 
 ## Verification and remaining gates
 
@@ -103,6 +103,8 @@ No tests, evaluation records, caches, secrets, local dossiers, conformance fixtu
 - The first full test run after adding the 140th case exposed one stale hard-coded expected corpus count (`139`). It produced 310 tests, 308 passed, 2 failure entries (the leaf assertion and its parent suite). After correcting the count to 140, a fresh exact `npm run check` passed typecheck, all 310 tests, and all 140 conformance cases with zero skipped/todo and no uncovered direction.
 - Package dry-run: 86 allowlisted files; prohibited categories absent.
 - Evaluation validation after r4: 26/26 records pass the closed schema and semantic validator; the external integrity manifest has 26/26 SHA-256/Git-blob/first-containing-commit mappings with no mismatch.
+- Final exact `npm run check`: typecheck passed; 310/310 core tests and 15/15 offline evaluation tests passed with no failed/skipped/todo; conformance passed 140/140 with no uncovered direction.
+- Final range `git diff --check 55c8c47..HEAD`: clean.
 
 Remaining release blockers:
 
