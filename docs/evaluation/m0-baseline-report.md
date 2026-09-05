@@ -87,7 +87,7 @@ No tests, evaluation records, caches, secrets, local dossiers, conformance fixtu
 - Clean dependency install succeeded with 9 packages using the Node 24 bundled npm `11.17.0` CLI. The normal `npm.cmd` first failed because the user's separate roaming npm installation is missing `npm-bundled`; no global installation was changed.
 - Typecheck: zero errors.
 - Conformance: 140 total, 140 passed, 0 failed, no uncovered positive or negative direction.
-- The first full test run after adding the 140th case exposed one stale hard-coded expected corpus count (`139`). It produced 310 tests, 308 passed, 2 failure entries (the leaf assertion and its parent suite). The count was corrected to 140 and must pass a fresh full-suite rerun before completion is claimed.
+- The first full test run after adding the 140th case exposed one stale hard-coded expected corpus count (`139`). It produced 310 tests, 308 passed, 2 failure entries (the leaf assertion and its parent suite). After correcting the count to 140, a fresh exact `npm run check` passed typecheck, all 310 tests, and all 140 conformance cases with zero skipped/todo and no uncovered direction.
 - Package dry-run: 86 allowlisted files; prohibited categories absent.
 
 Remaining release blockers:
@@ -97,4 +97,3 @@ Remaining release blockers:
 3. post-pilot protocol amendments need a newly frozen rerun after a real adapter exists;
 4. independent final review must still reconcile spec, schema, CLI, fixtures, package, and claims;
 5. deferred earlier-task findings remain for final-branch triage.
-

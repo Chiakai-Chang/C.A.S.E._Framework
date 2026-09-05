@@ -35,8 +35,10 @@ The authorized server was started twice from the unmodified batch. After each ev
 - `npm.cmd --cache .npm-cache ci` — failed before install because the user's roaming npm copy lacks `npm-bundled`.
 - `node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" --cache .npm-cache ci` — success, 9 packages.
 - direct bundled npm `run typecheck` — success, zero errors.
-- first direct bundled npm `test` — 310 tests, 308 passed, 2 failure entries caused by one stale expected total (139 versus 140); fixed and pending fresh full-suite evidence.
+- first direct bundled npm `test` — 310 tests, 308 passed, 2 failure entries caused by one stale expected total (139 versus 140); this was the expected red evidence for the count correction.
+- fresh direct bundled npm `run check` after the fix — typecheck passed; 310 tests passed with zero failures, skipped, or todo; conformance passed 140/140 with no uncovered direction.
 - direct bundled npm `run conformance` after the fix — 140 total, 140 passed, 0 failed, no uncovered direction.
+- AJV 2020 validation of every committed result against `results.schema.json` — 18 total, 18 valid, 0 invalid.
 - direct bundled npm `pack --dry-run --json` — 86 entries; 143,772 packed bytes; 777,996 unpacked bytes; shasum `20a8dd6763672671ff8f8b2fabe34e8472ea9e88`; prohibited categories absent.
 
 ## Package file list
@@ -49,5 +51,4 @@ The exact compressed list is README and package metadata; nine named schemas; an
 - M0 production baseline invalid and therefore cannot satisfy the advance gate.
 - r2/r3 are post-pilot amendments, not preregistered samples.
 - Controlled-test conformance is not production support.
-- Final full test rerun, diff/status accounting, and independent whole-branch review remain controller gates.
-
+- Independent whole-branch review remains a controller gate; Task 12's full check, package dry-run, result-schema validation, and diff/status accounting are complete.
