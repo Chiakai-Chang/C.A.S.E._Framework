@@ -18,6 +18,12 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import {
+  clearImmediate as trustedClearImmediate,
+  clearTimeout as trustedClearTimeout,
+  setImmediate as trustedSetImmediate,
+  setTimeout as trustedSetTimeout,
+} from "node:timers";
 import { fileURLToPath } from "node:url";
 import { promiseHooks } from "node:v8";
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -66,6 +72,8 @@ import { addEvidence, checkDossier } from "../workflows/evidence.js";
 import { acceptHandoff, offerHandoff } from "../workflows/handoff.js";
 import { initRepository, nodeRepositoryFileSystem } from "../workflows/init.js";
 import { createSubmission } from "../workflows/submission.js";
+
+const trustedCreatePromiseHook = promiseHooks.createHook.bind(promiseHooks);
 
 export interface CorpusSummary {
   total: number;
@@ -3078,25 +3086,83 @@ async function initializeHarnessGitRepository(repositoryRoot: string, realGit: b
   });
 }
 
+async function assertAsyncAuditCapabilities(): Promise<void> {
+  const promiseParents = new WeakMap<object, object | undefined>();
+  const resourceIds = new WeakMap<object, number>();
+  const completedCallbacks = new Set<number>();
+  const destroyedResources = new Set<number>();
+  const lifecycle = createHook({
+    init: (asyncId, type, _triggerAsyncId, resource) => {
+      if (type === "PROMISE" || type === "Timeout" || type === "Immediate") {
+        resourceIds.set(resource, asyncId);
+      }
+    },
+    after: (asyncId) => { completedCallbacks.add(asyncId); },
+    destroy: (asyncId) => { destroyedResources.add(asyncId); },
+  });
+  let stopPromiseHook = (): void => undefined;
+  let releaseGate = (): void => undefined;
+  let cancelledTimeout: NodeJS.Timeout | undefined;
+  let cancelledImmediate: NodeJS.Immediate | undefined;
+  let completedImmediate: NodeJS.Immediate | undefined;
+  try {
+    if (!/^24\./u.test(process.versions.node)) throw new Error("unsupported Node major");
+    lifecycle.enable();
+    stopPromiseHook = trustedCreatePromiseHook({
+      init: (promise, parent) => { promiseParents.set(promise, parent); },
+    }) as () => void;
+    const gate = new Promise<void>((resolveGate) => { releaseGate = resolveGate; });
+    const continuation = gate.then(() => undefined);
+    cancelledTimeout = trustedSetTimeout(() => undefined, 60_000);
+    cancelledImmediate = trustedSetImmediate(() => undefined);
+    let completedImmediateRan = false;
+    completedImmediate = trustedSetImmediate(() => { completedImmediateRan = true; });
+    const gateId = resourceIds.get(gate);
+    const continuationId = resourceIds.get(continuation);
+    const cancelledTimeoutId = resourceIds.get(cancelledTimeout);
+    const cancelledImmediateId = resourceIds.get(cancelledImmediate);
+    const completedImmediateId = resourceIds.get(completedImmediate);
+    trustedClearTimeout(cancelledTimeout);
+    trustedClearImmediate(cancelledImmediate);
+    await new Promise<void>((resolveCheckpoint) => trustedSetImmediate(resolveCheckpoint));
+    releaseGate();
+    await continuation;
+    const capable = gateId !== undefined
+      && promiseParents.has(gate) && promiseParents.get(gate) === undefined
+      && promiseParents.get(continuation) === gate
+      && continuationId !== undefined
+      && cancelledTimeoutId !== undefined && destroyedResources.has(cancelledTimeoutId)
+      && cancelledImmediateId !== undefined && destroyedResources.has(cancelledImmediateId)
+      && completedImmediateId !== undefined && completedImmediateRan
+      && completedCallbacks.has(completedImmediateId);
+    if (!capable) throw new Error("async lifecycle capability mismatch");
+  } catch {
+    throw new CorpusValidationError("Node 24 async lifecycle capability probe failed");
+  } finally {
+    releaseGate();
+    if (cancelledTimeout !== undefined) trustedClearTimeout(cancelledTimeout);
+    if (cancelledImmediate !== undefined) trustedClearImmediate(cancelledImmediate);
+    if (completedImmediate !== undefined) trustedClearImmediate(completedImmediate);
+    stopPromiseHook();
+    lifecycle.disable();
+  }
+}
+
 async function executeCase(corpusRoot: string, located: LocatedCase, ports: CorpusPorts): Promise<boolean> {
   const temporary = await mkdtemp(join(tmpdir(), "case-agent-conformance-"));
   const repositoryRoot = join(temporary, "repository");
-  const scheduleImmediate = globalThis.setImmediate;
-  const cancelImmediate = globalThis.clearImmediate;
-  const cancelTimeout = globalThis.clearTimeout;
   let networkCalls = 0;
   const caseAsyncIds = new Set<number>();
   const pendingCaseResources = new Map<number, {
     readonly type: string;
     readonly resource: object;
     readonly scopedAtInit: boolean;
-    readonly timeoutId: number | undefined;
   }>();
   const auditScope = new AsyncLocalStorage<boolean>();
   const auditInfrastructureScope = new AsyncLocalStorage<boolean>();
   let bodyPromiseAsyncId: number | undefined;
   const registeredPromiseContinuations = new WeakSet<object>();
-  const stopPromiseAudit = promiseHooks.createHook({
+  const stopPromiseAudit = trustedCreatePromiseHook({
     init: (promise, parent) => {
       if (parent !== undefined) registeredPromiseContinuations.add(promise);
     },
@@ -3108,23 +3174,20 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
   // inside the case carry causal scope; the body/current runner continuations
   // are excluded explicitly rather than ignoring every Promise.
   const isOneShotCallbackResource = (type: string): boolean =>
-    /(?:REQ|REQUEST)/u.test(type) || type === "TickObject" || type === "Microtask";
+    /(?:REQ|REQUEST)/u.test(type)
+      || type === "TickObject" || type === "Microtask" || type === "Immediate";
   const reachLifecycleCheckpoint = async (): Promise<void> => {
     await auditInfrastructureScope.run(true, () =>
-      new Promise<void>((resolveCheckpoint) => scheduleImmediate(resolveCheckpoint)));
+      new Promise<void>((resolveCheckpoint) => trustedSetImmediate(resolveCheckpoint)));
   };
-  const cleanupKnownCaseResource = (
-    type: string,
-    resource: object,
-    timeoutId: number | undefined,
-  ): void => {
+  const cleanupKnownCaseResource = (type: string, resource: object): void => {
     try {
       if (type === "Timeout") {
-        cancelTimeout(timeoutId ?? (resource as NodeJS.Timeout));
+        trustedClearTimeout(resource as NodeJS.Timeout);
         return;
       }
       if (type === "Immediate") {
-        cancelImmediate(resource as NodeJS.Immediate);
+        trustedClearImmediate(resource as NodeJS.Immediate);
         return;
       }
       if (type === "DNSCHANNEL") {
@@ -3158,19 +3221,7 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
       if (!scopedAtInit && !caseAsyncIds.has(triggerAsyncId)) return;
       caseAsyncIds.add(asyncId);
       if (isNetworkResource(type)) networkCalls += 1;
-      let timeoutId: number | undefined;
-      if (type === "Timeout") {
-        // Timeout's numeric primitive is public in Node and is captured during
-        // init, before the creating hook receives the handle and can alter it.
-        try {
-          const candidate = Number(resource);
-          if (Number.isSafeInteger(candidate) && candidate >= 0) timeoutId = candidate;
-        } catch {
-          // A malformed adapter cannot make the async hook throw globally; the
-          // live resource remains pending and the case still fails closed.
-        }
-      }
-      pendingCaseResources.set(asyncId, { type, resource, scopedAtInit, timeoutId });
+      pendingCaseResources.set(asyncId, { type, resource, scopedAtInit });
     },
     after: (asyncId) => {
       const pending = pendingCaseResources.get(asyncId);
@@ -3230,76 +3281,90 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
       Object.fromEntries(await collectFiles(repositoryRoot, true)),
     );
     await ports.onBeforeDerivedView?.(located.fixture.case_id, repositoryRoot);
-    const outcomesMatched = await outcomesMatch(corpusRoot, repositoryRoot, located.fixture, outcomes);
-    const derivedViewMatched = await derivedViewMatches(corpusRoot, located.fixture, context);
-    const finalTreeMatched = await finalTreeMatches(repositoryRoot, located.fixture);
-    const gitTreeMatched = sameMap(gitBaseline, await collectFiles(join(repositoryRoot, ".git"), false));
-    const executedAssertions = new Set(outcomes.flatMap((outcome) => outcome.assertionIds));
-    executedAssertions.add("population.safe-confined");
-    for (const fact of context.operationFacts) executedAssertions.add(fact);
-    for (const [operationId, events] of context.operationTraces) {
-      executedAssertions.add(`storage:${operationId}:event-count=${events.length}`);
-      const mutationCount = events.filter((event) =>
-        /^atomic\.(?:create-once|flush-close|replace|remove|quarantine):/u.test(event)).length;
-      executedAssertions.add(`storage:${operationId}:mutation-count=${mutationCount}`);
-      events.forEach((event, index) => executedAssertions.add(`storage:${operationId}:${index}=${event}`));
-    }
-    if (outcomesMatched) {
-      for (let index = 0; index < outcomes.length; index += 1) {
-        const outcome = outcomes[index]!;
-        executedAssertions.add(`process:${index}:exit=${outcome.processExit}`);
-        executedAssertions.add(`process:${index}:code=${outcome.resultCode}`);
-        executedAssertions.add(`process:${index}:stdout=${sha256(Buffer.from(outcome.stdout, "utf8"))}`);
-        executedAssertions.add(`process:${index}:stderr=${sha256(Buffer.from(outcome.stderr, "utf8"))}`);
-        const argv = located.fixture.invocations[index]!.argv;
-        if (outcome.stdout !== "" && (argv.includes("--json") || argv[0]?.startsWith("@"))) {
-          emitStructuredAssertions(executedAssertions, `stdout:${index}`, parseStrictJson(Buffer.from(outcome.stdout, "utf8")));
-        } else if (outcome.stdout !== "") {
-          const lines = outcome.stdout.endsWith("\n") ? outcome.stdout.slice(0, -1).split("\n") : outcome.stdout.split("\n");
-          executedAssertions.add(`human-stdout:${index}:line-count=${lines.length}`);
-          const fieldByteLengths = lines.flatMap((line) => {
-            const separator = line.indexOf(": ");
-            return separator < 0 ? [] : [Buffer.byteLength(line.slice(separator + 2), "utf8")];
-          });
-          executedAssertions.add(`human-stdout:${index}:max-field-utf8-bytes=${Math.max(0, ...fieldByteLengths)}`);
-          executedAssertions.add(`human-stdout:${index}:utf8-bytes=${Buffer.byteLength(outcome.stdout, "utf8")}`);
-          lines.forEach((line, lineIndex) => executedAssertions.add(`human-stdout:${index}:${lineIndex}=${line}`));
-        }
+    const evaluateStateDependentOracles = async () => {
+      const outcomesMatched = await outcomesMatch(corpusRoot, repositoryRoot, located.fixture, outcomes);
+      // The derived show is a read-only reference invocation. Running it again
+      // after the final hook avoids trusting its earlier result.
+      const derivedViewMatched = await derivedViewMatches(corpusRoot, located.fixture, context);
+      const gitTreeMatched = sameMap(gitBaseline, await collectFiles(join(repositoryRoot, ".git"), false));
+      const finalTreeMatched = await finalTreeMatches(repositoryRoot, located.fixture);
+      return { outcomesMatched, derivedViewMatched, finalTreeMatched, gitTreeMatched };
+    };
+    const buildExecutedAssertions = async (
+      verification: Awaited<ReturnType<typeof evaluateStateDependentOracles>>,
+    ): Promise<Set<string>> => {
+      const assertions = new Set(outcomes.flatMap((outcome) => outcome.assertionIds));
+      assertions.add("population.safe-confined");
+      for (const fact of context.operationFacts) assertions.add(fact);
+      for (const [operationId, events] of context.operationTraces) {
+        assertions.add(`storage:${operationId}:event-count=${events.length}`);
+        const mutationCount = events.filter((event) =>
+          /^atomic\.(?:create-once|flush-close|replace|remove|quarantine):/u.test(event)).length;
+        assertions.add(`storage:${operationId}:mutation-count=${mutationCount}`);
+        events.forEach((event, index) => assertions.add(`storage:${operationId}:${index}=${event}`));
       }
-      const groups = new Set(located.fixture.invocations.flatMap(({ concurrency_group: group }) => group === null ? [] : [group]));
-      for (const group of groups) executedAssertions.add(`concurrency:${group}:successes=1`);
-    }
-    if (derivedViewMatched && located.fixture.expected_derived_view_file !== null) {
-      const view = parseStrictJson(await readCorpusFile(corpusRoot, located.fixture.expected_derived_view_file));
-      emitStructuredAssertions(executedAssertions, "view", view);
-    }
-    if (finalTreeMatched) {
-      executedAssertions.add("tree:exact-set");
-      for (const directory of located.fixture.expected_final_directories) {
-        executedAssertions.add(`directory:/${directory}=present`);
-      }
-      for (const entry of located.fixture.expected_final_tree) {
-        executedAssertions.add(`tree:/${entry.path}=${entry.presence === "present" ? entry.sha256 : "absent"}`);
-        if (entry.presence === "present") {
-          try {
-            const value = parseStrictJson(await readFile(repositoryPath(repositoryRoot, entry.path)));
-            emitStructuredAssertions(executedAssertions, `tree-json:/${entry.path}`, value);
-          } catch {
-            // Exact bytes still remain asserted; only strict JSON files receive structured facts.
+      if (verification.outcomesMatched) {
+        for (let index = 0; index < outcomes.length; index += 1) {
+          const outcome = outcomes[index]!;
+          assertions.add(`process:${index}:exit=${outcome.processExit}`);
+          assertions.add(`process:${index}:code=${outcome.resultCode}`);
+          assertions.add(`process:${index}:stdout=${sha256(Buffer.from(outcome.stdout, "utf8"))}`);
+          assertions.add(`process:${index}:stderr=${sha256(Buffer.from(outcome.stderr, "utf8"))}`);
+          const argv = located.fixture.invocations[index]!.argv;
+          if (outcome.stdout !== "" && (argv.includes("--json") || argv[0]?.startsWith("@"))) {
+            emitStructuredAssertions(assertions, `stdout:${index}`, parseStrictJson(Buffer.from(outcome.stdout, "utf8")));
+          } else if (outcome.stdout !== "") {
+            const lines = outcome.stdout.endsWith("\n") ? outcome.stdout.slice(0, -1).split("\n") : outcome.stdout.split("\n");
+            assertions.add(`human-stdout:${index}:line-count=${lines.length}`);
+            const fieldByteLengths = lines.flatMap((line) => {
+              const separator = line.indexOf(": ");
+              return separator < 0 ? [] : [Buffer.byteLength(line.slice(separator + 2), "utf8")];
+            });
+            assertions.add(`human-stdout:${index}:max-field-utf8-bytes=${Math.max(0, ...fieldByteLengths)}`);
+            assertions.add(`human-stdout:${index}:utf8-bytes=${Buffer.byteLength(outcome.stdout, "utf8")}`);
+            lines.forEach((line, lineIndex) => assertions.add(`human-stdout:${index}:${lineIndex}=${line}`));
           }
         }
+        const groups = new Set(located.fixture.invocations.flatMap(({ concurrency_group: group }) => group === null ? [] : [group]));
+        for (const group of groups) assertions.add(`concurrency:${group}:successes=1`);
       }
-      const actualPaths = [...(await collectFiles(repositoryRoot, true)).keys()];
-      if (!actualPaths.some((path) => /(?:^|\/)brief\.md$/u.test(path))) {
-        executedAssertions.add("tree:no-authoritative-brief");
+      if (verification.derivedViewMatched && located.fixture.expected_derived_view_file !== null) {
+        const view = parseStrictJson(await readCorpusFile(corpusRoot, located.fixture.expected_derived_view_file));
+        emitStructuredAssertions(assertions, "view", view);
       }
-    }
-    if (gitTreeMatched) executedAssertions.add("git-tree:exact");
-    for (const profile of located.fixture.applicable_platform_profiles) {
-      executedAssertions.add(`profile:${profile}`);
-    }
+      if (verification.finalTreeMatched) {
+        assertions.add("tree:exact-set");
+        for (const directory of located.fixture.expected_final_directories) {
+          assertions.add(`directory:/${directory}=present`);
+        }
+        for (const entry of located.fixture.expected_final_tree) {
+          assertions.add(`tree:/${entry.path}=${entry.presence === "present" ? entry.sha256 : "absent"}`);
+          if (entry.presence === "present") {
+            try {
+              const value = parseStrictJson(await readFile(repositoryPath(repositoryRoot, entry.path)));
+              emitStructuredAssertions(assertions, `tree-json:/${entry.path}`, value);
+            } catch {
+              // Exact bytes still remain asserted; only strict JSON files receive structured facts.
+            }
+          }
+        }
+        const actualPaths = [...(await collectFiles(repositoryRoot, true)).keys()];
+        if (!actualPaths.some((path) => /(?:^|\/)brief\.md$/u.test(path))) {
+          assertions.add("tree:no-authoritative-brief");
+        }
+      }
+      if (verification.gitTreeMatched) assertions.add("git-tree:exact");
+      for (const profile of located.fixture.applicable_platform_profiles) {
+        assertions.add(`profile:${profile}`);
+      }
+      return assertions;
+    };
+    let verification = await evaluateStateDependentOracles();
+    let executedAssertions = await buildExecutedAssertions(verification);
     await ports.onCaseAssertions?.(located.fixture.case_id, [...executedAssertions].sort(compareCodeUnits));
     await reachLifecycleCheckpoint();
+    verification = await evaluateStateDependentOracles();
+    executedAssertions = await buildExecutedAssertions(verification);
     const currentAsyncId = executionAsyncId();
     const unresolvedContinuationIds = new Set([...pendingCaseResources]
       .filter(([asyncId, { type, resource, scopedAtInit }]) => type === "PROMISE"
@@ -3317,7 +3382,8 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     const bindingsMatched = located.ruleBindings.every(({ assertion_ids }) =>
       assertion_ids.every((assertionId) => executedAssertions.has(assertionId)));
     return networkCalls === 0 && asyncResourcesQuiescent
-      && outcomesMatched && derivedViewMatched && finalTreeMatched && gitTreeMatched && bindingsMatched;
+      && verification.outcomesMatched && verification.derivedViewMatched
+      && verification.finalTreeMatched && verification.gitTreeMatched && bindingsMatched;
       } catch {
         return false;
       }
@@ -3330,8 +3396,8 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
     auditInfrastructureScope.disable();
     networkAudit.disable();
     stopPromiseAudit();
-    for (const { type, resource, timeoutId } of pendingCaseResources.values()) {
-      cleanupKnownCaseResource(type, resource, timeoutId);
+    for (const { type, resource } of pendingCaseResources.values()) {
+      cleanupKnownCaseResource(type, resource);
     }
     await safeRemoveTemporary(temporary);
   }
@@ -3339,6 +3405,7 @@ async function executeCase(corpusRoot: string, located: LocatedCase, ports: Corp
 
 /** Load, validate, execute, and summarize the frozen conformance corpus. */
 export async function runCorpus(corpusRoot: string, ports: CorpusPorts = {}): Promise<CorpusSummary> {
+  await assertAsyncAuditCapabilities();
   const root = await realpath(corpusRoot);
   const before = await collectFiles(root, false);
   const { rules, cases } = await loadCorpus(root);

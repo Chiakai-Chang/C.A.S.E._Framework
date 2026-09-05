@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
+import { createHook } from "node:async_hooks";
+import { spawn } from "node:child_process";
 import { createHash, pbkdf2 } from "node:crypto";
 import { createSocket } from "node:dgram";
 import { lookup, Resolver } from "node:dns";
+import { writeFileSync } from "node:fs";
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { createServer, type AddressInfo, type Server } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { promiseHooks } from "node:v8";
 import { runCorpus } from "../../src/conformance/runner.js";
 
 const corpusRoot = join(process.cwd(), "conformance");
@@ -84,6 +88,11 @@ test("§22.1 stderr prose and the closed case schema define the same exact relat
   assert.match(section, /bare unresolved Promise with no registered continuation is not pending work/u);
   assert.match(section, /one deterministic, non-timed event-loop lifecycle checkpoint/u);
   assert.match(section, /mutable private handle fields carry no authority/u);
+  assert.match(section, /re-evaluates outcomes, the read-only derived view, the final repository tree, and the harness-owned Git baseline/u);
+  assert.match(section, /rebuilds binding facts only from that second evaluation/u);
+  assert.match(section, /module-loaded `node:timers` cancellation functions with the actual resource objects/u);
+  assert.match(section, /Node 24\.19\.0 is the measured baseline/u);
+  assert.match(section, /every other Node 24 release must pass this capability probe/u);
   assert.match(section, /audit hook is disabled before the library call returns/u);
   assert.match(section, /detection, not a claim that the runner can cancel a Promise or sandbox a later side effect/u);
   assert.match(section, /formal conformance command writes its final result synchronously and terminates its process explicitly/u);
@@ -854,15 +863,9 @@ test("harness-owned Git state is immutable and derived-view network attempts tur
   });
   await t.test("a forged private timer flag cannot hide live delayed DNS work", async () => {
     await withCorpusCopy(async (root) => {
-      const originalClearTimeout = globalThis.clearTimeout;
       let targetTimer: NodeJS.Timeout | undefined;
-      let cleanupObserved = false;
       let passed: boolean | undefined;
       let summary;
-      globalThis.clearTimeout = ((timer: Parameters<typeof clearTimeout>[0]) => {
-        if (targetTimer !== undefined && timer === Number(targetTimer)) cleanupObserved = true;
-        return originalClearTimeout(timer);
-      }) as typeof clearTimeout;
       try {
         summary = await runCorpus(root, {
           onCaseAssertions: (caseId) => {
@@ -873,12 +876,10 @@ test("harness-owned Git state is immutable and derived-view network attempts tur
           onCaseResult: (caseId, ok) => { if (caseId === "walking-skeleton-offline") passed = ok; },
         });
       } finally {
-        globalThis.clearTimeout = originalClearTimeout;
-        if (targetTimer !== undefined) originalClearTimeout(Number(targetTimer));
+        if (targetTimer !== undefined) clearTimeout(targetTimer);
       }
       assert.equal(passed, false);
       assert.ok(summary.failed > 0);
-      assert.equal(cleanupObserved, true);
     });
   });
   await t.test("honestly cancelled final-hook timers and immediates are already quiescent", async () => {
@@ -1000,6 +1001,249 @@ test("network handles created outside every case scope are not attributed to cor
     resolver.cancel();
     await new Promise<void>((resolveClosed) => server.close(() => resolveClosed()));
   }
+});
+
+test("poisoned Timeout coercion cannot steal cleanup ownership from a red case", async () => {
+  await withCorpusCopy(async (root) => {
+    const timeoutIds = new WeakMap<object, number>();
+    const destroyed = new Set<number>();
+    const lifecycle = createHook({
+      init: (asyncId, type, _triggerAsyncId, resource) => {
+        if (type === "Timeout") timeoutIds.set(resource, asyncId);
+      },
+      destroy: (asyncId) => { destroyed.add(asyncId); },
+    });
+    lifecycle.enable();
+    const originalClearTimeout = globalThis.clearTimeout;
+    const baselineTimer = setTimeout(() => undefined, 60_000);
+    const timeoutPrototype = Object.getPrototypeOf(baselineTimer) as object;
+    const primitiveDescriptor = Object.getOwnPropertyDescriptor(timeoutPrototype, Symbol.toPrimitive);
+    assert.ok(primitiveDescriptor);
+    let caseTimer: NodeJS.Timeout | undefined;
+    let casePassed: boolean | undefined;
+    let poisonInstalled = false;
+    try {
+      const summary = await runCorpus(root, {
+        onCaseStart: (caseId) => {
+          if (caseId !== "walking-skeleton-offline") return;
+          Object.defineProperty(timeoutPrototype, Symbol.toPrimitive, {
+            ...primitiveDescriptor,
+            value: () => { throw new Error("poisoned timer coercion"); },
+          });
+          globalThis.clearTimeout = (() => {
+            originalClearTimeout(baselineTimer);
+          }) as typeof clearTimeout;
+          poisonInstalled = true;
+        },
+        onCaseAssertions: (caseId) => {
+          if (caseId === "walking-skeleton-offline") {
+            caseTimer = setTimeout(() => lookup("localhost", () => undefined), 50);
+          }
+        },
+        onCaseResult: (caseId, passed) => {
+          if (caseId !== "walking-skeleton-offline") return;
+          casePassed = passed;
+          globalThis.clearTimeout = originalClearTimeout;
+          Object.defineProperty(timeoutPrototype, Symbol.toPrimitive, primitiveDescriptor);
+          poisonInstalled = false;
+        },
+      });
+      await new Promise<void>((resolveTurn) => setImmediate(resolveTurn));
+      assert.ok(caseTimer);
+      const baselineAsyncId = timeoutIds.get(baselineTimer);
+      const caseAsyncId = timeoutIds.get(caseTimer);
+      assert.notEqual(baselineAsyncId, undefined);
+      assert.notEqual(caseAsyncId, undefined);
+      assert.equal(casePassed, false);
+      assert.ok(summary.failed > 0);
+      assert.equal(destroyed.has(baselineAsyncId!), false);
+      assert.equal(destroyed.has(caseAsyncId!), true);
+    } finally {
+      if (poisonInstalled) {
+        globalThis.clearTimeout = originalClearTimeout;
+        Object.defineProperty(timeoutPrototype, Symbol.toPrimitive, primitiveDescriptor);
+      }
+      if (caseTimer !== undefined) originalClearTimeout(caseTimer);
+      originalClearTimeout(baselineTimer);
+      lifecycle.disable();
+    }
+  });
+});
+
+test("state-dependent oracles are revalidated after every final assertion hook turn", async (t) => {
+  for (const mode of ["sync", "nextTick", "microtask", "git"] as const) {
+    await t.test(mode, async () => {
+      await withCorpusCopy(async (root) => {
+        let repositoryRoot: string | undefined;
+        let casePassed: boolean | undefined;
+        const mutateRepository = (): void => {
+          assert.ok(repositoryRoot);
+          const target = mode === "git" ? join(repositoryRoot, ".git", "config") : join(repositoryRoot, "late-port-mutation.txt");
+          writeFileSync(target, `${mode}\n`);
+        };
+        const summary = await runCorpus(root, {
+          onRepositoryReady: (caseId, observedRoot) => {
+            if (caseId === "dossier-create") repositoryRoot = observedRoot;
+          },
+          onCaseAssertions: (caseId) => {
+            if (caseId !== "dossier-create") return;
+            if (mode === "sync" || mode === "git") mutateRepository();
+            else if (mode === "nextTick") process.nextTick(mutateRepository);
+            else queueMicrotask(mutateRepository);
+          },
+          onCaseResult: (caseId, passed) => {
+            if (caseId === "dossier-create") casePassed = passed;
+          },
+        });
+        assert.equal(casePassed, false);
+        assert.ok(summary.failed > 0);
+      });
+    });
+  }
+});
+
+test("completed Immediate work is quiescent but its case-causal children remain audited", async (t) => {
+  await t.test("a completed benign Immediate is quiescent", async () => {
+    await withCorpusCopy(async (root) => {
+      let immediateRan = false;
+      let casePassed: boolean | undefined;
+      const summary = await runCorpus(root, {
+        onCaseAssertions: (caseId) => {
+          if (caseId === "dossier-create") {
+            setImmediate(() => { immediateRan = true; });
+          }
+        },
+        onCaseResult: (caseId, passed) => {
+          if (caseId === "dossier-create") casePassed = passed;
+        },
+      });
+      assert.equal(immediateRan, true);
+      assert.equal(casePassed, true);
+      assert.equal(summary.failed, 0);
+      assert.deepEqual(summary.uncovered_positive, []);
+      assert.deepEqual(summary.uncovered_negative, []);
+    });
+  });
+
+  await t.test("a completed Immediate cannot hide its pending child timer", async () => {
+    await withCorpusCopy(async (root) => {
+      let immediateRan = false;
+      let childTimer: NodeJS.Timeout | undefined;
+      let casePassed: boolean | undefined;
+      try {
+        const summary = await runCorpus(root, {
+          onCaseAssertions: (caseId) => {
+            if (caseId !== "walking-skeleton-offline") return;
+            setImmediate(() => {
+              immediateRan = true;
+              childTimer = setTimeout(() => lookup("localhost", () => undefined), 60_000);
+            });
+          },
+          onCaseResult: (caseId, passed) => {
+            if (caseId === "walking-skeleton-offline") casePassed = passed;
+          },
+        });
+        assert.equal(immediateRan, true);
+        assert.equal(casePassed, false);
+        assert.ok(summary.failed > 0);
+      } finally {
+        if (childTimer !== undefined) clearTimeout(childTimer);
+      }
+    });
+  });
+});
+
+test("the runtime capability probe fails closed when Promise parent correlation is unavailable", async () => {
+  const mutations = [
+    { name: "missing-continuation-parent", parentExpression: "undefined" },
+    { name: "invented-bare-parent", parentExpression: "parent === undefined ? promise : parent" },
+  ] as const;
+  for (const mutation of mutations) {
+    const script = [
+      'import { promiseHooks } from "node:v8";',
+      "const originalCreateHook = promiseHooks.createHook;",
+      "promiseHooks.createHook = (callbacks) => {",
+      "  if (callbacks.init === undefined) return originalCreateHook(callbacks);",
+      "  const originalInit = callbacks.init;",
+      `  return originalCreateHook({ ...callbacks, init: (promise, parent) => originalInit(promise, ${mutation.parentExpression}) });`,
+      "};",
+      `const { runCorpus } = await import("./dist/src/conformance/runner.js?${mutation.name}");`,
+      "try {",
+      '  await runCorpus("./conformance");',
+      '  process.stdout.write("unexpected success\\n");',
+      "  process.exitCode = 1;",
+      "} catch (error) {",
+      '  const message = error instanceof Error ? error.message : String(error);',
+      '  process.stdout.write(`${message}\\n`);',
+      '  process.exitCode = message === "CASE_E_CONFORMANCE: Node 24 async lifecycle capability probe failed" ? 0 : 2;',
+      "}",
+    ].join("\n");
+    const child = spawn(process.execPath, ["--input-type=module", "--eval", script], {
+      cwd: process.cwd(),
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+    child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
+    child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
+    const exit = await new Promise<number | null>((resolveExit, rejectExit) => {
+      child.once("error", rejectExit);
+      child.once("close", resolveExit);
+    });
+    assert.equal(exit, 0, mutation.name);
+    assert.equal(
+      Buffer.concat(stdout).toString("utf8"),
+      "CASE_E_CONFORMANCE: Node 24 async lifecycle capability probe failed\n",
+      mutation.name,
+    );
+    assert.equal(Buffer.concat(stderr).toString("utf8"), "", mutation.name);
+  }
+});
+
+test("a runner port cannot replace Promise parent correlation after capability preflight", async () => {
+  await withCorpusCopy(async (root) => {
+    const originalCreateHook = promiseHooks.createHook;
+    let releaseGate!: () => void;
+    const gate = new Promise<void>((resolveGate) => { releaseGate = resolveGate; });
+    let continuationFinished!: () => void;
+    const finished = new Promise<void>((resolveFinished) => { continuationFinished = resolveFinished; });
+    let casePassed: boolean | undefined;
+    let hookReplaced = false;
+    try {
+      const summary = await runCorpus(root, {
+        onCaseStart: (caseId) => {
+          if (caseId !== "dossier-create") return;
+          promiseHooks.createHook = ((callbacks) => {
+            if (callbacks.init === undefined) return originalCreateHook(callbacks);
+            const originalInit = callbacks.init;
+            return originalCreateHook({
+              ...callbacks,
+              init: (promise) => originalInit(promise, undefined as never),
+            });
+          }) as typeof promiseHooks.createHook;
+          hookReplaced = true;
+        },
+        onCaseAssertions: (caseId) => {
+          if (caseId === "dossier-create") {
+            void gate.then(() => lookup("localhost", () => continuationFinished()));
+          }
+        },
+        onCaseResult: (caseId, passed) => {
+          if (caseId !== "dossier-create") return;
+          casePassed = passed;
+          promiseHooks.createHook = originalCreateHook;
+          hookReplaced = false;
+        },
+      });
+      assert.equal(casePassed, false);
+      assert.ok(summary.failed > 0);
+    } finally {
+      if (hookReplaced) promiseHooks.createHook = originalCreateHook;
+      releaseGate();
+      await finished;
+    }
+  });
 });
 
 test("state-critical input corruption turns a passing vector red even with a refreshed fixture digest", async () => {
