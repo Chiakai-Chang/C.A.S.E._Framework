@@ -88,4 +88,3 @@ npm pack --dry-run
 ```
 
 The B0/M0 comparison protocol is preregistered under `evaluation/markdown-baseline/`. Invalid, failed, partial, and timed-out results are retained; controlled-test success is never substituted for a production-platform result.
-

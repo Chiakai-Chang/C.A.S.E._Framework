@@ -24,7 +24,7 @@ Task 12 records the frozen four-case protocol, 18 immutable attempt records, bou
 See `docs/evaluation/m0-baseline-report.md` and schema-valid per-run records under `evaluation/markdown-baseline/results/`.
 
 - r1: eight retained invalid records (non-identical fixture revisions; B0 verdict truncation).
-- selected post-pilot B0: 3/4 detected, same-version double writer false-success; 16 commands; 180,329 ms; 3,103 input and 4,935 output tokens.
+- prior B0 aggregate withdrawn: independent review invalidated r3 because evaluator-created disconnected commits did not implement two model-directed writers or shared publication, and the raw actor responses needed to reproduce manual grading were not retained.
 - selected M0: four invalid outcomes at public Windows init, exit 10 / `CASE_E_UNSUPPORTED_PROFILE`; no target detection credit.
 - user decisions, corrections, and recovery steps: zero in selected observations.
 
@@ -50,5 +50,6 @@ The exact compressed list is README and package metadata; nine named schemas; an
 - Windows production mutation unsupported; POSIX unclaimed.
 - M0 production baseline invalid and therefore cannot satisfy the advance gate.
 - r2/r3 are post-pilot amendments, not preregistered samples.
+- r3 is retained but method-invalid and cannot be selected as comparative evidence; a method-frozen r4 is required.
 - Controlled-test conformance is not production support.
 - Independent whole-branch review remains a controller gate; Task 12's full check, package dry-run, result-schema validation, and diff/status accounting are complete.

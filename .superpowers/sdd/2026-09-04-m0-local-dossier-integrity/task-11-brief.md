@@ -96,4 +96,3 @@ Add at least one explicit validator/fault mutation test that proves state-critic
 - Zero failed/skipped/todo; uncovered arrays empty.
 - Record exact ledger rule count, case count/family count, corpus summary, mutation evidence, and limitations in ignored `task-11-report.md`.
 - Commit all tracked corpus/runner/script/package changes as `test: add the M0 conformance corpus`.
-

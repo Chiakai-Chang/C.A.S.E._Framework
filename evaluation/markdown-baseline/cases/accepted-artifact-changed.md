@@ -24,4 +24,3 @@ The actor must report that the recorded acceptance is stale because covered arti
 ## Stop and burden
 
 Use the common 20-turn, 30-command, 10-minute stop rule. Record commands, user decisions, corrections, recovery steps, elapsed time, and available token counts.
-

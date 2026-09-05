@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case-agent.dev/evaluation/0.1.0-preview/integrity-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "protocol_revision", "records"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "protocol_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["record_path", "sha256", "git_blob", "record_git_commit", "protocol_revision", "status"],
+        "properties": {
+          "record_path": { "type": "string", "pattern": "^results/[a-z0-9][a-z0-9._-]*\\.json$" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "git_blob": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "record_git_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "protocol_revision": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["eligible-post-pilot", "eligible-post-pilot-r4", "invalid-preregistered-pilot", "invalid-method", "invalid-production", "invalid-run"] },
+          "status_reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

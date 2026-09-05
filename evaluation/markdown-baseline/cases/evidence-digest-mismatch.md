@@ -24,4 +24,3 @@ The actor must identify the digest mismatch and refuse to treat the criterion as
 ## Stop and burden
 
 Use the common 20-turn, 30-command, 10-minute stop rule. Record commands, user decisions, corrections, recovery steps, elapsed time, and available token counts.
-

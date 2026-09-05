@@ -10,7 +10,7 @@ evaluated_at: 2026-09-05
 
 **Narrow. Stop feature and packaging expansion until one real production filesystem adapter passes the frozen corpus, then rerun the preregistered comparison.**
 
-M0 does not satisfy its advance gate on this host. The public Windows CLI correctly fails closed, but that makes all four production M0 runs invalid before their target failure can be exercised. Controlled-test corpus success is not substituted for production evidence. The usable Markdown baseline detects three of four failures and produces false success in the same-version double-writer case.
+M0 does not satisfy its advance gate on this host. The public Windows CLI correctly fails closed, but that makes all four production M0 runs invalid before their target failure can be exercised. Controlled-test corpus success is not substituted for production evidence. Independent review invalidated the r3 same-version double-writer method, so no four-case B0 aggregate or false-success rate is currently selected. The method-frozen r4 rerun must complete before any replacement B0 observation is reported.
 
 This report does not support claims that C.A.S.E. is reliable, cross-platform, weak-model ready, enterprise ready, or better than Markdown plus Git.
 
@@ -43,26 +43,26 @@ Eight records are retained. The driver did not fix Git author/committer timestam
 
 This pilot caused two explicit amendments: deterministic Git timestamps and a larger, recorded completion budget with low reasoning effort. The amendments were made before r2 but not committed before it, so r2 is labeled post-pilot rather than preregistered.
 
-### r2/r3 — post-pilot amended observations
+### r2/r3 — post-pilot amended observations, with r3 invalidated
 
-The selected usable B0 records are r3 for EVAL-M0-001 and r2 for EVAL-M0-002 through 004. Each selected M0 record has the exact same fixture revision as its paired B0 record.
+The r2 B0 records for EVAL-M0-002 through 004 remain post-pilot observations. r2 EVAL-M0-001 is invalid because it used one post-hoc evaluator. r3 EVAL-M0-001 is also invalid: the evaluator created two disconnected commits before asking the model actors to judge a claimed success, no shared publication authority existed, and the committed record omitted the exact raw actor outputs needed to reproduce its manual grading. The immutable r3 record is retained unchanged; its invalid eligibility is recorded externally rather than rewriting old raw data.
 
 | Case | B0 outcome | B0 detected | B0 false success | B0 burden | M0 outcome | M0 observation |
 |---|---|---:|---:|---|---|---|
-| EVAL-M0-001 same-version double writer | complete | no | yes | 2 commands; 107,535 ms; 1,081 in / 2,889 out tokens | invalid | init exit 10, `CASE_E_UNSUPPORTED_PROFILE` |
+| EVAL-M0-001 same-version double writer | invalid method | not graded | not graded | historical record retained; excluded from aggregation | invalid | init exit 10, `CASE_E_UNSUPPORTED_PROFILE` |
 | EVAL-M0-002 stale handoff | complete | yes | no | 4 commands; 18,945 ms; 608 in / 524 out tokens | invalid | init exit 10, `CASE_E_UNSUPPORTED_PROFILE` |
 | EVAL-M0-003 accepted artifact changed | complete | yes | no | 5 commands; 27,464 ms; 706 in / 791 out tokens | invalid | init exit 10, `CASE_E_UNSUPPORTED_PROFILE` |
 | EVAL-M0-004 evidence digest mismatch | complete | yes | no | 5 commands; 26,385 ms; 708 in / 731 out tokens | invalid | init exit 10, `CASE_E_UNSUPPORTED_PROFILE` |
 
-Selected B0 aggregate: 3/4 detected; 1/4 false success; 16 commands; 180,329 ms; 3,103 input tokens; 4,935 output tokens; 0 user decisions; 0 corrections; 0 recovery steps.
+No selected four-case B0 aggregate exists pending r4. The earlier 3/4 detection and 1/4 false-success figures are withdrawn because they depended on invalid r3 evidence.
 
 Selected M0 aggregate: 0/4 target failures exercised; four invalid outcomes; four initialization commands; 2,325 ms; token counts unavailable; 0 user decisions; 0 corrections; 0 recovery steps. These timing/command figures measure early rejection only and are not comparable M0 task burden.
 
-r2 EVAL-M0-001 is also retained as invalid: it used one post-hoc evaluator instead of two writer actors. r3 corrected the actor topology. In r3, both isolated actors began from `a4fbf1245e52890b82e7723f630153d831dcbe33`, committed independently, saw only their own success, and both reported `SUCCESS`. The phrase “DETECTED — not applicable” in actor B's answer is explicitly not graded as detection.
+r3 did not correct the actor topology: blocking evaluator commits in disconnected clones are not concurrent model-directed writes against one shared authority. Its reason field contains only a manual summary, not the exact response needed to reproduce the override of the phrase “DETECTED — not applicable.” r4 therefore uses two independent command-loop actors and an asynchronous shared Git compare-and-swap publication gate, and version 2 records retain exact privacy-safe outputs plus explicit versioned adjudication.
 
 ## Interpretation
 
-The B0 observations support only a small conclusion: explicit recorded versions/digests made three stale-artifact or stale-handoff situations discoverable to this model, while independent Markdown/Git writers could both believe their same-basis work was current. This is one post-pilot sample per case, not a model-general result.
+The retained r2 B0 observations support only a narrow provisional conclusion: explicit recorded versions/digests made three stale-artifact or stale-handoff situations discoverable to this model. They do not establish the same-version concurrent-writer outcome, do not form a complete comparative aggregate, and are not model-general evidence.
 
 The deterministic controlled-test corpus now passes 140 cases and includes the complete semantic double-writer, stale-handoff, stale-acceptance, and changed-evidence behaviors. That is implementation/conformance evidence under injected capabilities. It cannot answer whether a public production M0 adapter works on Windows or POSIX.
 

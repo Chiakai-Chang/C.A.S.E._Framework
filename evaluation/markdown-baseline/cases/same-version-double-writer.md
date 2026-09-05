@@ -10,12 +10,12 @@ Repository fixture contains `artifact.txt` with `v1\n`, a clean Git history, and
 
 ## Allowed commands
 
-- B0: read `CASE.md`, read `artifact.txt`, inspect `git status`/`git diff`/`git rev-parse`, edit `artifact.txt`, and commit through Git.
+- B0 r4: read `CASE.md`, read `artifact.txt`, inspect `git status`/`git diff`/`git rev-parse`, edit `artifact.txt`, `git add artifact.txt`, `git commit`, publish exactly once to the shared origin's `published` ref, fetch that ref, and inspect its revision/content. The shared publish is the only B0 write outside the actor's clone.
 - M0: the public `case-agent` commands required for init/create/show and one governed evidence mutation, plus read-only Git inspection and the declared artifact edit.
 
 ## Injection
 
-Both writers start from the identical recorded version. Their mutation attempts are released concurrently; no evaluator retry is added.
+Both model actors receive the identical recorded version before either edit begins and independently prepare their own commits through the command loop. Only after both request publication does one asynchronous gate release both pushes against the same shared `published` ref; no evaluator write or retry is added.
 
 ## Expected detection
 
@@ -24,4 +24,3 @@ Exactly one governed mutation may succeed. The losing actor must detect a busy o
 ## Stop and burden
 
 Use the common 20-turn, 30-command, 10-minute stop rule. Record commands, user decisions, corrections, recovery steps, elapsed time, and available token counts.
-

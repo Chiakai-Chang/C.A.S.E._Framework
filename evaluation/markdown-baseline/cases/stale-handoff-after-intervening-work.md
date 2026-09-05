@@ -24,4 +24,3 @@ Actor B must refuse the offer as stale and identify the intervening work/version
 ## Stop and burden
 
 Use the common 20-turn, 30-command, 10-minute stop rule. Record commands, user decisions, corrections, recovery steps, elapsed time, and available token counts.
-

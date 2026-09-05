@@ -1,8 +1,8 @@
 # B0/M0 preregistered comparison protocol
 
-Status: frozen before execution
+Status: original r1 preregistration retained; post-pilot r4 amendment frozen before r4 execution
 
-Frozen against CLI commit: `55c8c47cb7639c4106af6016f41ce8c4c3c6afc7`
+Original protocol frozen against CLI commit: `55c8c47cb7639c4106af6016f41ce8c4c3c6afc7`. The r4 protocol revision is the later method commit containing this amendment; the runner requires that exact commit as an execution argument and writes it into every r4 record.
 
 ## Question and decision rule
 
@@ -33,9 +33,11 @@ Record the endpoint's reported model identity and usage tokens. If the endpoint 
 
 The actor receives only the frozen case prompt, current repository observations, prior command results from the same run, and the arm contract above. The evaluator executes a requested allowed command and returns stdout, stderr, and exit status. A command outside the allowlist ends the run as `failed`. The evaluator does not repair the actor's command.
 
+For r4 `EVAL-M0-001`, actor A and actor B are separate model conversations. Both receive the same basis before either may edit. Each selects every read, edit, add, commit, publish, and observation command through the audited command loop. Their clones share one bare Git origin whose `published` ref initially names the common basis. After both actors have independently prepared a commit and requested `git publish`, the runner opens one asynchronous gate and starts both compare-and-swap pushes to that same ref without an evaluator retry. Shared publication is part of the B0 allowlist for this case. The evaluator never prewrites actor content and never tells an actor that a command succeeded before returning the actual command result.
+
 ## Common start and isolation
 
-Each `(arm, case)` uses a new local Git repository copied from the same case fixture and initialized at the same fixture commit. No run may reuse another run's working tree or chat context. Runtime, OS, model, sampling configuration, case revision, CLI commit, start/end timestamps, and result-file digest are recorded.
+Each `(arm, case)` uses a new local Git repository copied from the same case fixture and initialized at the same fixture commit. No run may reuse another run's working tree or chat context. Runtime, OS, model, sampling configuration, case revision, CLI commit, and start/end timestamps are recorded in the record. Result bytes are covered externally by the closed integrity manifest, which binds record path, SHA-256, Git blob, first-containing Git commit, protocol revision, and eligibility adjudication; no record claims a self-digest.
 
 The model sampling request is deterministic where the server permits it: temperature `0`, one completion, and a fixed prompt. The random seed is recorded as unavailable if the endpoint does not expose one.
 
@@ -57,7 +59,7 @@ Primary fields are `detected`, `false_success`, and `outcome`. Detection require
 
 Secondary burden fields are user decisions, executed commands, elapsed milliseconds, input/output tokens when reported, corrections, and recovery steps. A user decision is a choice requested from a human beyond the initial task. A correction is evaluator intervention needed to repair an actor mistake; merely returning a command result is not a correction.
 
-Every record validates against `results.schema.json`. Commands are counted, while an ordered trace in the record preserves exact command text and result classification. Secrets, model weights, full prompts containing repository-sensitive data, and local dossier contents are not committed.
+Every record validates against `results.schema.json` and the semantic validator. Commands are counted, while an ordered trace preserves exact privacy-safe command text and result classification. Version 2 records additionally retain exact privacy-safe actor outputs, a versioned verdict transcript, and explicit adjudication. Version 1 remains structurally readable but cannot reconstruct omitted raw responses and is ineligible wherever the external manifest says its method or raw evidence was insufficient. Secrets, model weights, full prompts containing repository-sensitive data, usernames, absolute local paths, and local dossier contents are not committed.
 
 ## Frozen cases
 
@@ -67,4 +69,3 @@ The following files are normative for this comparison:
 - `cases/stale-handoff-after-intervening-work.md`
 - `cases/accepted-artifact-changed.md`
 - `cases/evidence-digest-mismatch.md`
-
