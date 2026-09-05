@@ -87,6 +87,20 @@ export function accumulateTokenUsage(partial, response) {
   partial.output_tokens_total = (partial.output_tokens_total ?? 0) + response.output;
 }
 
+export function validateEvaluationIdentity({ runLabel, scorerVersion, protocolRevision, schemaVersion, existingRecordIds = [] }) {
+  if (typeof runLabel !== "string" || !/^r(?:[7-9]|[1-9][0-9]+)$/u.test(runLabel)) throw new Error("--run-label must be an explicit r7-or-later label; r1-r6 are reserved immutable history");
+  if (schemaVersion !== "4") throw new Error("--schema-version must explicitly select reserved post-r6 schema version 4");
+  if (scorerVersion !== "case-eval-v4.0.0") throw new Error("--scorer-version must explicitly select case-eval-v4.0.0");
+  if (typeof protocolRevision !== "string" || !/^[0-9a-f]{40}$/u.test(protocolRevision)) throw new Error("--protocol-revision requires the frozen 40-character method commit");
+  if (existingRecordIds.some((recordId) => recordId.endsWith(`-${runLabel}`))) throw new Error(`run-label collision: ${runLabel} already exists in the results directory`);
+  return { runLabel, scorerVersion, protocolRevision, schemaVersion };
+}
+
+export function assertFrozenEvaluationMethod({ protocolRevision, headRevision, dirtyPaths }) {
+  if (protocolRevision !== headRevision) throw new Error(`--protocol-revision ${protocolRevision} does not match current frozen method commit ${headRevision}`);
+  if (dirtyPaths.length) throw new Error(`evaluation method is not frozen: uncommitted method paths: ${dirtyPaths.join(", ")}`);
+}
+
 function appendTrace(partial, actor, command, result) {
   partial.command_trace.push({ sequence: partial.command_trace.length + 1, actor, command, exit_code: result.exit_code, result: `${result.stdout}${result.stderr}`.trim() || "(no output)", timed_out: Boolean(result.timed_out) });
   return result;
@@ -115,16 +129,32 @@ export function createPublicationGate(partial, deadlineAt, { runGit, remaining, 
   const requests = new Map();
   let released = false;
   let failedMessage = null;
+  function terminalize(actor, request, result, error = null) {
+    if (request.terminal) return;
+    request.terminal = true;
+    clearTimeout(request.timer);
+    if (requests.get(actor) === request) requests.delete(actor);
+    appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", result);
+    if (error) request.reject(error);
+    else request.resolve(result);
+  }
   async function release() {
     if (released || requests.size !== 2) return;
     released = true;
     const pairs = [...requests.entries()];
-    const settled = await Promise.allSettled(pairs.map(([, request]) => runGit(request.repository, ["push", "--porcelain", "origin", "HEAD:refs/heads/published"], remaining(deadlineAt))));
-    const results = settled.map((item) => item.status === "fulfilled" ? item.value : { exit_code: null, stdout: "", stderr: sanitize(`spawn rejected: ${item.reason}`), timed_out: false });
+    for (const [, request] of pairs) clearTimeout(request.timer);
+    const settled = await Promise.allSettled(pairs.map(([, request]) => Promise.resolve().then(
+      () => runGit(request.repository, ["push", "--porcelain", "origin", "HEAD:refs/heads/published"], remaining(deadlineAt)),
+    )));
     pairs.forEach(([actor, request], index) => {
-      const result = results[index];
-      appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", result);
-      request.resolve(result);
+      const item = settled[index];
+      if (item.status === "fulfilled") terminalize(actor, request, item.value);
+      else {
+        const timedOut = item.reason instanceof EvaluationTimeoutError;
+        const message = sanitize(item.reason?.message ?? String(item.reason));
+        const error = timedOut ? new EvaluationTimeoutError(message) : new Error(message);
+        terminalize(actor, request, { exit_code: null, stdout: "", stderr: message, timed_out: timedOut }, error);
+      }
     });
   }
   return {
@@ -136,20 +166,18 @@ export function createPublicationGate(partial, deadlineAt, { runGit, remaining, 
         return Promise.resolve(result);
       }
       return new Promise((resolvePromise, rejectPromise) => {
-        const timer = setTimeout(() => {
+        const request = { repository, resolve: resolvePromise, reject: rejectPromise, timer: null, terminal: false };
+        request.timer = setTimeout(() => {
           const message = `${actor} timed out waiting for peer at shared publication gate`;
           failedMessage = message;
-          requests.delete(actor);
-          appendTrace(partial, actor, "git publish origin HEAD:refs/heads/published", { exit_code: null, stdout: "", stderr: message, timed_out: true });
-          rejectPromise(new EvaluationTimeoutError(message));
+          terminalize(actor, request, { exit_code: null, stdout: "", stderr: message, timed_out: true }, new EvaluationTimeoutError(message));
         }, remaining(deadlineAt, waitCapMs));
-        const resolve = (result) => { clearTimeout(timer); resolvePromise(result); };
-        requests.set(actor, { repository, resolve });
+        requests.set(actor, request);
         void release();
       });
     },
     abort(message) {
-      for (const [, request] of requests) request.resolve({ exit_code: null, stdout: "", stderr: message, timed_out: false });
+      for (const [actor, request] of [...requests]) terminalize(actor, request, { exit_code: null, stdout: "", stderr: message, timed_out: false });
     },
   };
 }
@@ -251,8 +279,8 @@ export function validateRecordSemantics(record) {
   if (accounting === "unavailable" && (record.input_tokens !== null || record.output_tokens !== null)) errors.push("unavailable token accounting requires null token counts");
   if (record.outcome === "invalid" && (record.detected || record.false_success)) errors.push("invalid outcome cannot claim detection or false success");
   if (record.outcome === "timeout" && (record.detected || record.false_success)) errors.push("timeout outcome cannot claim detection or false success");
-  if (record.schema_version === "3" && record.command_trace?.some((entry) => typeof entry.timed_out !== "boolean")) errors.push("version 3 trace entries require timed_out");
-  if (record.schema_version === "3" && record.environment?.provenance_status === "unavailable" && record.outcome === "complete") errors.push("complete version 3 outcome requires verified provenance");
+  if (["3", "4"].includes(record.schema_version) && record.command_trace?.some((entry) => typeof entry.timed_out !== "boolean")) errors.push("version 3+ trace entries require timed_out");
+  if (["3", "4"].includes(record.schema_version) && record.environment?.provenance_status === "unavailable" && record.outcome === "complete") errors.push("complete version 3+ outcome requires verified provenance");
   if (record.command_trace?.some((entry) => entry.timed_out) && (record.outcome !== "timeout" || record.detected || record.false_success)) errors.push("timed-out command requires timeout without detection credit");
   return errors;
 }

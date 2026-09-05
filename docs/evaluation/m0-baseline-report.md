@@ -126,6 +126,10 @@ No tests, evaluation records, caches, secrets, local dossiers, conformance fixtu
 - Final fix-round-three `npm run check`: typecheck passed; 310/310 core tests and 32/32 evaluation tests passed with no failed/skipped/todo; conformance passed 140/140 with no uncovered direction.
 - Final range `git diff --check 55c8c47..HEAD`: clean.
 
+Post-result runner method note: the publication gate now clears both wait timers at release and settles each request exactly once after bounded push outcomes are gathered. Future runs have no r6/v3 default and must explicitly use a unique r7-or-later label, reserved schema v4, v4 scorer, and a clean frozen method revision. No r7/v4 evaluation was executed; all selected r6 arithmetic and the `narrow` decision above are unchanged.
+
+Round-five verification: 310/310 core tests, 45/45 evaluation tests, and 140/140 conformance cases passed; 34/34 immutable records and manifest entries verified with no failure; package contents and hash remained unchanged.
+
 Remaining release blockers:
 
 1. no proven production filesystem adapter/profile;

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
@@ -8,6 +8,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import {
   accumulateTokenUsage,
   applyLiveAdjudication,
+  assertFrozenEvaluationMethod,
   atomicPersistRecord,
   buildEvaluatorEnvironment,
   EvaluationTimeoutError,
@@ -20,13 +21,12 @@ import {
   createPublicationGate,
   injectSingleB0,
   scoreConcurrentPublication,
+  validateEvaluationIdentity,
   validateRecordSemantics,
 } from "./runner-lib.mjs";
 
 const root = resolve(import.meta.dirname, "../..");
 const endpoint = "http://127.0.0.1:8080/v1/chat/completions";
-const runLabel = "r6";
-const scorerVersion = "case-eval-v3.0.0";
 const childTimeoutMs = 30_000;
 const fetchTimeoutMs = 120_000;
 const os = `${process.platform} ${process.arch} ${process.version}`;
@@ -45,11 +45,35 @@ function argument(name) {
   return index < 0 ? null : process.argv[index + 1] ?? null;
 }
 
-const protocolRevision = argument("--protocol-revision");
-if (!protocolRevision || !/^[0-9a-f]{40}$/u.test(protocolRevision)) throw new Error("--protocol-revision requires the frozen 40-character method commit");
 const resultsDirectory = resolve(argument("--results-dir") ?? join(import.meta.dirname, "results"));
 const selectedCase = argument("--case");
 if (selectedCase && !cases.some(([caseId]) => caseId === selectedCase)) throw new Error(`unknown --case ${selectedCase}`);
+
+async function readExistingRecordIds(directory) {
+  let entries;
+  try { entries = await readdir(directory, { withFileTypes: true }); }
+  catch (error) { if (error?.code === "ENOENT") return []; throw error; }
+  const ids = [];
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) ids.push(...await readExistingRecordIds(path));
+    else if (entry.isFile() && entry.name.endsWith(".json")) {
+      const record = JSON.parse(await readFile(path, "utf8"));
+      if (typeof record.record_id !== "string") throw new Error(`existing result omitted record_id: ${entry.name}`);
+      ids.push(record.record_id);
+    }
+  }
+  return ids;
+}
+
+const identity = validateEvaluationIdentity({
+  runLabel: argument("--run-label"),
+  scorerVersion: argument("--scorer-version"),
+  protocolRevision: argument("--protocol-revision"),
+  schemaVersion: argument("--schema-version"),
+  existingRecordIds: await readExistingRecordIds(resultsDirectory),
+});
+const { runLabel, scorerVersion, protocolRevision, schemaVersion } = identity;
 
 const redactionOptions = { roots: [root], usernames: [process.env.USERNAME, process.env.USER].filter(Boolean) };
 
@@ -268,7 +292,7 @@ async function runSingleB0(provenance, cliCommit, caseId, caseFile, partial) {
     const falseSuccess = verdict.verdict === "SUCCESS";
     const ended = new Date();
     return {
-      schema_version: "3", record_id: `20260905-qwen-b0-${caseId.toLowerCase()}-${runLabel}`, arm: "B0", case_id: caseId,
+      schema_version: schemaVersion, record_id: `20260905-qwen-b0-${caseId.toLowerCase()}-${runLabel}`, arm: "B0", case_id: caseId,
       detected, false_success: falseSuccess, user_decisions: 0, commands: partial.command_trace.length,
       elapsed_ms: ended - started, input_tokens: partial.tokens_available ? partial.input_tokens_total : null, output_tokens: partial.tokens_available ? partial.output_tokens_total : null,
       corrections: 0, recovery_steps: 0, outcome: detected || falseSuccess ? "complete" : "failed",
@@ -391,7 +415,7 @@ async function runConcurrentB0(provenance, cliCommit, partial) {
     const { winners, losers, detected, false_success: falseSuccess } = score;
     const ended = new Date();
     return {
-      schema_version: "3", record_id: `20260905-qwen-b0-${caseId.toLowerCase()}-${runLabel}`, arm: "B0", case_id: caseId,
+      schema_version: schemaVersion, record_id: `20260905-qwen-b0-${caseId.toLowerCase()}-${runLabel}`, arm: "B0", case_id: caseId,
       detected, false_success: falseSuccess, user_decisions: 0, commands: partial.command_trace.length,
       elapsed_ms: ended - started, input_tokens: inputTokens, output_tokens: outputTokens,
       corrections: 0, recovery_steps: 0, outcome: score.outcome,
@@ -422,7 +446,7 @@ async function runM0(provenance, cliCommit, caseId, partial) {
     const { code, expected_unsupported: expected } = classification;
     const content = expected ? "No model actor invoked: public Windows initialization returned CASE_E_UNSUPPORTED_PROFILE before the target case." : `No model actor invoked: initialization exit=${result.exit_code}, code=${code}.`;
     return {
-      schema_version: "3", record_id: `20260905-qwen-m0-${caseId.toLowerCase()}-${runLabel}`, arm: "M0", case_id: caseId,
+      schema_version: schemaVersion, record_id: `20260905-qwen-m0-${caseId.toLowerCase()}-${runLabel}`, arm: "M0", case_id: caseId,
       detected: false, false_success: false, user_decisions: 0, commands: partial.command_trace.length,
       elapsed_ms: ended - started, input_tokens: null, output_tokens: null, corrections: 0, recovery_steps: 0, outcome: classification.outcome,
       reason: expected ? "Public Windows CLI failed closed at initialization with CASE_E_UNSUPPORTED_PROFILE (exit 10); target failure not exercised." : `M0 could not start safely: exit=${result.exit_code}, code=${code}.`,
@@ -439,7 +463,15 @@ async function runM0(provenance, cliCommit, caseId, partial) {
 const schema = JSON.parse(await readFile(join(import.meta.dirname, "results.schema.json"), "utf8"));
 const validateSchema = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
 const cliCommit = (await gitText(root, ["rev-parse", "HEAD"], "CLI commit"));
-if (protocolRevision !== cliCommit) throw new Error(`--protocol-revision ${protocolRevision} does not match current frozen method commit ${cliCommit}`);
+const methodPaths = [
+  "evaluation/markdown-baseline/run-evaluation.mjs",
+  "evaluation/markdown-baseline/runner-lib.mjs",
+  "evaluation/markdown-baseline/results.schema.json",
+  "evaluation/markdown-baseline/protocol.md",
+  "evaluation/markdown-baseline/cases",
+];
+const methodStatus = must(await runGit(root, ["status", "--porcelain=v1", "--", ...methodPaths]), "frozen method status").stdout.trim();
+assertFrozenEvaluationMethod({ protocolRevision, headRevision: cliCommit, dirtyPaths: methodStatus ? methodStatus.split(/\r?\n/u) : [] });
 let provenance = null;
 let modelFailure = null;
 try {
@@ -455,7 +487,7 @@ function failureRecord(plan, partial, error) {
   const timeout = error instanceof EvaluationTimeoutError || /deadline|turn limit|timed out/i.test(String(error));
   const content = safe(String(error?.stack ?? error));
   return {
-    schema_version: "3", record_id: `20260905-qwen-${plan.arm.toLowerCase()}-${plan.caseId.toLowerCase()}-${runLabel}`, arm: plan.arm, case_id: plan.caseId,
+    schema_version: schemaVersion, record_id: `20260905-qwen-${plan.arm.toLowerCase()}-${plan.caseId.toLowerCase()}-${runLabel}`, arm: plan.arm, case_id: plan.caseId,
     detected: false, false_success: false, user_decisions: 0, commands: partial.command_trace.length,
     elapsed_ms: ended - started,
     input_tokens: partial.tokens_available === false ? null : partial.input_tokens_total ?? null,

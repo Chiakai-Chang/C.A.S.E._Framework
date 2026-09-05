@@ -9,10 +9,12 @@ import {
   accumulateTokenUsage,
   adjudicateRecord,
   applyLiveAdjudication,
+  assertFrozenEvaluationMethod,
   buildEvaluatorEnvironment,
   buildIntegrityManifest,
   classifyM0ProcessResult,
   createPublicationGate,
+  EvaluationTimeoutError,
   executeRunPlans,
   fetchJsonWithDeadline,
   injectSingleB0,
@@ -24,6 +26,7 @@ import {
   verifyClosedManifest,
   verifyFinalPointInTime,
   validateRecordSemantics,
+  validateEvaluationIdentity,
   verifyIntegrityManifest,
 } from "../runner-lib.mjs";
 
@@ -92,6 +95,56 @@ test("publication gate traces its wait timeout before throwing typed timeout", a
   assert.match(partial.command_trace[0].result, /waiting for peer/u);
 });
 
+test("two-peer publication clears wait timers while deferred Git pushes race", async () => {
+  const partial = { command_trace: [] };
+  const pushResolvers = [];
+  const gate = createPublicationGate(partial, Date.now() + 1_000, {
+    runGit: async () => new Promise((resolve) => pushResolvers.push(resolve)),
+    remaining: (_deadline, cap) => cap === 10 ? 15 : 500,
+    waitCapMs: 10,
+  });
+  let settledA = false;
+  let settledB = false;
+  const first = gate.request("actor-a", "fixture-a").finally(() => { settledA = true; });
+  const second = gate.request("actor-b", "fixture-b").finally(() => { settledB = true; });
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  const settledBeforePush = [settledA, settledB];
+  pushResolvers[0]({ exit_code: 0, stdout: "winner", stderr: "", timed_out: false });
+  pushResolvers[1]({ exit_code: 1, stdout: "", stderr: "compare-and-swap conflict", timed_out: false });
+  await Promise.all([first, second]);
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.deepEqual(settledBeforePush, [false, false]);
+  assert.equal(partial.command_trace.length, 2);
+  assert.deepEqual(partial.command_trace.map((entry) => entry.actor).sort(), ["actor-a", "actor-b"]);
+});
+
+test("release-time deadline failure settles and traces each peer exactly once", async () => {
+  const partial = { command_trace: [] };
+  const gate = createPublicationGate(partial, Date.now() + 1_000, {
+    runGit: async () => assert.fail("deadline failure must happen before Git"),
+    remaining: (_deadline, cap) => {
+      if (cap === 100) return 200;
+      throw new EvaluationTimeoutError("release cutoff reached");
+    },
+    waitCapMs: 100,
+  });
+  const settle = (promise) => promise.then(
+    () => ({ status: "fulfilled" }),
+    (error) => ({ status: "rejected", error }),
+  );
+  const results = await Promise.all([
+    settle(gate.request("actor-a", "fixture-a")),
+    settle(gate.request("actor-b", "fixture-b")),
+  ]);
+  assert.deepEqual(results.map((result) => result.status), ["rejected", "rejected"]);
+  assert.ok(results.every((result) => result.error instanceof EvaluationTimeoutError));
+  assert.ok(results.every((result) => /release cutoff/u.test(result.error.message)));
+  assert.equal(partial.command_trace.length, 2);
+  assert.ok(partial.command_trace.every((entry) => entry.timed_out));
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  assert.equal(partial.command_trace.length, 2);
+});
+
 test("single-actor token accounting retains completed calls before a later failure", () => {
   const partial = { tokens_available: true };
   accumulateTokenUsage(partial, { input: 11, output: 3 });
@@ -101,6 +154,45 @@ test("single-actor token accounting retains completed calls before a later failu
   assert.equal(partial.tokens_available, false);
   assert.equal(partial.input_tokens_total, 18);
   assert.equal(partial.output_tokens_total, 5);
+});
+
+test("post-r6 runner identity requires explicit r7/v4 values", () => {
+  const revision = "a".repeat(40);
+  assert.throws(() => validateEvaluationIdentity({ runLabel: null, scorerVersion: null, protocolRevision: revision, schemaVersion: null }), /run-label/u);
+  assert.throws(() => validateEvaluationIdentity({ runLabel: "r6", scorerVersion: "case-eval-v3.0.0", protocolRevision: revision, schemaVersion: "3" }), /reserved|r7/u);
+  assert.deepEqual(validateEvaluationIdentity({ runLabel: "r7", scorerVersion: "case-eval-v4.0.0", protocolRevision: revision, schemaVersion: "4" }), {
+    runLabel: "r7", scorerVersion: "case-eval-v4.0.0", protocolRevision: revision, schemaVersion: "4",
+  });
+});
+
+test("runner identity rejects a label already present in the result directory", () => {
+  assert.throws(() => validateEvaluationIdentity({
+    runLabel: "r7", scorerVersion: "case-eval-v4.0.0", protocolRevision: "b".repeat(40), schemaVersion: "4",
+    existingRecordIds: ["20260905-qwen-b0-eval-m0-001-r7"],
+  }), /already exists|collision/u);
+});
+
+test("runner rejects a revision that is not the clean frozen method commit", () => {
+  const revision = "c".repeat(40);
+  assert.throws(() => assertFrozenEvaluationMethod({ protocolRevision: revision, headRevision: "d".repeat(40), dirtyPaths: [] }), /does not match/u);
+  assert.throws(() => assertFrozenEvaluationMethod({ protocolRevision: revision, headRevision: revision, dirtyPaths: ["evaluation/markdown-baseline/run-evaluation.mjs"] }), /uncommitted|not frozen/u);
+  assert.doesNotThrow(() => assertFrozenEvaluationMethod({ protocolRevision: revision, headRevision: revision, dirtyPaths: [] }));
+});
+
+test("post-r6 runner process rejects historical r6/v3 identity before producing a record", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "case-runner-identity-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const runner = join(import.meta.dirname, "..", "run-evaluation.mjs");
+  const result = await runChildWithDeadline(process.execPath, [runner,
+    "--results-dir", directory,
+    "--run-label", "r6",
+    "--schema-version", "3",
+    "--scorer-version", "case-eval-v3.0.0",
+    "--protocol-revision", "a".repeat(40),
+  ], { cwd: process.cwd(), timeoutMs: 5_000 });
+  assert.notEqual(result.exit_code, 0);
+  assert.match(result.stderr, /r1-r6 are reserved immutable history/u);
+  assert.deepEqual(await readdir(directory), []);
 });
 
 test("timed-out actor command is atomically retained as timeout rather than persistence failure", async (t) => {

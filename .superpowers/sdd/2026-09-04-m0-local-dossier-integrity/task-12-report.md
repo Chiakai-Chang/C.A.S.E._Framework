@@ -79,3 +79,13 @@ This is post-result runner hardening only: no raw record was changed and no mode
 The same absolute ten-minute case deadline now covers fixture setup and all injection steps as well as actor turns, child commands, and publication-gate waiting. Single-actor usage is accumulated into partial state after every completed model response so a later failure retains available usage. Evaluator Git uses a minimal newly built environment, ignores system/global configuration, disables hooks/signing/credentials/pagers and executable diff/text-conversion helpers, and invokes diff with `--no-ext-diff --no-textconv`; this narrows inherited-process surprises without claiming a general sandbox.
 
 Final round-four verification passed 310/310 core tests, 38/38 evaluation tests, and 140/140 conformance cases. The closed integrity verifier retained 34/34 records and 34/34 manifest entries with no failure. Package dry-run remains 86 allowlisted files, 143,799 packed bytes, 778,110 unpacked bytes, and shasum `13f071f42efc3c403642376f695bcd717846e6ea`.
+
+## Fix round 5
+
+This round changes only the future runner method and its documentation. No raw result was changed, no model was run, and the r6 selection, aggregates, and `narrow` decision remain unchanged.
+
+At the two-actor publication release point, both peer-wait timers are now cleared before either Git push begins. Release-time deadline or process errors are gathered independently, then each request receives one terminal trace and one typed settlement; late completion and abort cannot append a duplicate terminal trace. Deferred-push, release-time failure, and post-settlement delay tests exercise these boundaries directly.
+
+The runner no longer defaults to the historical `r6`/version-3 identity. Future execution requires explicit `--run-label r7` or later, `--schema-version 4`, `--scorer-version case-eval-v4.0.0`, and a frozen `--protocol-revision`. Historical labels, result-directory ID collisions, a revision unequal to `HEAD`, and uncommitted method files fail before model inventory. The schema reserves v4 for that future method, but this round creates no r7/v4 record.
+
+Final round-five verification passed 310/310 core tests, 45/45 evaluation tests, and 140/140 conformance cases. The closed integrity verifier retained 34/34 records and manifest entries with no failure. Package dry-run remains 86 allowlisted files, 143,799 packed bytes, 778,110 unpacked bytes, and shasum `13f071f42efc3c403642376f695bcd717846e6ea`.
