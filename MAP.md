@@ -9,6 +9,7 @@
 | 對齊目標、避免偏移 | [目標](docs/GOALS.md) | 完整交付範圍與工作判斷；沒有排程 |
 | 確認能用到哪裡、下一步 | [狀態與路線](docs/STATUS.md) | 當前可用性、尚未通過的門檻 |
 | 接手開發與驗證 | [CONTRIBUTING](CONTRIBUTING.md) | 環境、指令、修改與證據規則 |
+| 判斷修改的連動範圍 | [維護關聯](docs/MAINTENANCE.md) | 主要定義、程式／文件／範本／翻譯同步及臺灣用語 |
 | 理解目前架構與用語 | [Kit 架構](workflow-kit/docs/ARCHITECTURE.md) | 目前產品的責任邊界、資料與術語 |
 | 取用工作範本 | [範本入口](workflow-kit/docs/TEMPLATES.md) | 任務補充、工作包、回報與交付，不強制填表 |
 | English user guide | [Guide](workflow-kit/docs/GUIDE.en.md) | Installation, workflow, recovery and maintenance |

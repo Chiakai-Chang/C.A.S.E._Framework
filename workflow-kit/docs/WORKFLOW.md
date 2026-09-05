@@ -15,7 +15,7 @@ node "<cli>" init --project "<project>"
 node "<cli>" new --project "<project>" --title "修復 CSV 匯出" --goal "使用者可匯出包含特殊字元的 CSV，並從 README 學會使用" --criterion "逗號、雙引號、換行、空資料均有通過的匯出測試" --criterion "保持既有欄位順序與公開介面" --criterion "README 有與實作一致的可執行使用例" --constraint "不新增 runtime 依賴"
 ```
 
-agent 讀匯出程式與相關測試，修正必要行為。若空資料測試失敗，先保留觀察，再修正；不是把第一项標準刪掉。
+agent 讀匯出程式與相關測試，修正必要行為。若空資料測試失敗，先保留觀察，再修正；不是把第一項標準刪掉。
 
 ```sh
 node "<cli>" record --project "<project>" --task "<id>" --criterion 1 --result fail --evidence "tests/export.test.js 的空資料案例失敗：預期只有標頭，實際多一行空列"
@@ -36,7 +36,7 @@ node "<cli>" context --project "<project>" --task "<id>"
 
 測試修復與 README 可獨立處理，而且宿主提供已授權的 subagent 能力時，協調者自行修程式，交給 worker 撰寫 README。工作包可寫：「只修改 README 的匯出段落；讀 src/export.js 的公開介面；加入一個包含逗號的例子，核對可執行；回報修改位置、實際執行結果與限制；不要修改 .case-agent。」
 
-worker 回報後，協調者核對例子與最終程式是否一致。若 worker 認為應新增依賴，協調者依原约束採用不新增依賴的方法，或有實際必要時說明取捨；不因 worker 建議而擅改任務。沒有 subagent 功能時依序完成，結果同樣可以交付。
+worker 回報後，協調者核對例子與最終程式是否一致。若 worker 認為應新增依賴，協調者依原約束採用不新增依賴的方法，或有實際必要時說明取捨；不因 worker 建議而擅改任務。沒有 subagent 功能時依序完成，結果同樣可以交付。
 
 若由另一個 agent 接手整個任務，先保存交接，再由宿主實際傳遞：
 

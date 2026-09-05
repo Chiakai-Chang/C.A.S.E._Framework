@@ -39,6 +39,8 @@ pi／Codex 共用 `.agents/skills/case-workflow/`；Claude 使用 `.claude/skill
 
 ## 文件入口
 
+以臺灣慣用的正體中文為主要版本，另提供英文指南。維護時按 [修改關聯](docs/MAINTENANCE.md) 同步相關文件與翻譯；命令、路徑和資料格式保持一致。
+
 - [English guide](workflow-kit/docs/GUIDE.en.md)
 - [架構與用語](workflow-kit/docs/ARCHITECTURE.md) · [範本入口](workflow-kit/docs/TEMPLATES.md)
 - [套件使用與手動指令](workflow-kit/README.md)

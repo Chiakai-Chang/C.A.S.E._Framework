@@ -17,7 +17,7 @@
 
 [Antigravity 官方技能文件](https://antigravity.google/docs/skills) 目前以 `.agents/skills` 為預設，保留 `.agent/skills` 相容。可用上面的 installer 搭配 `--host codex`，安裝到共用 `.agents/skills/case-workflow/`；不需要另一套任務格式。`--host agy`／`antigravity` 尚不是有效參數，`all` 仍只建立兩個不同目錄。
 
-在 Antigravity 的目標專案確認技能已被辨識，或明確要求讀取 `.agents/skills/case-workflow/SKILL.md`。本專案尚未執行 agy 真實 session；這是官方格式／路徑相容性判斷。使用舊版或非標準設定時先核對該版本的技能目錄，不覆蓋全域配置。移除共用技能目錄會影響所有使用該目錄的宿主。
+在 Antigravity 的目標專案確認技能已被辨識，或明確要求讀取 `.agents/skills/case-workflow/SKILL.md`。本專案尚未執行 agy 真實 session；這是官方格式／路徑相容性判斷。使用舊版或非標準設定時先核對該版本的技能目錄，不覆蓋全域設定。移除共用技能目錄會影響所有使用該目錄的宿主。
 
 其他能讀檔、執行 Node 並寫入專案的 agent，可以由使用者指定讀取 SKILL.md 後使用相同本地工具；沒有這些能力的聊天介面不能直接操作 CLI。不同產品的自動技能發現及分工功能，不因支援 Markdown 就一律成立。
 

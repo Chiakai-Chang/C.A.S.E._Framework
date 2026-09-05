@@ -22,7 +22,7 @@ Windows／Node 24.19.0：`node --test workflow-kit/tests/*.test.mjs` 通過 13/1
 
 該流程中的產物由確定性的測試執行者製作，沒有冒充 LLM 行為實驗。完整 CSV 例子是教學，不是已執行的效果評估。
 
-安裝器另經独立實作審閱，無發現阻擋正常安裝、更新或移除的具體問題。可攜技能的 frontmatter 驗證通過。套件無 runtime 依賴，不需要安裝全域工具即可執行 CLI。
+安裝器另經獨立實作審閱，無發現阻擋正常安裝、更新或移除的具體問題。可攜技能的 frontmatter 驗證通過。套件無 runtime 依賴，不需要安裝全域工具即可執行 CLI。
 
 獨立情境審閱涵蓋缺 ID／截斷 context 的接續、worker 無來源成功宣稱、已完成任務變更範圍。發現「已完成舊任務需補反向連結」與不可修改完成狀態衝突，已修為只在新任務引用舊 ID，保留舊驗收。這是技能行為審閱，不冒充 pi 模型實測。
 
@@ -36,7 +36,7 @@ pi／Codex／Claude 的安裝路徑及呼叫方式已查核 [官方文件](HOSTS
 
 本機現有 pi 0.84.2 的 loader 嘗試因宿主缺失 `yaml` 內部模組而中止，未改動其全域安裝。隨後在本專案忽略的快取目錄隔離安裝相同版本（停用安裝 scripts），以其實際 `loadSkillsFromDir` 載入套件的 skills 目錄：恰好辨識一個 `case-workflow`，diagnostics 為空。這驗證真實 pi loader 的格式辨識，不涉及模型呼叫、全域 extensions 或完整 session 的行為評估。
 
-Node 20 是程式相容目標，當前實測 Node 為 24.19.0。已配置 Linux／Windows／macOS、Node 20／24 的 CI；尚未推送執行，因此不宣稱六組平台已通過。
+Node 20 是程式相容目標，當前實測 Node 為 24.19.0。已設定 Linux／Windows／macOS、Node 20／24 的 CI；尚未推送執行，因此不宣稱六組平台已通過。
 
 ## 仍需依使用結果判斷
 
