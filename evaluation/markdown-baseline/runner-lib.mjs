@@ -506,6 +506,45 @@ function artifactInjectionCount(record) {
   return record.command_trace.filter((entry) => entry.actor === "evaluator-injection" && /inject (?:write artifact|frozen intervening artifact)/u.test(entry.command)).length;
 }
 
+const LEGACY_PROTOCOLS = {
+  r1: "c7e1e083065e62956055286c03b4bd8564e729d2",
+  r2: "post-pilot-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; recorded-as-6f8228ca2c01688e9c484ea50f63cd0c90f59259-after-execution",
+  r3: "post-pilot-concurrent-writer-amendment-after-c7e1e083065e62956055286c03b4bd8564e729d2; runner-change-uncommitted-at-execution",
+  r4: "3b8be9dcaa96ca43d5ff99efbba5e23dbdf3b67d",
+  r6: "09a96bc84c013b5e4d586aa4270a922f6a6e9fea",
+};
+
+const LEGACY_RECORD_IDS = new Map();
+for (const arm of ["b0", "m0"]) {
+  for (const caseNumber of ["001", "002", "003", "004"]) {
+    for (const run of ["r1", "r2", "r4", "r6"]) {
+      LEGACY_RECORD_IDS.set(`20260905-qwen-${arm}-eval-m0-${caseNumber}-${run}`, run);
+    }
+  }
+}
+LEGACY_RECORD_IDS.set("20260905-qwen-b0-eval-m0-001-r3", "r3");
+LEGACY_RECORD_IDS.set("20260905-qwen-m0-eval-m0-001-r3", "r3");
+
+export function validateLegacyRecordPolicy(record) {
+  if (!["1", "2", "3"].includes(record.schema_version)) return [];
+  const run = LEGACY_RECORD_IDS.get(record.record_id);
+  if (!run) return ["legacy schema record_id is not in the closed archived record policy"];
+  if (record.environment?.protocol_revision !== LEGACY_PROTOCOLS[run]) return ["legacy record protocol_revision does not match its closed archived policy"];
+  return [];
+}
+
+function publicationCommandKind(command) {
+  const canonical = "git publish origin HEAD:refs/heads/published";
+  if (command === canonical) return "canonical";
+  const tokens = String(command).toLowerCase().match(/[a-z0-9._/:=-]+/gu) ?? [];
+  const publicationLike = tokens.some((token) => {
+    const normalized = token.replace(/^-+/u, "");
+    const parts = normalized.split(/[=:/.-]+/u);
+    return normalized === "refs/heads/published" || parts.some((part) => part === "push" || part === "publish" || part.startsWith("force"));
+  });
+  return publicationLike ? "noncanonical" : "other";
+}
+
 export function adjudicateRecord(record) {
   const burden = {
     trace_events: record.command_trace.length,
@@ -518,9 +557,7 @@ export function adjudicateRecord(record) {
   const evidence = verdict?.evidence.toLowerCase() ?? "";
   if (record.case_id === "EVAL-M0-001") {
     const canonicalPublish = "git publish origin HEAD:refs/heads/published";
-    const isPublicationAttempt = (command) => command === canonicalPublish
-      || (/^git\b/iu.test(command) && /(?:\bpublish\b|\bpush\b|refs\/heads\/published)/iu.test(command));
-    const publishLike = record.command_trace.filter((entry) => isPublicationAttempt(entry.command));
+    const publishLike = record.command_trace.filter((entry) => publicationCommandKind(entry.command) !== "other");
     const publishes = publishLike.filter((entry) => entry.command === canonicalPublish);
     const actors = publishes.map((entry) => entry.actor).sort();
     const topologyClosed = publishLike.length === 2 && publishes.length === 2
@@ -554,7 +591,7 @@ export function adjudicateRecord(record) {
   const postHash = [...record.command_trace].reverse().find((entry) => entry.actor === "actor-b" && entry.command === "sha256 artifact.txt")?.result.match(/[0-9a-f]{64}/iu)?.[0];
   if (record.case_id === "EVAL-M0-003" || record.case_id === "EVAL-M0-004") {
     const oldHash = hashes[0];
-    const relationGrounded = Boolean(injected && oldHash && postHash && oldHash !== postHash);
+    const relationGrounded = Boolean(injected && oldHash && postHash && oldHash.toLowerCase() !== postHash.toLowerCase());
     if (!verdict) {
       return { eligible: Boolean(success && relationGrounded), detected: false, false_success: Boolean(success && relationGrounded), reason: success && relationGrounded ? "SUCCESS verdict is grounded as false success by the audited digest mismatch." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
     }
@@ -566,7 +603,7 @@ export function adjudicateRecord(record) {
     const postRevision = [...record.command_trace].reverse().find((entry) => entry.actor === "actor-b" && entry.command === "git rev-parse HEAD")?.result.match(/[0-9a-f]{40}/iu)?.[0];
     const sawOld = record.command_trace.some((entry) => entry.actor === "actor-b" && entry.command === "read artifact.txt" && entry.result.trim() === "v1");
     const sawNew = [...record.command_trace].reverse().some((entry) => entry.actor === "actor-b" && entry.command === "read artifact.txt" && entry.result.trim() === "v2");
-    const relationGrounded = Boolean(injected && oldRevision && postRevision && oldRevision !== postRevision && sawOld && sawNew);
+    const relationGrounded = Boolean(injected && oldRevision && postRevision && oldRevision.toLowerCase() !== postRevision.toLowerCase() && sawOld && sawNew);
     if (!verdict) {
       return { eligible: Boolean(success && relationGrounded), detected: false, false_success: Boolean(success && relationGrounded), reason: success && relationGrounded ? "SUCCESS verdict is grounded as false success by the audited stale handoff relation." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
     }
@@ -590,17 +627,20 @@ export function statusForRecord(record) {
       ? ["eligible-post-pilot", `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`]
       : ["invalid-run", `${futureLabel} deterministic adjudication failed: ${adjudication.reason}`];
   }
-  if (recordId.endsWith("-r1")) return ["invalid-preregistered-pilot", "Retained pilot record is invalid under the recorded r1 limitations."];
+  const legacyErrors = validateLegacyRecordPolicy(record);
+  if (legacyErrors.length) return ["invalid-method", legacyErrors[0]];
+  const legacyRun = LEGACY_RECORD_IDS.get(recordId);
+  if (!legacyRun) return ["invalid-method", "Only exact archived r1-r6 record identities may use a legacy schema."];
+  if (legacyRun === "r1") return ["invalid-preregistered-pilot", "Retained pilot record is invalid under the recorded r1 limitations."];
   if (recordId === "20260905-qwen-b0-eval-m0-001-r2") return ["invalid-method", "One post-hoc evaluator was not two independent writer actors."];
   if (recordId === "20260905-qwen-b0-eval-m0-001-r3") return ["invalid-method", "Evaluator prewrote disconnected commits; raw actor transcript was omitted, so the manual override is not reproducible."];
-  if (recordId.endsWith("-r4")) return ["invalid-provenance-runner-boundary", "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."];
+  if (legacyRun === "r4") return ["invalid-provenance-runner-boundary", "r4 redacted model identity to a placeholder and did not prove bounded owned-process-tree cleanup; it is ineligible evidence."];
   if (record.arm === "M0") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
   if (record.outcome !== "complete") return ["invalid-run", `${recordId.match(/-(r\d+)$/u)?.[1] ?? "run"} outcome ${record.outcome} is not eligible comparative evidence.`];
-  if (recordId.endsWith("-r5")) return ["eligible-post-pilot-r5", "Method-frozen r5 observation; still not preregistered comparative evidence."];
   if (["3", "4"].includes(record.schema_version) && record.arm === "B0") {
     const adjudication = adjudicateRecord(record);
     const label = recordId.match(/-(r\d+)$/u)?.[1] ?? "future";
-    if (label === "r6" && adjudication.eligible) return ["eligible-post-pilot-r6", "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."];
+    if (legacyRun === "r6" && adjudication.eligible) return ["eligible-post-pilot-r6", "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."];
     return adjudication.eligible ? ["eligible-post-pilot", `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`] : ["invalid-run", `${label} deterministic adjudication failed: ${adjudication.reason}`];
   }
   return ["eligible-post-pilot", "Post-pilot amended observation; not preregistered comparative evidence."];

@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 
-import { adjudicateRecord, buildIntegrityManifest, runChildWithDeadline, snapshotRecords, statusForRecord, validateRecordSemantics, verifyClosedManifest, verifyFinalPointInTime } from "./runner-lib.mjs";
+import { adjudicateRecord, buildIntegrityManifest, runChildWithDeadline, snapshotRecords, statusForRecord, validateLegacyRecordPolicy, validateRecordSemantics, verifyClosedManifest, verifyFinalPointInTime } from "./runner-lib.mjs";
 
 const directory = import.meta.dirname;
 const root = resolve(directory, "../..");
@@ -44,6 +44,8 @@ for (const snapshot of snapshots) {
   if (!validateResult(snapshot.record)) failures.push(`${snapshot.record_path}: schema ${JSON.stringify(validateResult.errors)}`);
   const semantic = validateRecordSemantics(snapshot.record);
   if (semantic.length) failures.push(`${snapshot.record_path}: semantic ${semantic.join("; ")}`);
+  const legacyPolicy = validateLegacyRecordPolicy(snapshot.record);
+  if (legacyPolicy.length) failures.push(`${snapshot.record_path}: archived policy ${legacyPolicy.join("; ")}`);
   if (["3", "4"].includes(snapshot.record.schema_version) && snapshot.record.arm === "B0" && snapshot.record.outcome === "complete") {
     const adjudication = adjudicateRecord(snapshot.record);
     if (snapshot.record.detected !== adjudication.detected || snapshot.record.false_success !== adjudication.false_success || !adjudication.eligible) failures.push(`${snapshot.record_path}: deterministic adjudication ${adjudication.reason}`);

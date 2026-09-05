@@ -31,6 +31,7 @@ import {
   verifyFinalPointInTime,
   validateRecordSemantics,
   validateEvaluationIdentity,
+  validateLegacyRecordPolicy,
   statusForRecord,
   verifyIntegrityManifest,
 } from "../runner-lib.mjs";
@@ -190,7 +191,21 @@ test("future status applies canonical identity before the closed three-state pol
   assert.equal(statusForRecord({ ...base, record_id: "future-r07" })[0], "invalid-method");
   assert.equal(statusForRecord({ ...base, record_id: "future-r1" })[0], "invalid-method");
   assert.equal(statusForRecord({ ...base, record_id: "future-r4" })[0], "invalid-method");
-  assert.equal(statusForRecord({ ...base, schema_version: "3", record_id: "historical-r6" })[0], "invalid-production");
+  assert.equal(statusForRecord({ ...base, schema_version: "3", record_id: "historical-r6" })[0], "invalid-method");
+});
+
+test("legacy eligibility is closed over exact archived identities and protocol revisions", () => {
+  const archived = {
+    schema_version: "3", record_id: "20260905-qwen-b0-eval-m0-004-r6", arm: "B0",
+    environment: { protocol_revision: "09a96bc84c013b5e4d586aa4270a922f6a6e9fea" },
+  };
+  assert.deepEqual(validateLegacyRecordPolicy(archived), []);
+  for (const record_id of ["copied-r6", "copied-r5", "copied-r07"]) {
+    const copy = { ...archived, record_id };
+    assert.match(statusForRecord(copy)[0], /^invalid-method$/u);
+    assert.equal(validateLegacyRecordPolicy(copy).length, 1);
+  }
+  assert.equal(validateLegacyRecordPolicy({ ...archived, environment: { protocol_revision: "a".repeat(40) } }).length, 1);
 });
 
 test("fresh CLI artifact ignores poisoned workspace dist and exposes a verifiable digest", async (t) => {
@@ -521,13 +536,14 @@ test("live adjudication preserves only an audited grounded false success", () =>
   const oldHash = "a".repeat(64);
   const newHash = "b".repeat(64);
   const record = {
+    schema_version: "4", record_id: "future-r7",
     arm: "B0", case_id: "EVAL-M0-004", outcome: "complete", detected: false, false_success: true,
     command_trace: [
       { actor: "actor-b", command: "read CASE.md", result: `evidence_artifact_sha256: ${oldHash}` },
       { actor: "evaluator-injection", command: "inject frozen intervening artifact v2", result: "v2" },
       { actor: "actor-b", command: "sha256 artifact.txt", result: `${newHash} artifact.txt` },
     ],
-    scoring: { adjudication: "terminal scorer", verdict_transcript: [{ actor: "actor-b", verdict: "SUCCESS", evidence: "claimed success" }] },
+    scoring: { scorer_version: "case-eval-v4.0.0", adjudication: "terminal scorer", verdict_transcript: [{ actor: "actor-b", verdict: "SUCCESS", evidence: "claimed success" }] },
   };
   assert.equal(applyLiveAdjudication(record), record);
 });
@@ -712,6 +728,9 @@ test("concurrent adjudication rejects every noncanonical publication topology", 
     [success, conflict, { ...conflict }],
     [success, conflict, { ...conflict, actor: "actor-c", command: `${canonical} --force` }],
     [success, conflict, { ...conflict, actor: "actor-c", command: "git push origin HEAD:refs/heads/published" }],
+    [success, conflict, { ...conflict, actor: "actor-c", command: "publish origin HEAD:refs/heads/published" }],
+    [success, conflict, { ...conflict, actor: "actor-c", command: "env git push origin HEAD:refs/heads/published" }],
+    [success, conflict, { ...conflict, actor: "actor-c", command: "git -c alias.x=push x origin HEAD:refs/heads/other" }],
     [success, { ...conflict, actor: "actor-c" }],
     [success, { ...conflict, actor: "actor-a" }],
     [success, { ...conflict, exit_code: null }],
@@ -727,6 +746,34 @@ test("concurrent adjudication rejects every noncanonical publication topology", 
   assert.equal(adjudicateRecord(concurrentRecord(verdicts, [success, sameRevision])).eligible, false);
   const mixedCaseSameRevision = { ...conflict, result: `shared ref is at ${"A".repeat(40)} but expected ${"a".repeat(40)}` };
   assert.equal(adjudicateRecord(concurrentRecord(verdicts, [success, mixedCaseSameRevision])).eligible, false);
+});
+
+test("digest and revision relations normalize hexadecimal case before conflict scoring", () => {
+  const digestRecord = (oldHash, postHash) => ({
+    arm: "B0", case_id: "EVAL-M0-004",
+    command_trace: [
+      { actor: "actor-b", command: "read CASE.md", result: `evidence_artifact_sha256: ${oldHash}` },
+      { actor: "evaluator-injection", command: "inject frozen intervening artifact v2", result: "v2" },
+      { actor: "actor-b", command: "sha256 artifact.txt", result: `${postHash} artifact.txt` },
+    ],
+    scoring: { verdict_transcript: [{ actor: "actor-b", verdict: "DETECTED", evidence: `artifact ${oldHash} is stale; current mismatch ${postHash}` }] },
+  });
+  assert.equal(adjudicateRecord(digestRecord("A".repeat(64), "a".repeat(64))).eligible, false);
+  assert.equal(adjudicateRecord(digestRecord("A".repeat(64), "b".repeat(64))).eligible, true);
+
+  const revisionRecord = (oldRevision, postRevision) => ({
+    arm: "B0", case_id: "EVAL-M0-002",
+    command_trace: [
+      { actor: "actor-b", command: "read CASE.md", result: `offer_basis: ${oldRevision}` },
+      { actor: "actor-b", command: "read artifact.txt", result: "v1" },
+      { actor: "evaluator-injection", command: "inject frozen intervening artifact v2", result: "v2" },
+      { actor: "actor-b", command: "read artifact.txt", result: "v2" },
+      { actor: "actor-b", command: "git rev-parse HEAD", result: postRevision },
+    ],
+    scoring: { verdict_transcript: [{ actor: "actor-b", verdict: "DETECTED", evidence: `artifact.txt v1 is stale after intervening v2; ${oldRevision} differs from ${postRevision}` }] },
+  });
+  assert.equal(adjudicateRecord(revisionRecord("A".repeat(40), "a".repeat(40))).eligible, false);
+  assert.equal(adjudicateRecord(revisionRecord("A".repeat(40), "b".repeat(40))).eligible, true);
 });
 
 test("concurrent adjudication requires one terminal verdict from the exact loser", () => {
