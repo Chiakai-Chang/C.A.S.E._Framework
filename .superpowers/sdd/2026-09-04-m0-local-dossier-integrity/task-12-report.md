@@ -99,3 +99,13 @@ Future runs no longer trust ignored workspace `dist` output. After verifying tha
 The live writer and closed verifier now call one centralized eligibility policy. Failed, timed-out, invalid, unsupported-production M0, identity-mismatched v4, and ungrounded B0 outcomes are ineligible. A complete B0 requires the case-specific adjudicator to reproduce either trace-bound detection or a trace-grounded false-success claim. The publication gate permanently remembers actors after their first request; a duplicate after terminal settlement receives one immediate stable error trace/result and cannot re-enter peer waiting.
 
 Final round-six verification passed 310/310 core tests, 50/50 evaluation tests, and 140/140 conformance cases. The closed integrity verifier retained 34/34 records and manifest entries with no failure. Package dry-run remains 86 allowlisted files, 143,799 packed bytes, 778,110 unpacked bytes, and shasum `13f071f42efc3c403642376f695bcd717846e6ea`.
+
+## Fix round 7
+
+This method-only round makes `EVAL-M0-001` adjudication independent of transcript ordering. The audited publication trace must first produce exactly one winner and loser. Only the loser terminal verdict is graded; loser `SUCCESS` is grounded false success even when a winner `DETECTED` appears earlier, while competing `DETECTED` verdicts earn credit only when the loser's evidence binds both revisions and their publication conflict. Ambiguous publication topology earns no credit.
+
+Runner and verifier now share one canonical future-label parser: `r7` and ordinary later decimal spellings are accepted, while leading-zero aliases such as `r07`, `r0007`, and `r010` fail. Schema-v4 semantics bind the protocol revision, CLI commit, and fresh artifact source commit exactly. Future verifier output uses the existing generic manifest statuses rather than dynamically inventing `eligible-post-pilot-rN`, keeping output inside the closed schema enum.
+
+No raw result was changed and no model was run. Selected r6 evidence, aggregates, and the `narrow` decision remain unchanged.
+
+Final round-seven verification passed 310/310 core tests, 56/56 evaluation tests, and 140/140 conformance cases. The closed integrity verifier retained 34/34 records and manifest entries with no failure. Package dry-run remains 86 allowlisted files.

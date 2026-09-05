@@ -7,6 +7,8 @@ import { adjudicateRecord, validateRecordSemantics } from "../runner-lib.mjs";
 
 const schema = JSON.parse(await readFile(new URL("../results.schema.json", import.meta.url), "utf8"));
 const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
+const manifestSchema = JSON.parse(await readFile(new URL("../integrity-manifest.schema.json", import.meta.url), "utf8"));
+const validateManifest = new Ajv2020({ allErrors: true, strict: true }).compile(manifestSchema);
 
 function minimalV2(overrides = {}) {
   return {
@@ -92,6 +94,8 @@ test("v3 permits unavailable provenance only for a non-complete retained failure
 
 test("v4 reserves post-r6 records for the explicit v4 scorer", () => {
   const record = minimalV2({ schema_version: "4" });
+  record.environment.cli_commit = "a".repeat(40);
+  record.environment.protocol_revision = "a".repeat(40);
   record.environment.cli_artifact = { source_commit: "a".repeat(40), sha256: "b".repeat(64), file_count: 1, total_bytes: 1 };
   record.environment.model_artifact = { basename: "model.gguf", sha256: "a".repeat(64), size_bytes: 10 };
   record.environment.server_build = { basename: "llama-server.exe", sha256: "b".repeat(64), size_bytes: 20, config_id: "ctx262144-p1-mtp3" };
@@ -101,6 +105,43 @@ test("v4 reserves post-r6 records for the explicit v4 scorer", () => {
   assert.equal(validate(record), true, JSON.stringify(validate.errors));
   record.scoring.scorer_version = "case-eval-v3.0.0";
   assert.equal(validate(record), false);
+});
+
+test("v4 schema and semantics bind protocol, CLI commit, and artifact source", () => {
+  const record = minimalV2({ schema_version: "4", record_id: "future-r7" });
+  const revision = "c".repeat(40);
+  Object.assign(record.environment, {
+    cli_commit: revision, protocol_revision: revision,
+    cli_artifact: { source_commit: revision, sha256: "d".repeat(64), file_count: 1, total_bytes: 1 },
+    model_artifact: { basename: "model.gguf", sha256: "a".repeat(64), size_bytes: 10 },
+    server_build: { basename: "server.exe", sha256: "b".repeat(64), size_bytes: 20, config_id: "stable" },
+    provenance_status: "verified",
+  });
+  record.command_trace[0].timed_out = false;
+  record.scoring.scorer_version = "case-eval-v4.0.0";
+  assert.equal(validate(record), true, JSON.stringify(validate.errors));
+  record.environment.protocol_revision = "e".repeat(40);
+  assert.match(validateRecordSemantics(record).join("; "), /protocol_revision.*cli_commit/u);
+  record.environment.protocol_revision = revision;
+  record.record_id = "future-r07";
+  assert.match(validateRecordSemantics(record).join("; "), /canonical r7-or-later/u);
+  record.environment.protocol_revision = "not-a-commit";
+  assert.equal(validate(record), false);
+});
+
+test("future verifier statuses remain inside the closed manifest enum", () => {
+  for (const status of ["eligible-post-pilot", "invalid-method", "invalid-run"]) {
+    const manifest = {
+      schema_version: "1", protocol_revision: "a".repeat(40),
+      records: [{
+        record_path: "results/future-r7.json", sha256: "b".repeat(64), git_blob: "c".repeat(40),
+        record_git_commit: "d".repeat(40), protocol_revision: "a".repeat(40), status, status_reason: "stable policy output",
+      }],
+    };
+    assert.equal(validateManifest(manifest), true, `${status}: ${JSON.stringify(validateManifest.errors)}`);
+  }
+  const invalid = { schema_version: "1", protocol_revision: "a".repeat(40), records: [{ record_path: "results/future-r7.json", sha256: "b".repeat(64), git_blob: "c".repeat(40), record_git_commit: "d".repeat(40), protocol_revision: "a".repeat(40), status: "eligible-post-pilot-r7", status_reason: "dynamic status" }] };
+  assert.equal(validateManifest(invalid), false);
 });
 
 test("all retained v1 records remain schema and semantically readable", async () => {

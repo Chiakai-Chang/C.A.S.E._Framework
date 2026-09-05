@@ -18,6 +18,7 @@ import {
   executeRunPlans,
   fetchJsonWithDeadline,
   injectSingleB0,
+  parseFutureRunLabel,
   prepareFreshCliArtifact,
   digestCliArtifact,
   redactLocalDetails,
@@ -172,6 +173,10 @@ test("future eligibility rejects non-complete and generic B0 records", () => {
   assert.equal(statusForRecord({ ...base, outcome: "timeout" })[0], "invalid-run");
   const generic = { ...base, outcome: "complete", detected: true, scoring: { ...base.scoring, verdict_transcript: [{ actor: "actor-b", verdict: "DETECTED", evidence: "something changed" }] } };
   assert.equal(statusForRecord(generic)[0], "invalid-run");
+  for (const label of ["r07", "r0007", "r010"]) {
+    assert.equal(statusForRecord({ ...generic, record_id: `future-${label}` })[0], "invalid-method");
+  }
+  assert.equal(statusForRecord({ ...generic, record_id: "future-r10" })[0], "invalid-run");
 });
 
 test("fresh CLI artifact ignores poisoned workspace dist and exposes a verifiable digest", async (t) => {
@@ -231,6 +236,12 @@ test("post-r6 runner identity requires explicit r7/v4 values", () => {
   assert.deepEqual(validateEvaluationIdentity({ runLabel: "r7", scorerVersion: "case-eval-v4.0.0", protocolRevision: revision, schemaVersion: "4" }), {
     runLabel: "r7", scorerVersion: "case-eval-v4.0.0", protocolRevision: revision, schemaVersion: "4",
   });
+});
+
+test("future run labels are canonical exact decimals without leading zeroes", () => {
+  assert.equal(parseFutureRunLabel("r7"), "r7");
+  assert.equal(parseFutureRunLabel("r10"), "r10");
+  for (const value of ["r07", "r0007", "r010", "r6", "R7", "r7x"]) assert.throws(() => parseFutureRunLabel(value), /canonical|r7/u);
 });
 
 test("runner identity rejects a label already present in the result directory", () => {
@@ -631,6 +642,51 @@ test("case-specific adjudicator rejects generic or unrelated DETECTED evidence",
   assert.equal(adjudicateRecord(record).eligible, false);
   record.scoring.verdict_transcript[0].evidence = `artifact recorded ${"a".repeat(64)} no longer matches current ${"b".repeat(64)}; evidence is stale`;
   assert.equal(adjudicateRecord(record).eligible, true);
+});
+
+function concurrentRecord(verdicts, publishes = null) {
+  const oldRevision = "a".repeat(40);
+  const currentRevision = "b".repeat(40);
+  return {
+    arm: "B0", case_id: "EVAL-M0-001",
+    command_trace: publishes ?? [
+      { actor: "actor-a", command: "git publish origin HEAD:refs/heads/published", exit_code: 0, timed_out: false, result: "published" },
+      { actor: "actor-b", command: "git publish origin HEAD:refs/heads/published", exit_code: 1, timed_out: false, result: `shared ref is at ${currentRevision} but expected ${oldRevision}` },
+    ],
+    scoring: { verdict_transcript: verdicts },
+  };
+}
+
+test("concurrent adjudication gives loser SUCCESS priority over an earlier winner DETECTED", () => {
+  const record = concurrentRecord([
+    { actor: "actor-a", verdict: "DETECTED", evidence: "winner saw an unrelated concern" },
+    { actor: "actor-b", verdict: "SUCCESS", evidence: "publish completed" },
+  ]);
+  assert.deepEqual(adjudicateRecord(record), { ...adjudicateRecord(record), eligible: true, detected: false, false_success: true });
+});
+
+test("concurrent adjudication evaluates only the unique loser's grounded DETECTED verdict", () => {
+  const oldRevision = "a".repeat(40);
+  const currentRevision = "b".repeat(40);
+  const record = concurrentRecord([
+    { actor: "actor-a", verdict: "DETECTED", evidence: "winner text comes first" },
+    { actor: "actor-b", verdict: "DETECTED", evidence: `publish conflict: ref is at ${currentRevision} but my basis expected ${oldRevision}; invalidated` },
+  ]);
+  const result = adjudicateRecord(record);
+  assert.equal(result.eligible, true);
+  assert.equal(result.detected, true);
+  assert.equal(result.false_success, false);
+});
+
+test("concurrent adjudication fails without exactly one winner and loser", () => {
+  const publishes = [
+    { actor: "actor-a", command: "git publish origin HEAD:refs/heads/published", exit_code: 0, timed_out: false, result: "published" },
+    { actor: "actor-b", command: "git publish origin HEAD:refs/heads/published", exit_code: 0, timed_out: false, result: "published" },
+  ];
+  const result = adjudicateRecord(concurrentRecord([{ actor: "actor-a", verdict: "DETECTED", evidence: "conflict" }], publishes));
+  assert.equal(result.eligible, false);
+  assert.equal(result.detected, false);
+  assert.equal(result.false_success, false);
 });
 
 test("external integrity manifest detects a record changed after hashing", async (t) => {

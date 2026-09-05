@@ -139,7 +139,15 @@
       "if": { "properties": { "schema_version": { "const": "4" } }, "required": ["schema_version"] },
       "then": {
         "properties": {
-          "environment": { "type": "object", "properties": { "cli_artifact": { "$ref": "#/$defs/cliArtifact" } }, "required": ["cli_artifact"] },
+          "environment": {
+            "type": "object",
+            "properties": {
+              "cli_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+              "protocol_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+              "cli_artifact": { "$ref": "#/$defs/cliArtifact" }
+            },
+            "required": ["cli_artifact"]
+          },
           "scoring": { "type": "object", "properties": { "scorer_version": { "const": "case-eval-v4.0.0" } } }
         }
       }

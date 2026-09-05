@@ -87,8 +87,14 @@ export function accumulateTokenUsage(partial, response) {
   partial.output_tokens_total = (partial.output_tokens_total ?? 0) + response.output;
 }
 
+export function parseFutureRunLabel(runLabel) {
+  const match = typeof runLabel === "string" ? runLabel.match(/^r([1-9][0-9]*)$/u) : null;
+  if (!match || BigInt(match[1]) < 7n) throw new Error("--run-label must be the canonical exact decimal r7 or later without leading zeroes; r1-r6 are reserved immutable history");
+  return runLabel;
+}
+
 export function validateEvaluationIdentity({ runLabel, scorerVersion, protocolRevision, schemaVersion, existingRecordIds = [] }) {
-  if (typeof runLabel !== "string" || !/^r(?:[7-9]|[1-9][0-9]+)$/u.test(runLabel)) throw new Error("--run-label must be an explicit r7-or-later label; r1-r6 are reserved immutable history");
+  parseFutureRunLabel(runLabel);
   if (schemaVersion !== "4") throw new Error("--schema-version must explicitly select reserved post-r6 schema version 4");
   if (scorerVersion !== "case-eval-v4.0.0") throw new Error("--scorer-version must explicitly select case-eval-v4.0.0");
   if (typeof protocolRevision !== "string" || !/^[0-9a-f]{40}$/u.test(protocolRevision)) throw new Error("--protocol-revision requires the frozen 40-character method commit");
@@ -355,6 +361,12 @@ export function validateRecordSemantics(record) {
   if (["3", "4"].includes(record.schema_version) && record.command_trace?.some((entry) => typeof entry.timed_out !== "boolean")) errors.push("version 3+ trace entries require timed_out");
   if (["3", "4"].includes(record.schema_version) && record.environment?.provenance_status === "unavailable" && record.outcome === "complete") errors.push("complete version 3+ outcome requires verified provenance");
   if (record.schema_version === "4" && record.environment?.cli_artifact?.source_commit !== record.environment?.cli_commit) errors.push("version 4 CLI artifact source_commit must equal cli_commit");
+  if (record.schema_version === "4" && record.environment?.protocol_revision !== record.environment?.cli_commit) errors.push("version 4 protocol_revision must equal cli_commit");
+  if (record.schema_version === "4") {
+    const suffix = record.record_id?.match(/-(r[^-]+)$/u)?.[1] ?? null;
+    try { parseFutureRunLabel(suffix); } catch { errors.push("version 4 record_id requires a canonical r7-or-later suffix"); }
+    if (record.scoring?.scorer_version !== "case-eval-v4.0.0") errors.push("version 4 requires case-eval-v4.0.0");
+  }
   if (record.command_trace?.some((entry) => entry.timed_out) && (record.outcome !== "timeout" || record.detected || record.false_success)) errors.push("timed-out command requires timeout without detection credit");
   return errors;
 }
@@ -506,15 +518,20 @@ export function adjudicateRecord(record) {
   const evidence = verdict?.evidence.toLowerCase() ?? "";
   if (record.case_id === "EVAL-M0-001") {
     const publishes = record.command_trace.filter((entry) => entry.command.includes("publish origin"));
-    const loser = publishes.find((entry) => !entry.timed_out && entry.exit_code !== null && entry.exit_code !== 0);
-    const winner = publishes.find((entry) => !entry.timed_out && entry.exit_code === 0);
+    const topology = scoreConcurrentPublication(publishes, record.scoring?.verdict_transcript ?? []);
+    if (topology.winners.length !== 1 || topology.losers.length !== 1) return { eligible: false, detected: false, false_success: false, reason: "Audited publication trace does not identify exactly one winner and one loser.", burden };
+    const winner = publishes.find((entry) => entry.actor === topology.winners[0]);
+    const loser = publishes.find((entry) => entry.actor === topology.losers[0]);
     const match = loser?.result.match(/is at ([0-9a-f]{40}) but expected ([0-9a-f]{40})/iu);
     const relationGrounded = Boolean(loser && winner && match);
-    if (!verdict) {
-      const groundedFalseSuccess = Boolean(relationGrounded && success?.actor === loser?.actor);
+    const loserSuccess = record.scoring?.verdict_transcript?.find((item) => item.actor === loser?.actor && item.verdict === "SUCCESS") ?? null;
+    if (loserSuccess) {
+      const groundedFalseSuccess = Boolean(relationGrounded && topology.false_success);
       return { eligible: groundedFalseSuccess, detected: false, false_success: groundedFalseSuccess, reason: groundedFalseSuccess ? "SUCCESS verdict is grounded as false success by the audited losing publication conflict." : "No gradeable DETECTED or grounded SUCCESS verdict.", burden };
     }
-    const grounded = Boolean(relationGrounded && verdict.actor === loser.actor && containsRevision(evidence, match[1]) && containsRevision(evidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(evidence));
+    const loserVerdict = record.scoring?.verdict_transcript?.find((item) => item.actor === loser?.actor && item.verdict === "DETECTED") ?? null;
+    const loserEvidence = loserVerdict?.evidence.toLowerCase() ?? "";
+    const grounded = Boolean(relationGrounded && loserVerdict && containsRevision(loserEvidence, match[1]) && containsRevision(loserEvidence, match[2]) && /publish|ref|basis|conflict|invalidat/iu.test(loserEvidence));
     return { eligible: grounded, detected: grounded, false_success: false, reason: grounded ? "Loser verdict binds both exact shared-ref revisions and the audited publication conflict." : "DETECTED evidence is not grounded in the audited loser publication conflict and both revisions.", burden };
   }
   const injected = artifactInjectionCount(record) === 1;
@@ -554,18 +571,20 @@ export function statusForRecord(record) {
   if (record.arm === "M0" && record.outcome === "invalid") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
   if (record.outcome !== "complete") return ["invalid-run", `${recordId.match(/-(r\d+)$/u)?.[1] ?? "run"} outcome ${record.outcome} is not eligible comparative evidence.`];
   if (record.arm === "M0") return ["invalid-production", "Public Windows initialization is unsupported and target failure was not exercised."];
-  const runNumber = Number(recordId.match(/-r(\d+)$/u)?.[1] ?? 0);
-  if (runNumber >= 7 && (record.schema_version !== "4" || record.scoring?.scorer_version !== "case-eval-v4.0.0")) {
-    return ["invalid-method-identity", "r7-or-later records require schema 4 and case-eval-v4.0.0."];
+  const suffix = recordId.match(/-(r[^-]+)$/u)?.[1] ?? null;
+  let futureLabel = null;
+  if (suffix) try { futureLabel = parseFutureRunLabel(suffix); } catch { /* handled below for v4-like identities */ }
+  if (futureLabel && (record.schema_version !== "4" || record.scoring?.scorer_version !== "case-eval-v4.0.0")) {
+    return ["invalid-method", "r7-or-later records require schema 4 and case-eval-v4.0.0."];
   }
-  if (record.schema_version === "4" && runNumber < 7) return ["invalid-method-identity", "Schema 4 is reserved for an explicit r7-or-later identity."];
+  if (record.schema_version === "4" && !futureLabel) return ["invalid-method", "Schema 4 requires a canonical r7-or-later record ID suffix."];
   if (recordId.endsWith("-r5")) return ["eligible-post-pilot-r5", "Method-frozen r5 observation; still not preregistered comparative evidence."];
   if (["3", "4"].includes(record.schema_version) && record.arm === "B0") {
     const adjudication = adjudicateRecord(record);
     const label = recordId.match(/-(r\d+)$/u)?.[1] ?? "future";
     if (label === "r6" && adjudication.eligible) return ["eligible-post-pilot-r6", "Post-hoc deterministic adjudicator reproduced the method-frozen r6 detection from immutable trace and verdict evidence; still not preregistered comparative evidence."];
     return adjudication.eligible
-      ? [`eligible-post-pilot-${label}`, `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`]
+      ? ["eligible-post-pilot", `Deterministic adjudication reproduced a grounded ${adjudication.detected ? "detection" : "false-success"} from immutable trace and verdict evidence; still not preregistered comparative evidence.`]
       : ["invalid-run", `${label} deterministic adjudication failed: ${adjudication.reason}`];
   }
   return ["eligible-post-pilot", "Post-pilot amended observation; not preregistered comparative evidence."];
