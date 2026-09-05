@@ -51,7 +51,7 @@ BUSY 時先確認工作是否仍在進行。只有全部寫者停止且資料檢
 ## 驗證與打包
 
 ```text
-node --test tests/*.test.mjs
+node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs
 npm pack --dry-run
 ```
 

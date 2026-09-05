@@ -9,7 +9,7 @@
 Node.js 20+，不需安裝依賴：
 
 ```text
-node --test workflow-kit/tests/*.test.mjs
+node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs
 node workflow-kit/install.mjs --help
 node workflow-kit/skills/case-workflow/scripts/case.mjs --help
 ```

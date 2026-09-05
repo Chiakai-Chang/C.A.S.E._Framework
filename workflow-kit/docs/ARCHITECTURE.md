@@ -50,4 +50,4 @@ Workers 回報指定產物與證據，協調者核對後更新資料。交接前
 
 ## 開發者入口
 
-`install.mjs` 管安裝；`skills/case-workflow/scripts/case.mjs` 管任務；`tests/install.test.mjs`、`workflow.test.mjs`、`journey.test.mjs` 分別驗證安裝、狀態及安裝後接續。修改 Kit 跑 `node --test workflow-kit/tests/*.test.mjs`（repository 根目錄）。只有改 M0 才需要舊完整套件。
+`install.mjs` 管安裝；`skills/case-workflow/scripts/case.mjs` 管任務；`tests/install.test.mjs`、`workflow.test.mjs`、`journey.test.mjs` 分別驗證安裝、狀態及安裝後接續。修改 Kit 跑 `node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs`（repository 根目錄）。只有改 M0 才需要舊完整套件。

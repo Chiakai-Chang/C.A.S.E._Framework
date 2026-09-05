@@ -8,5 +8,5 @@
   "bin": { "case-workflow": "skills/case-workflow/scripts/case.mjs" },
   "files": ["skills", "install.mjs", "README.md", "docs"],
   "pi": { "skills": ["skills"] },
-  "scripts": { "test": "node --test tests/*.test.mjs" }
+  "scripts": { "test": "node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs" }
 }

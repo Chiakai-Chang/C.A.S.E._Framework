@@ -208,7 +208,7 @@ An interrupted task writer can leave `.case-agent/.write-lock`; an interrupted i
 For a source checkout containing tests:
 
 ```text
-node --test workflow-kit/tests/*.test.mjs
+node --test workflow-kit/tests/install.test.mjs workflow-kit/tests/workflow.test.mjs workflow-kit/tests/journey.test.mjs
 ```
 
 That command is run from the repository root. Distributed packages intentionally omit the test suite; inspect package contents with `npm pack --dry-run` from the kit directory before distribution.
