@@ -18,7 +18,7 @@
 
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
-| 目標、交付邊界：根目錄 `docs/GOALS.md` | 根 README、STATUS、MAP；Kit README、ARCHITECTURE、技能入口 | 確认是否改變使用承諾，不拿舊計畫當新需求 |
+| 目標、交付邊界：根目錄 `docs/GOALS.md` | 根 README、STATUS、MAP；Kit README、ARCHITECTURE、技能入口 | 確認是否改變使用承諾，不拿舊計畫當新需求 |
 | 任務命令、欄位、狀態：`skills/case-workflow/scripts/case.mjs` | 程式 help、`references/state-and-resume.md`、SKILL、README、WORKFLOW、ARCHITECTURE、GUIDE.en | workflow 與 journey 測試；成功、失敗及接續行為 |
 | 安裝位置、更新、移除：`install.mjs` | help、HOSTS、兩份 README、GUIDE.en、ARCHITECTURE、封裝設定 | install 與 journey 測試；共用目錄、備份及既有檔案保留 |
 | 工作方法、分工、驗收：`skills/case-workflow/SKILL.md` 與 `references/` | `assets/task-notes.md`、WORKFLOW、TEMPLATES、GUIDE.en；涉及新命令時回查 CLI | 技能與情境核對；工具行為變更才增加對應測試 |

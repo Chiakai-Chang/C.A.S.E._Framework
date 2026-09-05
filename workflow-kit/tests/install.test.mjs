@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, readdir, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, readdir, symlink, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installSkill } from '../install.mjs';
 
 async function fixture(t) {
-  const dir = await mkdtemp(join(tmpdir(), 'case-installer-test-'));
+  const dir = await mkdtemp(join(await realpath(tmpdir()), 'case-installer-test-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const project = join(dir, 'project');
   const source = join(dir, 'source');

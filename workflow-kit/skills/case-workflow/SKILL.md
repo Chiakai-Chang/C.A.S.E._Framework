@@ -19,7 +19,7 @@ description: Manage an AI agent task from agreed outcome through execution, boun
 
 1. 依使用者現有要求建立目標與驗收。已授權的工作自行執行；只有必要資訊、權限或重大取捨缺失才詢問。保持目標的原始意義，避免為容易測量而縮小交付。
 2. 若使用 CLI，找到**目前載入這份 SKILL.md 所在的目錄**，以下以 `<skill-dir>` 表示，執行 `node "<skill-dir>/scripts/case.mjs" --help`。不要假設技能在當前專案、某個 home 或固定宿主路徑。
-3. `init --project "<project>"` 初始化；`new --project "<project>" --title "..." --goal "..." --criterion "..."` 建立任务。多項驗收重複 `--criterion`，約束重複 `--constraint`。保存回傳 task ID。完整命令說明按需讀上面的 CLI reference。
+3. `init --project "<project>"` 初始化；`new --project "<project>" --title "..." --goal "..." --criterion "..."` 建立任務。多項驗收重複 `--criterion`，約束重複 `--constraint`。保存回傳 task ID。完整命令說明按需讀上面的 CLI reference。
 4. 選擇最直接可完成的實作路線。複雜工作以幾個可驗證步驟規劃；一般工作不先產生設計報告。先讀與下一步直接相關的程式／資料，不預載完整歷史。
 5. 在有意義的里程碑記錄目前狀態、關鍵觀察及下一個具體動作；大輸出留在檔案並引用路徑。失敗、未知成本及限制照實保留。不要逐次工具呼叫寫日誌。
 

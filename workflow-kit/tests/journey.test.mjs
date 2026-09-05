@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { installSkill } from '../install.mjs';
 
 test('installed kit completes a task across fresh processes and preserves work after uninstall', async t => {
-  const project = await mkdtemp(join(tmpdir(), 'case-kit-journey-'));
+  const project = await mkdtemp(join(await realpath(tmpdir()), 'case-kit-journey-'));
   t.after(() => rm(project, { recursive: true, force: true }));
   const installed = await installSkill({ project, host: 'all' });
   const cli = join(installed.results[0].destination, 'scripts', 'case.mjs');

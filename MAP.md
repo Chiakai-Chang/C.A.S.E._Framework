@@ -6,6 +6,7 @@
 |---|---|---|
 | 直接採用完整工作流程 | [套件](workflow-kit/README.md)、[實例](workflow-kit/docs/WORKFLOW.md)、[宿主](workflow-kit/docs/HOSTS.md) | 初始化、接續、分工、驗收與使用入口 |
 | 功能與實測狀態 | [READINESS](workflow-kit/docs/READINESS.md) | 已交付能力與實測／未測範圍 |
+| 查本次交付驗收 | [驗收](docs/ACCEPTANCE.md) | 目標對照、結果及未證明範圍 |
 | 對齊目標、避免偏移 | [目標](docs/GOALS.md) | 完整交付範圍與工作判斷；沒有排程 |
 | 確認能用到哪裡、下一步 | [狀態與路線](docs/STATUS.md) | 當前可用性、尚未通過的門檻 |
 | 接手開發與驗證 | [CONTRIBUTING](CONTRIBUTING.md) | 環境、指令、修改與證據規則 |

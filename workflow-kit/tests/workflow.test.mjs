@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { run } from '../skills/case-workflow/scripts/case.mjs';
 
 function fixture(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'case-workflow-'));
+  const dir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'case-workflow-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   return { dir, call: (cmd, ...args) => run([cmd, '--project', dir, ...args]) };
 }
