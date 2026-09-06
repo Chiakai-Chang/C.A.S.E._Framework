@@ -140,7 +140,7 @@ const packet = (id = 'p') => ({
 });
 function setup(t) {
     assert.ok(mod?.createStore, 'versioned core must exist');
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'case-v2-'));
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-v2-')));
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
     fs.writeFileSync(path.join(dir, 'source.txt'), '原始材料');
     const store = mod.createStore(dir);
@@ -247,7 +247,7 @@ test('修訂契約使既有成果需重驗', t => {
 });
 test('v1必須明示migration並保留外部備份和唯讀歷史', t => {
     assert.ok(mod?.createStore, 'versioned core must exist');
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'case-migrate-'));
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-migrate-')));
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
     v1(['init', '--project', dir]);
     const store = mod.createStore(dir);
@@ -369,7 +369,7 @@ test('run資料不得靜默遺失非JSON欄位', t => {
 });
 test('migration提交前程序中止保留v1且可確認停止後續接', t => {
     const f = setup(t);
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'case-crash-'));
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-crash-')));
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
     v1(['init', '--project', dir]);
     const code = `import fs from 'node:fs';import {createStore} from ${JSON.stringify(new URL('../skills/case-workflow/scripts/core/index.mjs', import.meta.url).href)};const rename=fs.renameSync;fs.renameSync=(from,to)=>{if(to.endsWith('workflow.json'))process.exit(73);return rename(from,to)};createStore(${JSON.stringify(dir)}).migrate();`;

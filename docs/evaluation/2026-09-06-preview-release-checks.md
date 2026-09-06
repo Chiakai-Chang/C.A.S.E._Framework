@@ -26,4 +26,8 @@
 
 ## 發布界線
 
-本次授權為整理、提交、合併及推送既有 Git repository。未選定開源授權、不發布 npm registry；保留工作分支、歷史證據與所有備份。不得 force push。遠端 main 已核對仍為 7dc3488；合併前再確認。
+本次授權為整理、提交、合併及推送既有 Git repository。`b14ded1` 已由功能分支 fast-forward 合併至 main，合併後 220/220 通過，一般 push 成功；未 force、未刪功能分支、歷史證據或備份。未選定開源授權，不發布 npm registry。
+
+推送後使用 Skills 1.5.23 從 README 的 GitHub main URL 在全新暫存專案安裝，v2 init 成功，確認下載內容包含 discovery 與最新 protected-material guard。首次網路受沙箱阻擋，經針對此次遠端驗證的執行授權後成功；沒有改全域技能。這次才是新版遠端入口實測，不與前面的本地來源測試混淆。
+
+首次遠端 [CI 34011183762](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011183762)：Ubuntu 的 Node 20／24 通過；macOS 24 因測試暫存目錄 `/var` 是系統別名，觸發既有拒絕符號連結的規則，其餘三組遭 fail-fast 取消。修正測試建立的目錄為實際路徑，不放寬產品安全規則；結果待新 CI 核對，不把取消當成通過。

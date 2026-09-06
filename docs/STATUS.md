@@ -26,7 +26,7 @@
 
 ## Git 交付與發布
 
-本輪正在完成 Git 合併／推送前的[採用核對](evaluation/2026-09-06-preview-release-checks.md)及獨立審閱修正；完成後更新本段。遠端版本以 Git 提交為準，不以本地檔案存在推定已上線。
+本輪已合併並推送至 GitHub main，主要交付提交為 `b14ded1`。新版 README 的 GitHub Skills 入口已實際下載並成功初始化 v2，包含最新 discovery 與材料保護。遠端首次 CI 的 macOS 暫存別名問題正進行測試修正；最新結果集中於[採用核對](evaluation/2026-09-06-preview-release-checks.md)。
 
 公開授權尚未選定，npm package 保持 private，未發布 registry。Git 推送、套件刊登與開源授權是不同事項，不代替使用者選擇授權。
 

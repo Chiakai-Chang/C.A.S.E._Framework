@@ -34,7 +34,7 @@ test('value comparison records wrong successful replies as failed artifacts',asy
 test('resume comparison really generates upstream then uses fresh sessions without rewriting it',async t=>{
   assert.ok(comparison?.evaluateArm,'Comparison arm must exist');
   for(const mode of ['single','case']){
-    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'case-value-resume-'));
+    const dir=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-value-resume-')));
     t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
     const spec=mod.fixture('resume');let n=0,firstHash;
     const record=await comparison.evaluateArm({spec,mode,project:dir,createRunner:async()=>async request=>{
