@@ -26,7 +26,7 @@
 
 ## Git 交付與發布
 
-本輪已合併並推送至 GitHub main，主要交付提交為 `b14ded1`。新版 README 的 GitHub Skills 入口已實際下載並成功初始化 v2，包含最新 discovery 與材料保護。遠端首次 CI 的 macOS 暫存別名問題正進行測試修正；最新結果集中於[採用核對](evaluation/2026-09-06-preview-release-checks.md)。
+本輪已合併並推送至 GitHub main，主要交付提交為 `b14ded1`，測試路徑修正為 `8c6d6c0`。新版 README 的 GitHub Skills 入口已實際下載並成功初始化 v2，包含最新 discovery 與材料保護。修正後 Windows／macOS／Ubuntu × Node 20／24 六組 [CI 全數通過](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011479357)；首次失敗與修正依據保留於[採用核對](evaluation/2026-09-06-preview-release-checks.md)。
 
 公開授權尚未選定，npm package 保持 private，未發布 registry。Git 推送、套件刊登與開源授權是不同事項，不代替使用者選擇授權。
 

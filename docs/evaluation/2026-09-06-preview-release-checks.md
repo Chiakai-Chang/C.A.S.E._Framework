@@ -30,4 +30,8 @@
 
 推送後使用 Skills 1.5.23 從 README 的 GitHub main URL 在全新暫存專案安裝，v2 init 成功，確認下載內容包含 discovery 與最新 protected-material guard。首次網路受沙箱阻擋，經針對此次遠端驗證的執行授權後成功；沒有改全域技能。這次才是新版遠端入口實測，不與前面的本地來源測試混淆。
 
-首次遠端 [CI 34011183762](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011183762)：Ubuntu 的 Node 20／24 通過；macOS 24 因測試暫存目錄 `/var` 是系統別名，觸發既有拒絕符號連結的規則，其餘三組遭 fail-fast 取消。修正測試建立的目錄為實際路徑，不放寬產品安全規則；結果待新 CI 核對，不把取消當成通過。
+首次遠端 [CI 34011183762](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011183762)：Ubuntu 的 Node 20／24 通過；macOS 24 因測試暫存目錄 `/var` 是系統別名，觸發既有拒絕符號連結的規則，其餘三組遭 fail-fast 取消。修正測試建立的目錄為實際路徑，不放寬產品安全規則，不把取消當成通過。
+
+修正提交 `8c6d6c0` 僅調整兩份測試的四處暫存目錄及發布紀錄，獨立複核確認未變更產品安全防護或移除斷言。本機完整 220/220 再次通過；推送後 [CI 34011479357](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011479357) 的 Windows／macOS／Ubuntu × Node 20／24 六組全部成功。這是程式跨平台驗證，不代表六種環境都執行過本機模型任務。
+
+文件核對涵蓋 61 份非凍結 Markdown、296 個本地檔案連結，未發現遺失目標；不將此檔案路徑核對宣稱為所有頁內錨點與外部網站皆已驗證。
