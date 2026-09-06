@@ -8,6 +8,29 @@ const toolsModule = await import('../integrations/pi/scoped-tools.mjs').catch(e 
         return {};
     throw e;
 });
+
+test('scoped tools exclude protected settings at every depth and preserve ordinary instructions for reading', async t => {
+    const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-protected-tools-')));
+    t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+    const tools = toolsModule.createScopedTools({ project, role: 'worker', writeScope: ['nested'] });
+    const read = tools.find(tool => tool.name === 'case_read');
+    const write = tools.find(tool => tool.name === 'case_write');
+    const list = tools.find(tool => tool.name === 'case_list');
+    fs.mkdirSync(path.join(project, 'nested'));
+    fs.writeFileSync(path.join(project, 'nested', 'AGENTS.md'), 'ordinary project instructions');
+    for (const segment of ['.git', '.pi', '.agents', '.codex', '.claude', '.case-agent']) {
+        for (const name of [`${segment}/fixture.txt`, `nested/${segment.toUpperCase()}/fixture.txt`]) {
+            fs.mkdirSync(path.dirname(path.join(project, name)), { recursive: true });
+            fs.writeFileSync(path.join(project, name), 'synthetic protected material');
+            await assert.rejects(read.execute('read', { path: name }), { code: 'UNSAFE_TOOL_PATH' });
+            await assert.rejects(write.execute('write', { path: name, content: 'changed' }), { code: 'UNSAFE_TOOL_PATH' });
+            await assert.rejects(list.execute('list', { path: path.posix.dirname(name) }), { code: 'UNSAFE_TOOL_PATH' });
+        }
+    }
+    assert.equal((await read.execute('normal', { path: 'nested/AGENTS.md' })).content[0].text, 'ordinary project instructions');
+    assert.equal((await list.execute('root', { path: '.' })).content[0].text, 'nested/');
+    assert.equal((await list.execute('nested', { path: 'nested' })).content[0].text, 'AGENTS.md');
+});
 test('declared new directory allows its first nested deliverable without widening scope', async (t) => {
     const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-new-dir-')));
     t.after(() => fs.rmSync(project, { recursive: true, force: true }));
@@ -38,6 +61,12 @@ test('worker file writes are restricted to declared paths and cannot change CASE
         await assert.rejects(write.execute('2', { path: target, content: 'bad' }));
     }
     assert.equal(fs.readFileSync(path.join(dir, 'source.txt'), 'utf8'), 'keep');
+    await assert.rejects(write.execute('3',{path:'source.txt',content:'bad'}),failure=>{
+        assert.equal(failure.code,'UNSAFE_TOOL_PATH');
+        assert.match(failure.message,/source\.txt/);
+        assert.match(failure.message,/output\.txt/);
+        return true;
+    });
 });
 test('review tools can inspect actual files but have no write or arbitrary shell tool', async (t) => {
     assert.equal(typeof toolsModule.createScopedTools, 'function', 'scoped tools are not implemented');

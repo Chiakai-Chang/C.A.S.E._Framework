@@ -13,14 +13,17 @@ import { approveChecks, createCheckExecutor } from '../integrations/pi/approved-
 
 const argv = process.argv.slice(2), options = {};
 if (argv.length === 1 && argv[0] === '--help') {
-  process.stdout.write('feedback-probe.mjs --sdk PATH --output FILE [--endpoint http://127.0.0.1:8080/v1] [--max-duration-ms 300000]\nSynthetic orders/prices/returns/rates, deliberately missing preparation packet. Local model only; preserves all results including failures.\n');
+  process.stdout.write('feedback-probe.mjs --sdk PATH --output FILE [--endpoint http://127.0.0.1:8080/v1] [--max-duration-ms 300000] [--feedback-mode legacy|discovery] [--thinking-level off|medium]\nSynthetic orders/prices/returns/rates, deliberately missing preparation packet. Local model only; preserves all results including failures. Discovery mode requires a persisted and resolved blocking discovery.\n');
   process.exit(0);
 }
 for (let i = 0; i < argv.length; i += 2) {
-  if (!['--sdk', '--output', '--endpoint', '--max-duration-ms'].includes(argv[i]) || !argv[i + 1] || Object.hasOwn(options, argv[i])) throw new Error('Use --help');
+  if (!['--sdk', '--output', '--endpoint', '--max-duration-ms', '--feedback-mode', '--thinking-level'].includes(argv[i]) || !argv[i + 1] || Object.hasOwn(options, argv[i])) throw new Error('Use --help');
   options[argv[i]] = argv[i + 1];
 }
 if (!options['--sdk'] || !options['--output']) throw new Error('--sdk and --output required');
+const feedbackMode = options['--feedback-mode'] ?? 'legacy';
+const thinkingLevel = options['--thinking-level'] ?? 'off';
+if (!['legacy', 'discovery'].includes(feedbackMode) || !['off', 'medium'].includes(thinkingLevel)) throw new Error('Use --help');
 const durationMs = Number(options['--max-duration-ms'] ?? 300000);
 if (!Number.isSafeInteger(durationMs) || durationMs < 1000 || durationMs > 900000) throw new Error('Duration must be 1000–900000ms');
 const endpoint = new URL(options['--endpoint'] ?? 'http://127.0.0.1:8080/v1');
@@ -41,9 +44,15 @@ const sourceHashes = Object.fromEntries([...Object.keys(sources), 'AGENTS.md'].m
 const codeFiles = ['feedback-probe.mjs', '../integrations/pi/runner.mjs', '../integrations/pi/sdk-session.mjs', '../integrations/pi/scoped-tools.mjs', '../integrations/pi/approved-checks.mjs', '../skills/case-workflow/scripts/core/state.mjs', '../skills/case-workflow/scripts/core/amendments.mjs', '../skills/case-workflow/scripts/core/contracts.mjs', '../skills/case-workflow/scripts/core/store.mjs', '../skills/case-workflow/scripts/core/context.mjs', '../skills/case-workflow/scripts/core/project-policy.mjs'];
 const evidence = { createdAt: new Date().toISOString(), project, agentDir, endpoint: endpoint.href, status: 'starting',
   design: 'One engineering probe. Operator deliberately supplies a missing prerequisite plan, not an unbiased autonomous planning benchmark. No A/B quality inference.',
-  configuration: { contextWindow: 32768, maxTokens: 4096, maxTurns: 12, maxAttempts: 5, maxDurationMs: durationMs, thinkingLevel: 'off' },
+  configuration: { contextWindow: 32768, maxTokens: 4096, maxTurns: 12, maxAttempts: 5, maxDurationMs: durationMs, thinkingLevel, feedbackMode },
   sourceHashes, codeHashes: Object.fromEntries(codeFiles.map(f => [f, hash(new URL(f, import.meta.url))])), sessions: [] };
 fs.writeFileSync(output, JSON.stringify(evidence, null, 2), { flag: 'wx' });
+// Freeze the entire core/integration dependency set, including new lifecycle modules.
+for (const directory of ['../skills/case-workflow/scripts/core/', '../integrations/pi/']) {
+  for (const file of fs.readdirSync(new URL(directory, import.meta.url)).filter(f => f.endsWith('.mjs'))) {
+    evidence.codeHashes[directory + file] = hash(new URL(directory + file, import.meta.url));
+  }
+}
 const save = () => fs.writeFileSync(output, JSON.stringify(evidence, null, 2));
 const store = createStore(project); store.init();
 store.setProject({ summary: '以可追溯資料完成本機報告', constraints: [{ id: 'local', text: '來源不可更動；缺外部資料不可猜測。' }], sources: ['AGENTS.md'] }, { expectedRevision: 0, reason: 'Operator-authorized synthetic probe' });
@@ -53,7 +62,7 @@ let state = store.create({
   acceptance: [{ id: 'normalization', text: 'normalized.json contains exactly the stated fields, one line per order after returns and currency conversion.' }, { id: 'report', text: 'report.json exactly matches verified normalized amounts and identifies all four raw sources.' }],
   writeScope: ['normalized.json', 'report.json'], budget: { maxAttempts: 5, maxDurationMs: durationMs },
 });
-state = store.dispatch(state.id, { type: 'plan', packets: [{ id: 'report', purpose: 'Consume verified normalized.json and write report.json. It has not been prepared yet; preparation is outside this packet writeScope. Report the missing prerequisite to the planner.',
+state = store.dispatch(state.id, { type: 'plan', packets: [{ id: 'report', purpose: 'Consume verified normalized.json and write report.json. It has not been prepared yet; preparation is outside this packet writeScope. Report the missing prerequisite to the planner.' + (feedbackMode === 'discovery' ? ' While executing, inspect the missing input and immediately use case_discover with impact blocking, a stable key, and concrete evidence. Do not replace this discovery with a terminal changeRequest.' : ''),
   constraintIds: ['preserve', 'project:local'], inputs: [...Object.keys(sources).map(p => ({ path: p, required: true, delivery: 'indexed' })), { path: 'normalized.json', required: false }],
   dependsOn: [], writeScope: ['report.json'], deliverables: [{ path: 'report.json' }],
   checks: [{ id: 'full', text: 'Check normalization provenance and report sums', criterionIds: ['normalization', 'report'] }], unknowns: ['Missing preparation packet'] }] }, { expectedRevision: state.revision, requestId: randomUUID() });
@@ -73,19 +82,34 @@ try {
   // Record only names after provider payload construction and before HTTP.
   // Preserve any native hook and its return; do not retain secrets or messages.
   evidence.providerToolNames = [];
+  evidence.resultRequests = [];
   const tracedSdk = { ...sdk, async createAgentSession(sessionOptions) {
     const created = await sdk.createAgentSession(sessionOptions);
+    // Synthetic probe only: preserve structured handoff arguments so a rejection
+    // can be diagnosed without guessing the model's original request.
+    created.session.subscribe(event => {
+      if (event.type === 'tool_execution_start' && ['case_result','case_discover'].includes(event.toolName)) {
+        evidence.resultRequests.push({sessionId:created.session.sessionId,toolName:event.toolName,args:event.args});
+        save();
+      }
+    });
     const originalPayload = created.session.agent.onPayload;
     created.session.agent.onPayload = async (payload, selectedModel) => {
       const transformed = await originalPayload?.(payload, selectedModel);
       const effective = transformed ?? payload;
-      evidence.providerToolNames.push({ at: new Date().toISOString(), sessionId: created.session.sessionId, names: (effective.tools ?? []).map(tool => tool.function?.name ?? tool.name) });
+      evidence.providerToolNames.push({ at: new Date().toISOString(), sessionId: created.session.sessionId,
+        names: (effective.tools ?? []).map(tool => tool.function?.name ?? tool.name),
+        chatTemplateKwargs: effective.chat_template_kwargs ?? null, maxTokens: effective.max_tokens ?? effective.max_completion_tokens ?? null,
+        systemSaysNoTools: (effective.messages ?? []).some(m => m.role === 'system' && typeof m.content === 'string' && /Available tools:\s*\(none\)/.test(m.content)) });
       save(); return transformed;
     };
     return created;
   } };
-  runtime.registerProvider('case-local-feedback', { baseUrl: endpoint.href, api: 'openai-completions', apiKey: 'local', compat: { supportsDeveloperRole: false, supportsReasoningEffort: false }, models: [{ id: modelId, name: modelId, reasoning: false, input: ['text'], contextWindow: 32768, maxTokens: 4096, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }] });
-  const runSession = await createPiSessionRunner({ sdk: tracedSdk, project, agentDir, model: runtime.getModel('case-local-feedback', modelId), modelRuntime: runtime, checks: approved, maxTurns: 12 });
+  // SDK registration expects compatibility on the model, unlike models.json's provider defaults.
+  runtime.registerProvider('case-local-feedback', { baseUrl: endpoint.href, api: 'openai-completions', apiKey: 'local', models: [{ id: modelId, name: modelId, reasoning: true, input: ['text'], contextWindow: 32768, maxTokens: 4096,
+    compat: { supportsDeveloperRole: false, supportsReasoningEffort: false, thinkingFormat: 'qwen-chat-template', maxTokensField: 'max_tokens' },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }] });
+  const runSession = await createPiSessionRunner({ sdk: tracedSdk, project, agentDir, model: runtime.getModel('case-local-feedback', modelId), modelRuntime: runtime, checks: approved, maxTurns: 12, thinkingLevel });
   evidence.status = 'running'; save();
   await runCase({ store, caseId: state.id, executeChecks, signal: AbortSignal.timeout(durationMs), onProgress: e => process.stdout.write(`${e.role}\n`), runSession: async request => {
     try {
@@ -99,8 +123,11 @@ evidence.elapsedMs = Date.now() - started;
 evidence.finalState = store.get(state.id); evidence.runs = store.listRuns(state.id);
 evidence.sourcesUnchanged = Object.entries(sourceHashes).every(([f, expected]) => hash(path.join(project, f)) === expected);
 evidence.independentChecks = await executeChecks({ role: 'integrator', state: evidence.finalState });
-evidence.feedbackObserved = evidence.runs.some(r => r.feedback?.some(f => f.kind === 'changeRequest'));
-evidence.passed = evidence.status === 'completed' && evidence.sourcesUnchanged && evidence.feedbackObserved && evidence.independentChecks.every(c => c.exitCode === 0 && !c.error);
+evidence.feedbackObserved = feedbackMode === 'discovery'
+  ? (evidence.finalState.discoveries ?? []).some(d => d.impact === 'blocking' && d.status === 'accepted')
+  : evidence.runs.some(r => r.feedback?.some(f => ['changeRequest','blocked'].includes(f.kind)));
+evidence.codeUnchanged = Object.entries(evidence.codeHashes).every(([file, expected]) => hash(new URL(file, import.meta.url)) === expected);
+evidence.passed = evidence.status === 'completed' && evidence.finalState.status === 'completed' && evidence.codeUnchanged && evidence.sourcesUnchanged && evidence.feedbackObserved && evidence.independentChecks.every(c => c.exitCode === 0 && !c.error);
 evidence.artifacts = Object.fromEntries(['normalized.json', 'report.json'].filter(f => fs.existsSync(path.join(project, f))).map(f => [f, fs.readFileSync(path.join(project, f), 'utf8')]));
 save(); process.stdout.write(`${evidence.passed ? 'PASS' : 'FAIL'} ${evidence.elapsedMs}ms; ${output}\n`);
 if (!evidence.passed) process.exitCode = 1;

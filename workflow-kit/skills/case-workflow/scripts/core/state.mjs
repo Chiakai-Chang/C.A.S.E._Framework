@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { fail, need, text, digest, evidence } from './io.mjs';
 import { contract, plan } from './contracts.mjs';
 import { amendPlan, attemptCount } from './amendments.mjs';
+import {reportDiscovery,resolveDiscoveries,reopenDiscovery,assertDiscoveriesResolved,assertDiscoveryLinks,packetDiscoveryBlocked} from './discoveries.mjs';
 export function fresh(project, packet, outputs = false, submitting = false) {
     const a = packet.attempts.at(-1);
     const submittedVersion = ['submitted', 'verified'].includes(packet.status);
@@ -63,9 +64,23 @@ export function transition(project, state, a) {
             break;
         case 'amend_plan':
             amendPlan(project, state, a, fresh);
+            assertDiscoveryLinks(state);
+            break;
+        case 'report_discovery':
+            reportDiscovery(state, a);
+            break;
+        case 'resolve_discoveries':
+            if (state.packets.some(p => ['running','submitted'].includes(p.status)))
+                fail('ACTIVE_ATTEMPT', 'Resolve discoveries at a safe worker/review boundary');
+            if (a.packets) amendPlan(project, state, a, fresh);
+            resolveDiscoveries(state, a);
+            break;
+        case 'reopen_discovery':
+            reopenDiscovery(state, a);
             break;
         case 'start':
             requirePacket('ready');
+            if (packetDiscoveryBlocked(state,p.id)) fail('UNRESOLVED_DISCOVERY','Blocking discovery must be resolved before this packet can run');
             need(text(a.sessionId), 'Session required');
             if ([...state.packets, ...(state.packetHistory ?? []).flat()].filter(old => old.id === p.id).some(old => old.attempts.some(x => x.sessionId === a.sessionId)))
                 fail('SAME_SESSION', 'Retry requires new session');
@@ -88,6 +103,7 @@ export function transition(project, state, a) {
             break;
         case 'submit':
             requirePacket('running');
+            if (packetDiscoveryBlocked(state,p.id)) fail('UNRESOLVED_DISCOVERY','Blocking discovery must be resolved before submission');
             if (last.id !== a.attemptId)
                 fail('INVALID_ATTEMPT', 'Attempt mismatch');
             need(text(a.summary), 'Summary required');
@@ -162,6 +178,8 @@ export function transition(project, state, a) {
             state.contractHistory ??= [];
             state.contractHistory.push({ contract: state.contract, reason: a.reason });
             state.contract = contract(a.contract, state.contract.revision + 1);
+            for (const d of state.discoveries ?? [])
+                if (d.status !== 'pending') reopenDiscovery(state,{id:d.id,reason:'Contract revised; discovery requires alignment'});
             for (const packet of state.packets) {
                 packet.status = 'blocked';
                 packet.reason = 'Contract revised; alignment and review required';
@@ -169,6 +187,7 @@ export function transition(project, state, a) {
             state.integration = null;
             break;
         case 'integrate':
+            assertDiscoveriesResolved(state);
             need(text(a.sessionId) && text(a.summary) && Array.isArray(a.results), 'Integration required');
             if (!state.packets.length || state.packets.some(p => p.status !== 'verified' || p.contractRevision !== state.contract.revision))
                 fail('ACCEPTANCE_INCOMPLETE', 'All packets must be verified');

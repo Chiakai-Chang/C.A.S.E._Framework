@@ -2,19 +2,19 @@
 
 ## pi v2：原生本機套件安裝
 
-已在隔離專案以 pi 0.84.2 安裝本機 checkout，實際 loader 註冊 `case_workflow` 工具與 `/case` 指令，載入無錯誤。先取得包含 v2 的本機版本，在實際工作專案執行（換成自己的 checkout 絕對路徑）：
+已在隔離專案以 pi 0.84.2 安裝本機套件，實際 loader 註冊 `case_workflow` 工具、`/case` 指令及技能，載入無錯誤。先用 `git clone https://github.com/Chiakai-Chang/C.A.S.E._Framework.git` 下載專案，再到實際工作專案執行（換成自己的下載位置絕對路徑）：
 
 ```text
-pi install -l "D:/MyProject/C.A.S.E._Framework/workflow-kit"
+pi install -l "<CASE下載位置>/workflow-kit"
 ```
 
-這會在專案設定引用該目錄，不複製套件；保留 checkout 路徑。核心需 Node.js 20+，本次 pi 0.84.2 需 Node.js 22.19+。SDK 由 pi 提供，套件以 optional peer dependency 宣告；本地 CLI 不需 SDK。重啟／重新載入 pi 後使用 [v2 指南](V2.md)。只裝技能不會有 `/case`，不要同時疊裝同名 skill。
+這會在專案設定引用該目錄，不複製套件；保留 checkout 路徑。安裝及移除均遵守 pi 的專案信任確認；若命令提示 Project is not trusted，先核對路徑與套件內容，再依 pi 指示確認。非互動操作可明確附 `--approve` 授權該次設定變更，勿用於未核對的專案。核心需 Node.js 20+，本次 pi 0.84.2 需 Node.js 22.19+。SDK 由 pi 提供，套件以 optional peer dependency 宣告；本地 CLI 不需 SDK。重啟／重新載入 pi 後使用 [v2 指南](V2.md)。只裝技能不會有 `/case`，不要同時疊裝同名 skill。
 
-更新本機 checkout 後重新載入 pi；移除使用 `pi remove -l "D:/MyProject/C.A.S.E._Framework/workflow-kit"`，不要改用下方 Node installer 管理 pi package。這是 pi 套件管理方式；移除與模型端到端實測狀態見 [READINESS](READINESS.md)。未刊登 registry 套件，也未驗證此 repository 根目錄的 Git 遠端安裝。
+更新本機 checkout 後重新載入 pi；移除使用 `pi remove -l "<CASE下載位置>/workflow-kit"`，不要改用下方 Node installer 管理 pi package。這是 pi 套件管理方式；移除與模型端到端實測狀態見 [READINESS](READINESS.md)。未刊登 registry 套件，也未驗證此 repository 根目錄的 Git 遠端安裝。
 
 ## 可攜技能：使用既有技能安裝器
 
-下列 main URL 屬既有 v1 發行；本輪 `2.0.0-preview.1` 尚未合併或推送，請勿將該 URL 當作已提供新 extension 的版本。
+下列入口只安裝技能及本地核心，不含 pi extension。技能依 v1／v2 資料與任務需求分流；資料不會因更新技能而自動遷移。
 
 在實際工作專案執行（需要 Node.js 20+ 與 Git）：
 

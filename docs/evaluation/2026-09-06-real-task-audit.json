@@ -1,0 +1,142 @@
+{
+  "auditedAt": "2026-09-06T04:12:39.162Z",
+  "rawEvidence": "2026-09-06-real-task-evidence.json",
+  "rawSha256": "c7adfd5963e68f3ba65e29ebf6d35782a1327833732dcf3461bdd3398a82c468",
+  "runtimeUnchanged": true,
+  "sourceUnchanged": true,
+  "results": [
+    {
+      "mode": "native-pi",
+      "artifactPassed": false,
+      "overallPassed": false,
+      "error": {
+        "code": "BUDGET_EXCEEDED",
+        "message": "Native session exceeded turn limit"
+      },
+      "elapsedMs": 81181,
+      "sdkTotalTokens": 62396,
+      "requirementsUnchanged": false,
+      "files": [
+        "HOSTS.md",
+        "install.mjs",
+        "MAINTENANCE.md",
+        "package.json",
+        "README.md",
+        "README_zh.md",
+        "requirements.md"
+      ],
+      "requests": 16,
+      "sessions": [
+        {
+          "role": "native-pi",
+          "error": {
+            "code": "BUDGET_EXCEEDED",
+            "message": "Native session exceeded turn limit"
+          },
+          "usage": {
+            "input": 3162,
+            "output": 1840,
+            "cacheRead": 57394,
+            "cacheWrite": 0,
+            "total": 62396
+          },
+          "text": "",
+          "toolCounts": {
+            "write": 19
+          }
+        }
+      ],
+      "constraints": {
+        "onlyDeclaredOutputWrites": "violated",
+        "requirementsPreserved": "violated",
+        "fourSourcesPreserved": "verified",
+        "sourcesReadBeforeWork": "violated",
+        "noOutsideReads": "verified-in-model-tool-trace",
+        "noNetworkOrInstallActions": "verified-in-model-tool-trace"
+      },
+      "writeViolations": {
+        "count": 19,
+        "paths": [
+          "README.md",
+          "README_zh.md",
+          "requirements.md"
+        ],
+        "contents": "placeholder\\n"
+      }
+    },
+    {
+      "mode": "case",
+      "artifactPassed": false,
+      "overallPassed": false,
+      "error": {
+        "code": "CANCELLED",
+        "message": "Session cancelled"
+      },
+      "elapsedMs": 596062,
+      "sdkTotalTokens": 87964,
+      "requirementsUnchanged": true,
+      "files": [
+        ".case-agent",
+        "HOSTS.md",
+        "install.mjs",
+        "MAINTENANCE.md",
+        "package.json",
+        "requirements.md"
+      ],
+      "requests": 9,
+      "finalStatus": "active",
+      "sessions": [
+        {
+          "role": "planner",
+          "usage": {
+            "input": 16211,
+            "output": 9361,
+            "cacheRead": 50823,
+            "cacheWrite": 0,
+            "total": 76395
+          },
+          "text": "{\"packets\":[{\"id\":\"build-adoption-map\",\"purpose\":\"Read the four frozen sources (install.mjs, package.json, HOSTS.md, MAINTENANCE.md) and write adoption-map.json containing exactly the four objects install, package, support, maintenance with only the required fields, source-grounded values, '/' paths, no trailing slashes on install destinations (piPrimary keeps integrations/pi/), and all arrays string-sorted and deduplicated.\",\"constraintIds\":[\"preserve\"],\"inputs\":[{\"path\":\"install.mjs\",\"required\":true,\"delivery\":\"indexed\"},{\"path\":\"package.json\",\"required\":true,\"delivery\":\"inline\"},{\"path\":\"HOSTS.md\",\"required\":true,\"delivery\":\"indexed\"},{\"path\":\"MAINTENANCE.md\",\"required\":true,\"delivery\":\"indexed\"}],\"dependsOn\":[],\"writeScope\":[\"adoption-map.json\"],\"deliverables\":[{\"path\":\"adoption-map.json\"}],\"checks\":[{\"id\":\"verify-adoption-map\",\"text\":\"adoption-map.json contains exactly the four objects install/package/support/maintenance with every required field; every value is derivable from the four sources (installer facts from install.mjs, package fields from package.json, tested/support status from HOSTS.md without treating compatibility as tested, maintenance rules from MAINTENANCE.md); paths use '/', install destinations have no trailing '/', piPrimary keeps the source's integrations/pi/; all arrays are ascending-sorted and duplicate-free; the four source files remain byte-identical and nothing else is written.\",\"criterionIds\":[\"accurate-map\"]}],\"unknowns\":[\"install.mjs as frozen appears to start mid-function at 'const results = []' with no imports or host-validation code visible; accepted --host values, default host, destinations and marker are therefore grounded in its help text plus the HOSTS.md host table — the executor should re-verify the full file length before finalizing the install object.\"]}]}",
+          "toolCounts": {
+            "case_list": 1,
+            "case_read": 11,
+            "case_result": 1
+          }
+        },
+        {
+          "role": "worker",
+          "error": {
+            "code": "CANCELLED",
+            "message": "Session cancelled"
+          },
+          "usage": {
+            "input": 6346,
+            "output": 929,
+            "cacheRead": 4294,
+            "cacheWrite": 0,
+            "total": 11569
+          },
+          "text": "",
+          "toolCounts": {
+            "case_list": 1,
+            "case_read": 3
+          }
+        }
+      ],
+      "constraints": {
+        "onlyDeclaredOutputWrites": "verified-in-recorded-tools-and-final-inventory",
+        "requirementsPreserved": "verified",
+        "fourSourcesPreserved": "verified",
+        "sourceContentsSupplied": "verified",
+        "exactReadPathsAndNoOutsideReads": "unverified-missing-tool-arguments",
+        "noNetworkOrInstallActions": "verified-in-model-tool-registry-and-trace"
+      },
+      "traceFinding": "Planner received complete 155-line install.mjs results but its packet unknowns still asserted missing imports/host validation. Worker did not write the requested artifact before cancellation."
+    }
+  ],
+  "auditScope": "Tool-trace review and final filesystem inventory; not OS/network monitoring. Original raw grade is unchanged.",
+  "originalGraderLimitations": [
+    "Did not check requirements.md integrity or extra files.",
+    "CASE SDK preserved tool end results and case_write writeRequest, not all read/discovery call arguments.",
+    "SDK token totals may omit unfinished generation usage; payload character counts are not context token measurements."
+  ]
+}

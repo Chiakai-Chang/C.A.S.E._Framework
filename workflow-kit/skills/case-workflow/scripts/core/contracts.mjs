@@ -59,7 +59,8 @@ export function plan(project, state, packets) {
             ...structuredClone(p), inputs, revision: 1, contractRevision: state.contract.revision, status: p.dependsOn.length ? 'planned' : 'ready', attempts: []
         };
     });
-    need(state.contract.acceptance.every(a => covered.has(a.id)), 'Acceptance coverage incomplete');
+    const missing = state.contract.acceptance.filter(a => !covered.has(a.id)).map(a => a.id);
+    need(missing.length === 0, `Acceptance coverage incomplete: missing ${missing.join(', ')}`);
     const visited = new Set(), visiting = new Set();
     function visit(id) {
         need(!visiting.has(id), 'Dependency cycle');

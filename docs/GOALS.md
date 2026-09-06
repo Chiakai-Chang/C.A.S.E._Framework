@@ -6,9 +6,13 @@
 
 主要目標是讓本地模型把工作做好，不是寫論文。研究與實戰知識妥善保存，是為了可追溯、可修正及後續理解，不以研究產出取代產品效益。
 
+2026-09-06 效益復盤：[固定版三類比較](evaluation/case-value-validation-report.md)未觀察到完整分工的品質優勢，且有缺產物失敗。目標不改，手段調整為直接完成優先、摘要接續次之，按版本化交辦／獨立核對需求明確選用完整流程；不以功能存在推定必須使用，也不因單一小型比較否定所有長 context 情境。
+
 本次重新確認的完整流程為：全域目標與限制（大憲法）→ 規劃 → 有界工作包（小憲法）→ 獨立 context 執行 → 核對 → 全域整合 → 回饋與接續。方向與下一步見[重構決策](design/2026-09-05-constitution-context-reconstruction.md)。context 分離是待驗證的改善方法，不是品質保證。
 
-目前 [Workflow Kit](../workflow-kit/README.md) 的 `2.0.0-preview.1` 已實作 v2 契約核心與 pi 自動 context 流程，涵蓋規劃、工作包執行、不同 session 核對、整合及失敗保存。實測範圍見 [READINESS](../workflow-kit/docs/READINESS.md)；本輪分支尚未合併或推送。先前 v1 驗收與 CI 不代表 v2 或所有設計驗收已通過。
+完整生命週期亦包含執行中自查修復、立即持久回饋新工作、規劃者在原授權內去重／補包、只暫停受影響工作及保留成果接續。這不是新增目標，而是補回先前未完整追蹤的原案要求；[需求對照與驗收](design/2026-09-06-discovery-and-repair.md)集中記錄。借用提案／審閱／採納的概念，不綁 GitHub 或軟體專案；技能提供方法，程式保障可檢查的狀態與權限。
+
+目前 [Workflow Kit](../workflow-kit/README.md) 的 `2.0.0-preview.1` 已實作 v2 契約核心與 pi 自動 context 流程，涵蓋規劃、工作包執行、不同 session 核對、整合及失敗保存。實測範圍見 [READINESS](../workflow-kit/docs/READINESS.md)，Git 交付狀態見 [STATUS](STATUS.md)。先前 v1 驗收與 CI 不代表 v2 或所有設計驗收已通過。
 
 設計依據見[完整解決方案](design/2026-09-05-case-solution-design.md)：共用核心、可攜技能與薄整合層，按任務選擇直接完成、分階段接續或工作包分工。目前 pi 有原生 runner；Codex、Claude Code 與 Antigravity 使用可攜技能／核心協作，尚無本套件的原生自動 session 整合。主要交付是本地模型的正確成果及誠實比較，不以記錄工具可用代替工作品質。
 

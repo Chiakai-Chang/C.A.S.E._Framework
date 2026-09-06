@@ -35,7 +35,7 @@ export function createStore(directory) {
     function read(id) {
         owned();
         const state = json(path.join(location(id), 'state.json'));
-        if (state.format !== FORMAT || state.id !== id || !Number.isSafeInteger(state.revision) || state.revision < 0 || !Array.isArray(state.packets) || !state.requests || !state.contract)
+        if (![FORMAT,'case-workflow/2.1'].includes(state.format) || state.id !== id || !Number.isSafeInteger(state.revision) || state.revision < 0 || !Array.isArray(state.packets) || !state.requests || !state.contract)
             fail('INVALID_STATE', 'Invalid case state');
         return state;
     }
@@ -92,6 +92,37 @@ export function createStore(directory) {
             });
         },
         get: read,
+        readDiscovery(id, discoveryId, {start=0,maxChars=6000,expectedRevision} = {}) {
+            const state=read(id);
+            assertProjectAligned(project,owned().projectPolicy,state.contract.project);
+            if (expectedRevision !== undefined && expectedRevision !== state.revision) fail('REVISION_CONFLICT','Revision has changed');
+            need(Number.isSafeInteger(start) && start>=0 && Number.isSafeInteger(maxChars) && maxChars>0 && maxChars<=12000,'Discovery read requires nonnegative start and maxChars from 1 to 12000');
+            const d=(state.discoveries??[]).find(d=>d.id===discoveryId);
+            need(d,'Unknown discovery ID');
+            const content=JSON.stringify(d,null,2);
+            need(start<=content.length,'Discovery start exceeds record length');
+            const nextStart=Math.min(content.length,start+maxChars);
+            return {id:d.id,revision:state.revision,start,nextStart,totalChars:content.length,complete:nextStart===content.length,text:content.slice(start,nextStart)};
+        },
+        validateAction(id, action, {expectedRevision} = {}) {
+            jsonValue(action);
+            need(['submit','resolve_discoveries'].includes(action?.type), 'Unsupported preflight action');
+            const state = read(id);
+            if (state.revision !== expectedRevision) fail('REVISION_CONFLICT', 'Revision has changed');
+            assertProjectAligned(project, owned().projectPolicy, state.contract.project);
+            transition(project, state, structuredClone(action));
+            return {valid:true};
+        },
+        validatePlan(id, action, {expectedRevision} = {}) {
+            jsonValue(action);
+            need(['plan','amend_plan'].includes(action?.type), 'Only plan actions can be validated');
+            const state = read(id);
+            if (state.revision !== expectedRevision) fail('REVISION_CONFLICT', 'Revision has changed');
+            assertProjectAligned(project, owned().projectPolicy, state.contract.project);
+            // read() returns a fresh object. Use the same transition, without committing it.
+            transition(project, state, structuredClone(action));
+            return {valid:true};
+        },
         list() {
             owned();
             return fs.readdirSync(path.join(root, 'cases')).sort().map(read);

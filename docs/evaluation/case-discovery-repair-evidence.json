@@ -1,0 +1,692 @@
+{
+  "date": "2026-09-06",
+  "kind": "engineering-probes-not-a-quality-benchmark",
+  "status": "scoped-lifecycle-implementation-and-probes-verified",
+  "regression": {
+    "command": "npm test --prefix workflow-kit",
+    "tests": 169,
+    "pass": 169,
+    "fail": 0
+  },
+  "review": {
+    "initialImportantFindings": 2,
+    "resolved": 2,
+    "postFixScopedTests": 36,
+    "latestStrictReplyScopedTests": 98,
+    "note": "Overlapping subsets, not additional test counts."
+  },
+  "skill": {
+    "applicationScenarios": 4,
+    "paginationScenarioPassed": true,
+    "utf8StructureValidationPassed": true
+  },
+  "packaging": {
+    "dryRunPassed": true,
+    "entries": 33,
+    "runtimeDiscoveryIncluded": true,
+    "privateArtifactsExcluded": true,
+    "note": "Global npm 12.0.2 dry-run exited 1 without useful error; bundled Node npm succeeded. No global installation changed."
+  },
+  "finalRuntimeComparison": {
+    "probes": [
+      "discovery-probe-20260906-04",
+      "self-repair-probe-20260906-03"
+    ],
+    "commonRuntimeFiles": 16,
+    "sameHashes": true
+  },
+  "probes": [
+    {
+      "id": "discovery-probe-20260906-01",
+      "rawEvidence": ".npm-cache/discovery-probe-20260906-01.json",
+      "rawSha256": "b7880f8273fb56ccd8d54c4555a0168ebacce2686347fff9e86b37088a667395",
+      "createdAt": "2026-09-06T02:53:43.907Z",
+      "configuration": {
+        "contextWindow": 32768,
+        "maxTokens": 4096,
+        "maxTurns": 12,
+        "maxAttempts": 5,
+        "maxDurationMs": 600000,
+        "thinkingLevel": "medium",
+        "feedbackMode": "discovery"
+      },
+      "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "workflowStatus": "active",
+      "probePassed": false,
+      "elapsedMs": 213738,
+      "sessionCount": 3,
+      "totalTokens": 60187,
+      "usage": [
+        {
+          "input": 3489,
+          "output": 1100,
+          "cacheRead": 6999,
+          "cacheWrite": 0,
+          "total": 11588
+        },
+        {
+          "input": 4599,
+          "output": 1387,
+          "cacheRead": 7095,
+          "cacheWrite": 0,
+          "total": 13081
+        },
+        {
+          "input": 4649,
+          "output": 1453,
+          "cacheRead": 29416,
+          "cacheWrite": 0,
+          "total": 35518
+        }
+      ],
+      "codeHashes": {
+        "feedback-probe.mjs": "3098504b021b825af3a7393365610ac28adc12e344ddd751532952952132af78",
+        "../integrations/pi/runner.mjs": "2d30295259243f5ccb93dbe97c8771680eda47464dc0ffcdb85794abd09e1432",
+        "../integrations/pi/sdk-session.mjs": "798296ff46d604af7c5212d80c8040fee39aa31deed061eb71c338b89fefb1d8",
+        "../integrations/pi/scoped-tools.mjs": "ba600762c43251cc3999354010a7ecb8073523774f0d417486231c57446a03c7",
+        "../integrations/pi/approved-checks.mjs": "b53fff05e4e1956797880cefe2af0e460c16b4d5a7437e9f6051bb21b3f95b11",
+        "../skills/case-workflow/scripts/core/state.mjs": "51c10d9cec743338936ad9d96a7403c33a9b4e8b66d97d49e8f3abacf2ac2886",
+        "../skills/case-workflow/scripts/core/amendments.mjs": "f345e85f726b28140e963bd181de6fb349517240297530c0d7b1f7597029bd3a",
+        "../skills/case-workflow/scripts/core/contracts.mjs": "0833b92c5b40c7781137f32f6d9a46e17b2d4fa5851d6a7dc77214581e395bf6",
+        "../skills/case-workflow/scripts/core/store.mjs": "6db87cf1fa635f1eebd090e59707ca81799542db90c23fae8b8aba6558135687",
+        "../skills/case-workflow/scripts/core/context.mjs": "9aa69af5010a3a64003a80538014f7b81836fcff1d907d540f5a1a40d6939e1d",
+        "../skills/case-workflow/scripts/core/project-policy.mjs": "9a911e2408278e6691aa2a6b93e3b391cc9c11f53dbaab9fad7684f001999544",
+        "../skills/case-workflow/scripts/core/io.mjs": "69e6e756256580ed971e28b186386e766eb78e3a883c421b585b3f52b45bbf56",
+        "../skills/case-workflow/scripts/core/index.mjs": "f1ec91a8c4adac6a0ea261342d52cc0942a85d8c6e4eed17509e2a2194dff3bf",
+        "../skills/case-workflow/scripts/core/migration.mjs": "2c11378f970fad65330ea71cb6bb4383733c44f13e8d84ae18f404b882532b72",
+        "../skills/case-workflow/scripts/core/discoveries.mjs": "fd7714801f6b47ce8e1842428e6ee89938a28ebc805b9078aab32ba50d79bf51",
+        "../integrations/pi/extension.mjs": "9b4dc8ddc9983b0aa4bef3cd94f14593367e7570ede96440a829484d045d5fee",
+        "../integrations/pi/extension-core.mjs": "dba6e3161d8d6b940d21d6f4ebcb9fe26dbdbd79b61ba2840b38f43d08e83549"
+      },
+      "codeUnchanged": true,
+      "sourcesUnchanged": true,
+      "feedbackObserved": true,
+      "sameSessionRepair": null,
+      "error": {
+        "code": "RESULT_ALREADY_RECORDED",
+        "message": "No tool calls are allowed after case_result"
+      },
+      "independentChecks": [
+        {
+          "id": "exact",
+          "exitCode": 1,
+          "errorPresent": true
+        }
+      ],
+      "artifacts": {
+        "normalized.json": "{\n  \"lines\": [\n    {\n      \"orderId\": \"o1\",\n      \"netQuantity\": 2,\n      \"currency\": \"USD\",\n      \"netAmount\": 20,\n      \"netTwd\": 640\n    },\n    {\n      \"orderId\": \"o2\",\n      \"netQuantity\": 2,\n      \"currency\": \"EUR\",\n      \"netAmount\": 16,\n      \"netTwd\": 560\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "id": "discovery-probe-20260906-02",
+      "rawEvidence": ".npm-cache/discovery-probe-20260906-02.json",
+      "rawSha256": "7556dfdd04b2c81fd1bb7bd4fe9b4c59a08ce607d8fbf21a1c2c4242794b35c1",
+      "createdAt": "2026-09-06T03:03:15.064Z",
+      "configuration": {
+        "contextWindow": 32768,
+        "maxTokens": 4096,
+        "maxTurns": 12,
+        "maxAttempts": 5,
+        "maxDurationMs": 600000,
+        "thinkingLevel": "medium",
+        "feedbackMode": "discovery"
+      },
+      "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "workflowStatus": "completed",
+      "probePassed": false,
+      "elapsedMs": 411003,
+      "sessionCount": 7,
+      "totalTokens": 83817,
+      "usage": [
+        {
+          "input": 3649,
+          "output": 2689,
+          "cacheRead": 19624,
+          "cacheWrite": 0,
+          "total": 25962
+        },
+        {
+          "input": 3319,
+          "output": 1628,
+          "cacheRead": 3360,
+          "cacheWrite": 0,
+          "total": 8307
+        },
+        {
+          "input": 3586,
+          "output": 530,
+          "cacheRead": 7424,
+          "cacheWrite": 0,
+          "total": 11540
+        },
+        {
+          "input": 2817,
+          "output": 755,
+          "cacheRead": 5229,
+          "cacheWrite": 0,
+          "total": 8801
+        },
+        {
+          "input": 1621,
+          "output": 392,
+          "cacheRead": 8849,
+          "cacheWrite": 0,
+          "total": 10862
+        },
+        {
+          "input": 1305,
+          "output": 1306,
+          "cacheRead": 6260,
+          "cacheWrite": 0,
+          "total": 8871
+        },
+        {
+          "input": 2895,
+          "output": 1028,
+          "cacheRead": 5551,
+          "cacheWrite": 0,
+          "total": 9474
+        }
+      ],
+      "codeHashes": {
+        "feedback-probe.mjs": "3098504b021b825af3a7393365610ac28adc12e344ddd751532952952132af78",
+        "../integrations/pi/runner.mjs": "22473b02c6fc5dc8a6f49c65460603aa4bc4d906bda458a070027cba24e1a1c8",
+        "../integrations/pi/sdk-session.mjs": "c62cd7af6ffc882c65b204dd1cea53a79c6134cdf3e7506a8f88de6134cc6d24",
+        "../integrations/pi/scoped-tools.mjs": "ba600762c43251cc3999354010a7ecb8073523774f0d417486231c57446a03c7",
+        "../integrations/pi/approved-checks.mjs": "b53fff05e4e1956797880cefe2af0e460c16b4d5a7437e9f6051bb21b3f95b11",
+        "../skills/case-workflow/scripts/core/state.mjs": "51c10d9cec743338936ad9d96a7403c33a9b4e8b66d97d49e8f3abacf2ac2886",
+        "../skills/case-workflow/scripts/core/amendments.mjs": "f345e85f726b28140e963bd181de6fb349517240297530c0d7b1f7597029bd3a",
+        "../skills/case-workflow/scripts/core/contracts.mjs": "0833b92c5b40c7781137f32f6d9a46e17b2d4fa5851d6a7dc77214581e395bf6",
+        "../skills/case-workflow/scripts/core/store.mjs": "b05cfc4f0a484139752ead8e95690a03e2df6209707bc2087b52053c673eef4d",
+        "../skills/case-workflow/scripts/core/context.mjs": "faa9f030f3f25e01418159ed397c763af4667361baf6decb48b6d251498446d8",
+        "../skills/case-workflow/scripts/core/project-policy.mjs": "9a911e2408278e6691aa2a6b93e3b391cc9c11f53dbaab9fad7684f001999544",
+        "../skills/case-workflow/scripts/core/io.mjs": "69e6e756256580ed971e28b186386e766eb78e3a883c421b585b3f52b45bbf56",
+        "../skills/case-workflow/scripts/core/index.mjs": "f1ec91a8c4adac6a0ea261342d52cc0942a85d8c6e4eed17509e2a2194dff3bf",
+        "../skills/case-workflow/scripts/core/migration.mjs": "2c11378f970fad65330ea71cb6bb4383733c44f13e8d84ae18f404b882532b72",
+        "../skills/case-workflow/scripts/core/discoveries.mjs": "89117f6653fd37d29965454fd11d40198bd5b08923684807082cab8ff62a5685",
+        "../integrations/pi/extension.mjs": "9b4dc8ddc9983b0aa4bef3cd94f14593367e7570ede96440a829484d045d5fee",
+        "../integrations/pi/extension-core.mjs": "dba6e3161d8d6b940d21d6f4ebcb9fe26dbdbd79b61ba2840b38f43d08e83549"
+      },
+      "codeUnchanged": true,
+      "sourcesUnchanged": true,
+      "feedbackObserved": false,
+      "sameSessionRepair": null,
+      "error": null,
+      "independentChecks": [
+        {
+          "id": "exact",
+          "exitCode": 0,
+          "errorPresent": false
+        }
+      ],
+      "artifacts": {
+        "normalized.json": "{\n  \"lines\": [\n    {\n      \"orderId\": \"o1\",\n      \"netQuantity\": 2,\n      \"currency\": \"USD\",\n      \"netAmount\": 20,\n      \"netTwd\": 640\n    },\n    {\n      \"orderId\": \"o2\",\n      \"netQuantity\": 2,\n      \"currency\": \"EUR\",\n      \"netAmount\": 16,\n      \"netTwd\": 560\n    }\n  ]\n}\n",
+        "report.json": "{\n  \"netTwd\": 1200,\n  \"byCurrency\": {\n    \"USD\": 20,\n    \"EUR\": 16\n  },\n  \"sourceFiles\": [\n    \"orders.json\",\n    \"prices.json\",\n    \"returns.json\",\n    \"rates.json\"\n  ]\n}\n"
+      }
+    },
+    {
+      "id": "self-repair-probe-20260906-01",
+      "rawEvidence": ".npm-cache/self-repair-probe-20260906-01.json",
+      "rawSha256": "7a9c725a1a03148f4ac7c3edc7334ffe61448e7b05e21840515d9c840c2bebcb",
+      "createdAt": "2026-09-06T03:12:38.873Z",
+      "configuration": {
+        "endpoint": "http://127.0.0.1:8080/v1",
+        "thinkingLevel": "medium",
+        "maxTurns": 12,
+        "contextWindow": 32768,
+        "maxTokens": 4096,
+        "maxDurationMs": 180000,
+        "maxAttempts": 2
+      },
+      "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "workflowStatus": "completed",
+      "probePassed": true,
+      "elapsedMs": 74243,
+      "sessionCount": 3,
+      "totalTokens": 25528,
+      "usage": [
+        {
+          "input": 2774,
+          "output": 428,
+          "cacheRead": 11690,
+          "cacheWrite": 0,
+          "total": 14892
+        },
+        {
+          "input": 1879,
+          "output": 385,
+          "cacheRead": 1912,
+          "cacheWrite": 0,
+          "total": 4176
+        },
+        {
+          "input": 1142,
+          "output": 478,
+          "cacheRead": 4840,
+          "cacheWrite": 0,
+          "total": 6460
+        }
+      ],
+      "codeHashes": {
+        "../skills/case-workflow/scripts/core/io.mjs": "69e6e756256580ed971e28b186386e766eb78e3a883c421b585b3f52b45bbf56",
+        "../skills/case-workflow/scripts/core/contracts.mjs": "0833b92c5b40c7781137f32f6d9a46e17b2d4fa5851d6a7dc77214581e395bf6",
+        "../skills/case-workflow/scripts/core/state.mjs": "51c10d9cec743338936ad9d96a7403c33a9b4e8b66d97d49e8f3abacf2ac2886",
+        "../skills/case-workflow/scripts/core/index.mjs": "f1ec91a8c4adac6a0ea261342d52cc0942a85d8c6e4eed17509e2a2194dff3bf",
+        "../skills/case-workflow/scripts/core/context.mjs": "faa9f030f3f25e01418159ed397c763af4667361baf6decb48b6d251498446d8",
+        "../skills/case-workflow/scripts/core/store.mjs": "b05cfc4f0a484139752ead8e95690a03e2df6209707bc2087b52053c673eef4d",
+        "../skills/case-workflow/scripts/core/migration.mjs": "2c11378f970fad65330ea71cb6bb4383733c44f13e8d84ae18f404b882532b72",
+        "../skills/case-workflow/scripts/core/project-policy.mjs": "9a911e2408278e6691aa2a6b93e3b391cc9c11f53dbaab9fad7684f001999544",
+        "../skills/case-workflow/scripts/core/amendments.mjs": "f345e85f726b28140e963bd181de6fb349517240297530c0d7b1f7597029bd3a",
+        "../skills/case-workflow/scripts/core/discoveries.mjs": "89117f6653fd37d29965454fd11d40198bd5b08923684807082cab8ff62a5685",
+        "../integrations/pi/runner.mjs": "91c3fa5b0665418285c8cd894999a13e1b5ae532f536cbdd16f7aa2c2cf38f04",
+        "../integrations/pi/scoped-tools.mjs": "ba600762c43251cc3999354010a7ecb8073523774f0d417486231c57446a03c7",
+        "../integrations/pi/sdk-session.mjs": "c62cd7af6ffc882c65b204dd1cea53a79c6134cdf3e7506a8f88de6134cc6d24",
+        "../integrations/pi/extension.mjs": "9b4dc8ddc9983b0aa4bef3cd94f14593367e7570ede96440a829484d045d5fee",
+        "../integrations/pi/extension-core.mjs": "dba6e3161d8d6b940d21d6f4ebcb9fe26dbdbd79b61ba2840b38f43d08e83549",
+        "../integrations/pi/approved-checks.mjs": "b53fff05e4e1956797880cefe2af0e460c16b4d5a7437e9f6051bb21b3f95b11",
+        "self-repair-probe.mjs": "41411f52ab6f2c3f63b0c833a312d1346505252583b13d32db2a49af763d6b79"
+      },
+      "codeUnchanged": true,
+      "sourcesUnchanged": true,
+      "feedbackObserved": null,
+      "sameSessionRepair": true,
+      "error": null,
+      "independentChecks": [
+        {
+          "id": "exact",
+          "exitCode": 0,
+          "errorPresent": false
+        }
+      ],
+      "artifacts": {
+        "result": "{\"answer\": 42}\n"
+      }
+    },
+    {
+      "id": "discovery-probe-20260906-03",
+      "rawEvidence": ".npm-cache/discovery-probe-20260906-03.json",
+      "rawSha256": "03a67731ac55e8fadaf58c03279563b2cc873ba5dd75cd15da17362270c25156",
+      "createdAt": "2026-09-06T03:14:16.589Z",
+      "configuration": {
+        "contextWindow": 32768,
+        "maxTokens": 4096,
+        "maxTurns": 12,
+        "maxAttempts": 5,
+        "maxDurationMs": 600000,
+        "thinkingLevel": "medium",
+        "feedbackMode": "discovery"
+      },
+      "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "workflowStatus": "active",
+      "probePassed": false,
+      "elapsedMs": 601399,
+      "sessionCount": 8,
+      "totalTokens": 106281,
+      "usage": [
+        {
+          "input": 3654,
+          "output": 2028,
+          "cacheRead": 21706,
+          "cacheWrite": 0,
+          "total": 27388
+        },
+        {
+          "input": 2711,
+          "output": 1529,
+          "cacheRead": 5093,
+          "cacheWrite": 0,
+          "total": 9333
+        },
+        {
+          "input": 2127,
+          "output": 2264,
+          "cacheRead": 6683,
+          "cacheWrite": 0,
+          "total": 11074
+        },
+        {
+          "input": 3955,
+          "output": 1595,
+          "cacheRead": 3542,
+          "cacheWrite": 0,
+          "total": 9092
+        },
+        {
+          "input": 4110,
+          "output": 605,
+          "cacheRead": 8481,
+          "cacheWrite": 0,
+          "total": 13196
+        },
+        {
+          "input": 3025,
+          "output": 1057,
+          "cacheRead": 6033,
+          "cacheWrite": 0,
+          "total": 10115
+        },
+        {
+          "input": 4043,
+          "output": 3398,
+          "cacheRead": 18642,
+          "cacheWrite": 0,
+          "total": 26083
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      ],
+      "codeHashes": {
+        "feedback-probe.mjs": "3098504b021b825af3a7393365610ac28adc12e344ddd751532952952132af78",
+        "../integrations/pi/runner.mjs": "91c3fa5b0665418285c8cd894999a13e1b5ae532f536cbdd16f7aa2c2cf38f04",
+        "../integrations/pi/sdk-session.mjs": "c62cd7af6ffc882c65b204dd1cea53a79c6134cdf3e7506a8f88de6134cc6d24",
+        "../integrations/pi/scoped-tools.mjs": "ba600762c43251cc3999354010a7ecb8073523774f0d417486231c57446a03c7",
+        "../integrations/pi/approved-checks.mjs": "b53fff05e4e1956797880cefe2af0e460c16b4d5a7437e9f6051bb21b3f95b11",
+        "../skills/case-workflow/scripts/core/state.mjs": "51c10d9cec743338936ad9d96a7403c33a9b4e8b66d97d49e8f3abacf2ac2886",
+        "../skills/case-workflow/scripts/core/amendments.mjs": "f345e85f726b28140e963bd181de6fb349517240297530c0d7b1f7597029bd3a",
+        "../skills/case-workflow/scripts/core/contracts.mjs": "0833b92c5b40c7781137f32f6d9a46e17b2d4fa5851d6a7dc77214581e395bf6",
+        "../skills/case-workflow/scripts/core/store.mjs": "b05cfc4f0a484139752ead8e95690a03e2df6209707bc2087b52053c673eef4d",
+        "../skills/case-workflow/scripts/core/context.mjs": "faa9f030f3f25e01418159ed397c763af4667361baf6decb48b6d251498446d8",
+        "../skills/case-workflow/scripts/core/project-policy.mjs": "9a911e2408278e6691aa2a6b93e3b391cc9c11f53dbaab9fad7684f001999544",
+        "../skills/case-workflow/scripts/core/io.mjs": "69e6e756256580ed971e28b186386e766eb78e3a883c421b585b3f52b45bbf56",
+        "../skills/case-workflow/scripts/core/index.mjs": "f1ec91a8c4adac6a0ea261342d52cc0942a85d8c6e4eed17509e2a2194dff3bf",
+        "../skills/case-workflow/scripts/core/migration.mjs": "2c11378f970fad65330ea71cb6bb4383733c44f13e8d84ae18f404b882532b72",
+        "../skills/case-workflow/scripts/core/discoveries.mjs": "89117f6653fd37d29965454fd11d40198bd5b08923684807082cab8ff62a5685",
+        "../integrations/pi/extension.mjs": "9b4dc8ddc9983b0aa4bef3cd94f14593367e7570ede96440a829484d045d5fee",
+        "../integrations/pi/extension-core.mjs": "dba6e3161d8d6b940d21d6f4ebcb9fe26dbdbd79b61ba2840b38f43d08e83549"
+      },
+      "codeUnchanged": true,
+      "sourcesUnchanged": true,
+      "feedbackObserved": true,
+      "sameSessionRepair": null,
+      "error": {
+        "code": "CANCELLED",
+        "message": "Session cancelled"
+      },
+      "independentChecks": [
+        {
+          "id": "exact",
+          "exitCode": 0,
+          "errorPresent": false
+        }
+      ],
+      "artifacts": {
+        "normalized.json": "{\"lines\":[{\"orderId\":\"o1\",\"netQuantity\":2,\"currency\":\"USD\",\"netAmount\":20,\"netTwd\":640},{\"orderId\":\"o2\",\"netQuantity\":2,\"currency\":\"EUR\",\"netAmount\":16,\"netTwd\":560}]}",
+        "report.json": "{\n  \"netTwd\": 1200,\n  \"byCurrency\": {\n    \"USD\": 20,\n    \"EUR\": 16\n  },\n  \"sourceFiles\": [\n    \"orders.json\",\n    \"prices.json\",\n    \"returns.json\",\n    \"rates.json\"\n  ]\n}\n"
+      }
+    },
+    {
+      "id": "discovery-probe-20260906-04",
+      "rawEvidence": ".npm-cache/discovery-probe-20260906-04.json",
+      "rawSha256": "c7e9ea2eeab1335749875858359b4e84aaa5bbb30753a583006f4bfadb450046",
+      "createdAt": "2026-09-06T03:27:41.937Z",
+      "configuration": {
+        "contextWindow": 32768,
+        "maxTokens": 4096,
+        "maxTurns": 12,
+        "maxAttempts": 5,
+        "maxDurationMs": 900000,
+        "thinkingLevel": "medium",
+        "feedbackMode": "discovery"
+      },
+      "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "workflowStatus": "completed",
+      "probePassed": true,
+      "elapsedMs": 415643,
+      "sessionCount": 7,
+      "totalTokens": 86054,
+      "usage": [
+        {
+          "input": 3716,
+          "output": 1187,
+          "cacheRead": 7863,
+          "cacheWrite": 0,
+          "total": 12766
+        },
+        {
+          "input": 4046,
+          "output": 2001,
+          "cacheRead": 7762,
+          "cacheWrite": 0,
+          "total": 13809
+        },
+        {
+          "input": 4432,
+          "output": 712,
+          "cacheRead": 9463,
+          "cacheWrite": 0,
+          "total": 14607
+        },
+        {
+          "input": 2988,
+          "output": 845,
+          "cacheRead": 2832,
+          "cacheWrite": 0,
+          "total": 6665
+        },
+        {
+          "input": 4097,
+          "output": 1029,
+          "cacheRead": 9304,
+          "cacheWrite": 0,
+          "total": 14430
+        },
+        {
+          "input": 1251,
+          "output": 1186,
+          "cacheRead": 6802,
+          "cacheWrite": 0,
+          "total": 9239
+        },
+        {
+          "input": 3303,
+          "output": 1213,
+          "cacheRead": 10022,
+          "cacheWrite": 0,
+          "total": 14538
+        }
+      ],
+      "codeHashes": {
+        "feedback-probe.mjs": "75820303789449e58b2f1b93f69769415cbdb296f35c348d2ba76a5fb4ccc0cd",
+        "../integrations/pi/runner.mjs": "76af60b2bff589286393b57401b6169bc0087bba9d9c36e38ae05baf860ecba6",
+        "../integrations/pi/sdk-session.mjs": "b695c8a3ec91d70f79072f4b8cf83eea767fe91f8b21a36ce9683818311d65ce",
+        "../integrations/pi/scoped-tools.mjs": "ba600762c43251cc3999354010a7ecb8073523774f0d417486231c57446a03c7",
+        "../integrations/pi/approved-checks.mjs": "b53fff05e4e1956797880cefe2af0e460c16b4d5a7437e9f6051bb21b3f95b11",
+        "../skills/case-workflow/scripts/core/state.mjs": "51c10d9cec743338936ad9d96a7403c33a9b4e8b66d97d49e8f3abacf2ac2886",
+        "../skills/case-workflow/scripts/core/amendments.mjs": "f345e85f726b28140e963bd181de6fb349517240297530c0d7b1f7597029bd3a",
+        "../skills/case-workflow/scripts/core/contracts.mjs": "0833b92c5b40c7781137f32f6d9a46e17b2d4fa5851d6a7dc77214581e395bf6",
+        "../skills/case-workflow/scripts/core/store.mjs": "b05cfc4f0a484139752ead8e95690a03e2df6209707bc2087b52053c673eef4d",
+        "../skills/case-workflow/scripts/core/context.mjs": "faa9f030f3f25e01418159ed397c763af4667361baf6decb48b6d251498446d8",
+        "../skills/case-workflow/scripts/core/project-policy.mjs": "9a911e2408278e6691aa2a6b93e3b391cc9c11f53dbaab9fad7684f001999544",
+        "../skills/case-workflow/scripts/core/io.mjs": "69e6e756256580ed971e28b186386e766eb78e3a883c421b585b3f52b45bbf56",
+        "../skills/case-workflow/scripts/core/index.mjs": "f1ec91a8c4adac6a0ea261342d52cc0942a85d8c6e4eed17509e2a2194dff3bf",
+        "../skills/case-workflow/scripts/core/migration.mjs": "2c11378f970fad65330ea71cb6bb4383733c44f13e8d84ae18f404b882532b72",
+        "../skills/case-workflow/scripts/core/discoveries.mjs": "89117f6653fd37d29965454fd11d40198bd5b08923684807082cab8ff62a5685",
+        "../integrations/pi/extension.mjs": "9b4dc8ddc9983b0aa4bef3cd94f14593367e7570ede96440a829484d045d5fee",
+        "../integrations/pi/extension-core.mjs": "dba6e3161d8d6b940d21d6f4ebcb9fe26dbdbd79b61ba2840b38f43d08e83549"
+      },
+      "codeUnchanged": true,
+      "sourcesUnchanged": true,
+      "feedbackObserved": true,
+      "sameSessionRepair": null,
+      "error": null,
+      "independentChecks": [
+        {
+          "id": "exact",
+          "exitCode": 0,
+          "errorPresent": false
+        }
+      ],
+      "artifacts": {
+        "normalized.json": "{\n  \"lines\": [\n    {\n      \"orderId\": \"o1\",\n      \"netQuantity\": 2,\n      \"currency\": \"USD\",\n      \"netAmount\": 20,\n      \"netTwd\": 640\n    },\n    {\n      \"orderId\": \"o2\",\n      \"netQuantity\": 2,\n      \"currency\": \"EUR\",\n      \"netAmount\": 16,\n      \"netTwd\": 560\n    }\n  ]\n}\n",
+        "report.json": "{\n  \"netTwd\": 1200,\n  \"byCurrency\": {\n    \"USD\": 20,\n    \"EUR\": 16\n  },\n  \"sourceFiles\": [\n    \"orders.json\",\n    \"prices.json\",\n    \"returns.json\",\n    \"rates.json\"\n  ]\n}\n"
+      }
+    },
+    {
+      "id": "self-repair-probe-20260906-02",
+      "rawEvidence": ".npm-cache/self-repair-probe-20260906-02.json",
+      "rawSha256": "26625212b0064ca714c4301e9db5adaf682aa034217fa091d027fa713472010d",
+      "createdAt": "2026-09-06T03:35:24.697Z",
+      "configuration": {
+        "endpoint": "http://127.0.0.1:8080/v1",
+        "thinkingLevel": "medium",
+        "maxTurns": 12,
+        "contextWindow": 32768,
+        "maxTokens": 4096,
+        "maxDurationMs": 180000,
+        "maxAttempts": 2
+      },
+      "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "workflowStatus": "completed",
+      "probePassed": false,
+      "elapsedMs": 77237,
+      "sessionCount": 3,
+      "totalTokens": 25282,
+      "usage": [
+        {
+          "input": 2877,
+          "output": 492,
+          "cacheRead": 9329,
+          "cacheWrite": 0,
+          "total": 12698
+        },
+        {
+          "input": 1900,
+          "output": 395,
+          "cacheRead": 3927,
+          "cacheWrite": 0,
+          "total": 6222
+        },
+        {
+          "input": 1144,
+          "output": 428,
+          "cacheRead": 4790,
+          "cacheWrite": 0,
+          "total": 6362
+        }
+      ],
+      "codeHashes": {
+        "../skills/case-workflow/scripts/core/io.mjs": "69e6e756256580ed971e28b186386e766eb78e3a883c421b585b3f52b45bbf56",
+        "../skills/case-workflow/scripts/core/contracts.mjs": "0833b92c5b40c7781137f32f6d9a46e17b2d4fa5851d6a7dc77214581e395bf6",
+        "../skills/case-workflow/scripts/core/state.mjs": "51c10d9cec743338936ad9d96a7403c33a9b4e8b66d97d49e8f3abacf2ac2886",
+        "../skills/case-workflow/scripts/core/index.mjs": "f1ec91a8c4adac6a0ea261342d52cc0942a85d8c6e4eed17509e2a2194dff3bf",
+        "../skills/case-workflow/scripts/core/context.mjs": "faa9f030f3f25e01418159ed397c763af4667361baf6decb48b6d251498446d8",
+        "../skills/case-workflow/scripts/core/store.mjs": "b05cfc4f0a484139752ead8e95690a03e2df6209707bc2087b52053c673eef4d",
+        "../skills/case-workflow/scripts/core/migration.mjs": "2c11378f970fad65330ea71cb6bb4383733c44f13e8d84ae18f404b882532b72",
+        "../skills/case-workflow/scripts/core/project-policy.mjs": "9a911e2408278e6691aa2a6b93e3b391cc9c11f53dbaab9fad7684f001999544",
+        "../skills/case-workflow/scripts/core/amendments.mjs": "f345e85f726b28140e963bd181de6fb349517240297530c0d7b1f7597029bd3a",
+        "../skills/case-workflow/scripts/core/discoveries.mjs": "89117f6653fd37d29965454fd11d40198bd5b08923684807082cab8ff62a5685",
+        "../integrations/pi/runner.mjs": "76af60b2bff589286393b57401b6169bc0087bba9d9c36e38ae05baf860ecba6",
+        "../integrations/pi/scoped-tools.mjs": "ba600762c43251cc3999354010a7ecb8073523774f0d417486231c57446a03c7",
+        "../integrations/pi/sdk-session.mjs": "b695c8a3ec91d70f79072f4b8cf83eea767fe91f8b21a36ce9683818311d65ce",
+        "../integrations/pi/extension.mjs": "9b4dc8ddc9983b0aa4bef3cd94f14593367e7570ede96440a829484d045d5fee",
+        "../integrations/pi/extension-core.mjs": "dba6e3161d8d6b940d21d6f4ebcb9fe26dbdbd79b61ba2840b38f43d08e83549",
+        "../integrations/pi/approved-checks.mjs": "b53fff05e4e1956797880cefe2af0e460c16b4d5a7437e9f6051bb21b3f95b11",
+        "self-repair-probe.mjs": "41411f52ab6f2c3f63b0c833a312d1346505252583b13d32db2a49af763d6b79"
+      },
+      "codeUnchanged": true,
+      "sourcesUnchanged": true,
+      "feedbackObserved": null,
+      "sameSessionRepair": false,
+      "error": null,
+      "independentChecks": [
+        {
+          "id": "exact",
+          "exitCode": 0,
+          "errorPresent": false
+        }
+      ],
+      "artifacts": {
+        "result": "{\"answer\": 42}\n"
+      }
+    },
+    {
+      "id": "self-repair-probe-20260906-03",
+      "rawEvidence": ".npm-cache/self-repair-probe-20260906-03.json",
+      "rawSha256": "947ec2892843594cab8d3f6559a9308154e72514a1a26dee259a656b0108e534",
+      "createdAt": "2026-09-06T03:40:05.608Z",
+      "configuration": {
+        "endpoint": "http://127.0.0.1:8080/v1",
+        "thinkingLevel": "medium",
+        "maxTurns": 12,
+        "contextWindow": 32768,
+        "maxTokens": 4096,
+        "maxDurationMs": 180000,
+        "maxAttempts": 2
+      },
+      "model": "Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "workflowStatus": "completed",
+      "probePassed": true,
+      "elapsedMs": 63821,
+      "sessionCount": 3,
+      "totalTokens": 28128,
+      "usage": [
+        {
+          "input": 1183,
+          "output": 370,
+          "cacheRead": 13951,
+          "cacheWrite": 0,
+          "total": 15504
+        },
+        {
+          "input": 1114,
+          "output": 580,
+          "cacheRead": 4763,
+          "cacheWrite": 0,
+          "total": 6457
+        },
+        {
+          "input": 1142,
+          "output": 306,
+          "cacheRead": 4719,
+          "cacheWrite": 0,
+          "total": 6167
+        }
+      ],
+      "codeHashes": {
+        "../skills/case-workflow/scripts/core/io.mjs": "69e6e756256580ed971e28b186386e766eb78e3a883c421b585b3f52b45bbf56",
+        "../skills/case-workflow/scripts/core/contracts.mjs": "0833b92c5b40c7781137f32f6d9a46e17b2d4fa5851d6a7dc77214581e395bf6",
+        "../skills/case-workflow/scripts/core/state.mjs": "51c10d9cec743338936ad9d96a7403c33a9b4e8b66d97d49e8f3abacf2ac2886",
+        "../skills/case-workflow/scripts/core/index.mjs": "f1ec91a8c4adac6a0ea261342d52cc0942a85d8c6e4eed17509e2a2194dff3bf",
+        "../skills/case-workflow/scripts/core/context.mjs": "faa9f030f3f25e01418159ed397c763af4667361baf6decb48b6d251498446d8",
+        "../skills/case-workflow/scripts/core/store.mjs": "b05cfc4f0a484139752ead8e95690a03e2df6209707bc2087b52053c673eef4d",
+        "../skills/case-workflow/scripts/core/migration.mjs": "2c11378f970fad65330ea71cb6bb4383733c44f13e8d84ae18f404b882532b72",
+        "../skills/case-workflow/scripts/core/project-policy.mjs": "9a911e2408278e6691aa2a6b93e3b391cc9c11f53dbaab9fad7684f001999544",
+        "../skills/case-workflow/scripts/core/amendments.mjs": "f345e85f726b28140e963bd181de6fb349517240297530c0d7b1f7597029bd3a",
+        "../skills/case-workflow/scripts/core/discoveries.mjs": "89117f6653fd37d29965454fd11d40198bd5b08923684807082cab8ff62a5685",
+        "../integrations/pi/runner.mjs": "76af60b2bff589286393b57401b6169bc0087bba9d9c36e38ae05baf860ecba6",
+        "../integrations/pi/scoped-tools.mjs": "ba600762c43251cc3999354010a7ecb8073523774f0d417486231c57446a03c7",
+        "../integrations/pi/sdk-session.mjs": "b695c8a3ec91d70f79072f4b8cf83eea767fe91f8b21a36ce9683818311d65ce",
+        "../integrations/pi/extension.mjs": "9b4dc8ddc9983b0aa4bef3cd94f14593367e7570ede96440a829484d045d5fee",
+        "../integrations/pi/extension-core.mjs": "dba6e3161d8d6b940d21d6f4ebcb9fe26dbdbd79b61ba2840b38f43d08e83549",
+        "../integrations/pi/approved-checks.mjs": "b53fff05e4e1956797880cefe2af0e460c16b4d5a7437e9f6051bb21b3f95b11",
+        "self-repair-probe.mjs": "d7659558ed5154a73f753fb6b954d90e0ed79fc9ac6c6f39c7229f6f3cdfd6bc"
+      },
+      "codeUnchanged": true,
+      "sourcesUnchanged": true,
+      "feedbackObserved": null,
+      "sameSessionRepair": true,
+      "error": null,
+      "independentChecks": [
+        {
+          "id": "exact",
+          "exitCode": 0,
+          "errorPresent": false
+        }
+      ],
+      "artifacts": {
+        "result": "{\"answer\":42}"
+      }
+    }
+  ],
+  "limitations": [
+    "Development probes vary by runtime/injection/budget; not fixed-version success-rate or quality comparisons.",
+    "SDK cumulative tokens include cache reads. Actual machine cost and peak context usage are unknown, not zero.",
+    "Raw local evidence is ignored; this public summary retains raw SHA256, configuration, runtime hashes and outcomes.",
+    "Only the pi integration and this local model were exercised; portable skills do not imply native runners on other products."
+  ]
+}

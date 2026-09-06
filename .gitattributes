@@ -4,3 +4,7 @@ conformance/**/*.bin -text
 conformance/data/prompts/*.txt -whitespace
 # Immutable evaluation evidence is hashed as bytes; never transform on checkout.
 evaluation/markdown-baseline/results/** -text
+# Frozen real-project inputs retain the exact bytes used in recorded comparisons.
+workflow-kit/evaluation/real-task-sources/** -text
+workflow-kit/evaluation/real-task-*.executed.mjs -text
+docs/evaluation/2026-09-06-real-task-evidence.json -text

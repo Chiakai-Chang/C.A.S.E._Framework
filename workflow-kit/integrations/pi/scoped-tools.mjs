@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
+import { isProtectedMaterialPart } from '../../skills/case-workflow/scripts/core/io.mjs';
 
-const protectedParts = new Set(['.case-agent', '.git', '.pi', '.agents', '.codex', '.claude']);
 const fail = message => { throw Object.assign(new Error(message), { code: 'UNSAFE_TOOL_PATH' }); };
 const schema = properties => ({ type: 'object', properties, required: Object.keys(properties).filter(k => !['startLine', 'maxLines'].includes(k)), additionalProperties: false });
 const string = description => ({ type: 'string', description });
@@ -13,7 +13,7 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
   function resolve(relative, write = false) {
     if (typeof relative !== 'string' || !relative || path.isAbsolute(relative) || relative.includes(':') || relative.includes('\0')) fail('Use a relative project path');
     const parts = relative.replaceAll('\\', '/').split('/').filter(p => p !== '.');
-    if (parts.some(p => p === '..' || protectedParts.has(p.toLowerCase()))) fail('Path escapes the permitted project data');
+    if (parts.some(p => p === '..' || isProtectedMaterialPart(p))) fail('Path escapes the permitted project data');
     if (write && ['agents.md', 'claude.md', 'gemini.md'].includes(parts.at(-1)?.toLowerCase())) fail('Agent instructions are not worker deliverables');
     const target = path.resolve(root, ...parts);
     for (let current = target; current !== root; current = path.dirname(current)) {
@@ -23,7 +23,7 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
     if (write && !writeScope.some(scope => {
       const allowed = resolve(scope);
       return target === allowed || ((!fs.existsSync(allowed) || fs.statSync(allowed).isDirectory()) && target.startsWith(allowed + path.sep));
-    })) fail('Write is outside packet writeScope');
+    })) fail(`Write is outside packet writeScope. Requested: ${JSON.stringify(relative)}. Allowed: ${JSON.stringify(writeScope)}. Use a declared path; do not retry the same rejected path.`);
     return target;
   }
   const tools = [{
@@ -47,7 +47,7 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
     parameters: schema({ path: string('Relative directory, or .') }),
     async execute(_id, args) {
       const entries = fs.readdirSync(resolve(args.path), { withFileTypes: true })
-        .filter(e => !protectedParts.has(e.name.toLowerCase()) && !e.isSymbolicLink());
+        .filter(e => !isProtectedMaterialPart(e.name) && !e.isSymbolicLink());
       if (entries.length > 300) fail('Directory has more than 300 entries; use a narrower material index');
       return content(entries.map(e => e.name + (e.isDirectory() ? '/' : '')).join('\n'));
     },

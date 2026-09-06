@@ -9,6 +9,8 @@ export function need(value, message = 'Invalid argument') {
         fail('INVALID_ARGUMENT', message);
 }
 export const text = value => typeof value === 'string' && value.trim().length > 0;
+const protectedMaterialParts = new Set(['.case-agent', '.git', '.pi', '.agents', '.codex', '.claude']);
+export const isProtectedMaterialPart = part => protectedMaterialParts.has(part.toLowerCase());
 export function jsonValue(value, seen = new Set()) {
     if (value === null || typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number' && Number.isFinite(value))
         return;
@@ -45,7 +47,7 @@ export function resolveMaterial(project, name) {
         fail('UNSAFE_PATH', 'Require project-relative path');
     const target = path.resolve(project, name);
     const first = path.relative(project, target).split(path.sep)[0].toLowerCase();
-    if (target === project || !target.startsWith(project + path.sep) || first.startsWith('.case-agent'))
+    if (target === project || !target.startsWith(project + path.sep) || first.startsWith('.case-agent') || name.split('/').some(isProtectedMaterialPart))
         fail('UNSAFE_PATH', 'Path outside materials');
     return safe(target, true);
 }

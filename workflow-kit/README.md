@@ -1,72 +1,72 @@
 # C.A.S.E. Workflow Kit
 
-讓 agent 在有限 context 下，把工作交辦清楚、回報缺口、補做並接續成果。專案共識、整體計畫與工作包分層；可攜技能提供方法，本地核心保存版本，pi 整合自動建立新的規劃、執行與核對 context。
+把專案要求、整體計畫與當前交辦分開，讓 agent 在有限 context 下執行、自查、回報缺口並接續成果。可攜技能提供方法，本地核心保存版本與證據，pi 整合自動建立規劃、執行、核對與整合的獨立 session。
 
-需要 pi 自動規劃、執行、核對與整合，從 [v2 指南](docs/V2.md) 開始。以下技能安裝及手動命令保留 v1 記錄流程；只安裝 skill 不會安裝 pi extension。v1 資料必須顯式遷移才供 v2 使用，不能混寫。
+[完整介紹](https://github.com/Chiakai-Chang/C.A.S.E._Framework#readme) · [操作指南](docs/V2.md) · [安裝維護](docs/HOSTS.md) · [English](docs/GUIDE.en.md)
 
-例如整理訂單與退貨報告：報告執行者發現缺少前置整理結果，可交回規劃者補包；無關且已核對的成果保留。真正缺外部資料才停下，整體驗收不通過則補做，不能只改一個「完成」標記。短工作直接做，不強制拆包或建立共識文件。
+**2.0.0-preview.1 預覽版。** 適合需要版本化交辦、分階段接續或獨立核對紀錄的工作。短問答、小修改直接做即可；完整分工有額外成本，不保證品質更高或 tokens 更少。
 
-工作方法由技能指引，資料由本地工具保存；模型、工具權限及真正的工作仍由 pi、Codex 等提供。程式測試已驗證操作與接續，但不能因此宣稱普遍改善模型品質或節省 token。[設計與邊界](docs/ARCHITECTURE.md) · [具體工作例](docs/WORKFLOW.md) · [可信範圍](docs/READINESS.md)
+## pi：完整自動流程
 
-## 安裝
+先下載 framework repository，再到你要工作的專案目錄執行：
 
-文件導航：[English guide](docs/GUIDE.en.md) · [完整例子](docs/WORKFLOW.md) · [架構與用語](docs/ARCHITECTURE.md) · [可取用範本](docs/TEMPLATES.md) · [AI 工具與疑難排解](docs/HOSTS.md) · [驗證範圍](docs/READINESS.md)。
+```text
+pi install -l "<CASE下載位置>/workflow-kit"
+```
 
-以下公開 main URL 是既有 v1 發行，不代表尚未合併／推送的 `2.0.0-preview.1` 已上線。pi v2 使用 [HOSTS](docs/HOSTS.md) 的本機 checkout 安裝。既有可攜技能在工作專案使用現成安裝器（Node.js 20+、Git）：
+將路徑換成下載位置的絕對路徑並保留它；這是 pi 的本機套件引用，不是複製安裝。不需在 framework 根目錄 npm install。本次驗證使用 pi 0.84.2（需要 Node.js 22.19+）；本地核心需要 Node.js 20+。
+
+重新載入 pi、選好模型後，交代：
+
+> 用 CASE 整理來源資料，產出可追溯的摘要。保留原始檔，只寫 reports/，自行核對結果；總時間最多十分鐘。
+
+agent 使用 `case_workflow` 建立任務。你可以用 `/case list`、`/case show <id>`、`/case run <id>` 查看及執行，用 `/case stop` 請求停止。實際測試命令由你透過 `/case checks <設定檔>` 確認後才執行，並具有目前使用者權限，不是沙箱。
+
+遇到缺口時，執行者立即保存證據，規劃者在原授權內去重、補前置與調整工作。只有受影響工作等待，無關且有效的成果保留；提交遭拒可在原 session 修復，之後仍須獨立核對及整體驗收。這是協作概念，不要求 GitHub Issue／PR。
+
+詳見 [v2 使用與接續](docs/V2.md)。只安裝下方技能，不會得到 pi extension；不要疊裝同名技能。
+
+## Codex／Claude Code／Antigravity：技能與共同資料
+
+在工作專案使用現成 Skills 安裝器：
 
 ```text
 npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy
 ```
 
-選擇 AI 工具，以專案範圍安裝；更新與移除交給同一工具。來源、差異與驗證見 [安裝指南](docs/HOSTS.md)。以下是已下載本套件後的進階／離線安裝方式，不是主要上手入口。
+依提示選 AI 工具及專案範圍，再請 agent 使用 case-workflow。Codex 可用 `$case-workflow`，Claude Code 可用 `/case-workflow`。其他工具取得相同技能與核心，不代表本套件已提供其自動 session 整合；Antigravity 完整模型任務尚未實測。
 
-從本目錄執行：
+技能帶有 scripts、references 與 assets，複製安裝後本地工具不需原 repository 或網路。更新、移除使用同一個安裝管理工具。離線安裝、共用目錄、同名技能與平台限制見 [HOSTS](docs/HOSTS.md)。
 
-```text
-node install.mjs --project "D:/Projects/MyProject" --host pi
-```
+## 如何選擇？
 
-可選 pi、codex、claude、all。pi／Codex 共用 `.agents/skills/case-workflow/`，Claude 使用 `.claude/skills/case-workflow/`。在目標專案使用 pi 的 `/skill:case-workflow`、Codex 的 `$case-workflow` 或 Claude 的 `/case-workflow`，附上工作要求。
+| 工作需要 | 使用方式 |
+|---|---|
+| 一次可完成 | 直接交代原本的 agent，不必建立 CASE 任務 |
+| 輕量記錄與手動接續 | [v1 操作實例](docs/WORKFLOW.md) |
+| 來源版本、工作包與獨立核對 | [v2 操作指南](docs/V2.md)，pi 可自動交接 |
 
-見 [AI 工具與更新／移除](docs/HOSTS.md)。技能包含需要的 scripts、references、assets，安裝後不需原 repository 或網路即可執行本地工具。pi package 另含 extension，SDK 由 pi 提供，已測版本為 0.84.2；安裝驗證範圍見該頁。
+v1 與 v2 命令、資料不同；既有 v1 資料必須明示遷移，不能混寫。任務集中在專案 `.case-agent/`，不覆寫 AGENTS.md／CLAUDE.md；更新或移除技能不刪任務資料。跨工具接手前確認舊寫者已停止，不在不同機器同時寫入。
 
-## v1 手動操作
+## 證據與限制
 
-可不安裝，直接從本目錄使用工具。project 換成存在的目錄；task ID 使用 `new` 回傳值。
+本機模型已完成「即時回報新工作 → 補包 → 交付與獨立整合」及「缺檔拒收 → 同 session 修復 → 獨立驗收」。這證明指定流程可完成，不等於所有任務可靠或有品質優勢。先前比較中的失敗與額外成本持續保留於 [READINESS](docs/READINESS.md) 的來源紀錄。
 
-```text
-node skills/case-workflow/scripts/case.mjs init --project "D:/Projects/MyProject"
-node skills/case-workflow/scripts/case.mjs new --project "D:/Projects/MyProject" --title "修正匯出" --goal "CSV 正確處理逗號" --criterion "逗號案例通過" --constraint "保留欄位順序"
-node skills/case-workflow/scripts/case.mjs list --project "D:/Projects/MyProject"
-node skills/case-workflow/scripts/case.mjs checkpoint --project "D:/Projects/MyProject" --task "<id>" --summary "已定位 export 函式" --next "修改引號處理並執行相關測試"
-node skills/case-workflow/scripts/case.mjs context --project "D:/Projects/MyProject" --task "<id>"
-```
+最新真實專案資訊整理比較，原生 pi 約 81 秒、CASE 約 596 秒，兩者均未完成合格產物；本輪沒有顯示品質或成本優勢。適合明確需要交辦／核對紀錄且能接受預覽版限制的使用者，不建議拿來無人監督執行重要工作。
 
-完成實際修改和驗證才能 record pass。以下 evidence 須替換成真正觀察到的來源和結果：
+模型可能漏報、誤判或耗盡預算；核心檢查狀態、來源與實際產物，不替文字證據背書。沒有核准檢查時不宣稱已執行測試。資料雖在本機，仍可能傳至你選定的模型服務。框架不提供作業系統沙箱、跨機同步、強身分認證或零失敗保證。
 
-```text
-node skills/case-workflow/scripts/case.mjs record --project "D:/Projects/MyProject" --task "<id>" --criterion 1 --result pass --evidence "tests/export.test.js：逗號案例已執行且通過"
-node skills/case-workflow/scripts/case.mjs finish --project "D:/Projects/MyProject" --task "<id>" --summary "CSV 逗號修正並通過驗收"
-node skills/case-workflow/scripts/case.mjs doctor --project "D:/Projects/MyProject"
-```
+[架構](docs/ARCHITECTURE.md) · [範本](docs/TEMPLATES.md) · [驗證範圍](docs/READINESS.md)
 
-所有 criteria 都需 recorded pass，否則 finish 失敗。CLI 不替你執行測試或驗真證據。失敗、handoff、reopen 與分工見 [完整實例](docs/WORKFLOW.md)。
+## 開發與打包
 
-## v1 資料與共同限制
-
-資料只在 `.case-agent/workflow.json` 與 `.case-agent/tasks/<id>.json`。context 是精簡視圖，show 是完整當前狀態；事件只留最近 30 筆。重要證據留在來源檔，不把事件當永久稽核。文字欄位最多 2,000 字元、驗收與約束各最多 20 項；大量內容以引用保存。
-
-只由一名協調者更新任務，worker 回傳產物後由協調者整合。CLI 有合作式寫入鎖，不提供多機同步、強身分認證、秘密掃描、不可竄改稽核或斷電恢復。handoff 不發訊息，checkpoint 不自動 compact，finish 不冒充人類批准。
-
-BUSY 時先確認工作是否仍在進行。只有全部寫者停止且資料檢查後，才由人處理遺留 `.write-lock`。部分初始化、foreign namespace 或格式損壞會停止；先備份查明，不自動覆蓋或把舊 M0 匯入。勿在同步目錄／不同機器同時寫入。
-
-技能移除保留任務資料及安裝備份；自訂安裝不被覆蓋。資料可能敏感，是否提交版本控制由專案決定。
-
-## 驗證與打包
+從本套件目錄執行：
 
 ```text
 npm test
 npm pack --dry-run
 ```
 
-本地 CLI 不需 npm install。封裝含 skills、pi integration、installer、README、docs 與 package metadata，不含 tests、模型、node_modules、任務資料或快取；pi 執行使用 pi 提供的 SDK（optional peer dependency）。見 [功能與驗證範圍](docs/READINESS.md)。package 目前 private，授權及 registry 發布尚未決定。
+本地核心不需 npm install。封裝包含 skills、pi integration、installer、README、docs 與 package metadata，不含 tests、evaluation、模型、node_modules、任務或快取。pi SDK 由 pi 提供。
+
+公開授權尚未選定，package 保持 private，未發布 npm registry。Git 版本交付不等於授權或 registry 發布。

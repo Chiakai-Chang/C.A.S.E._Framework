@@ -11,7 +11,7 @@ description: Manage an AI agent task from agreed outcome through execution, boun
 
 - 短問答或一次可完成的小修改：直接做，驗證與交付保持相稱；不強制 init。
 - 新的持續任務：先確認成果、可觀察的驗收與不能違反的約束；長且相依的工作可分階段接續，可獨立驗收的產物才拆工作包。選最少有用的分工，預設依序執行。
-- 需要版本化契約、工作包或 pi 新 session 執行：讀 [v2 契約與接續](references/v2-contracts.md)。pi 安裝 extension 才有 `case_workflow` 與 `/case`；只安裝 skill 不具備自動 session 執行。
+- 需要版本化契約、工作包、執行中新增待辦／自查修復或 pi 新 session 執行：讀 [v2 契約與接續](references/v2-contracts.md)。pi 安裝 extension 才有 `case_workflow` 與 `/case`；只安裝 skill 不具備自動 session 執行。
 - 已有資料先讀 `.case-agent/workflow.json` 的 format：`case-workflow/2` 使用 v2 reference；`case-workflow/1` 使用下列 v1 流程。既有 v1 只有明確升級意圖才 migrate，不自動切換格式。
 - v1 接續／即將壓縮 context：讀 [接續與 CLI](references/state-and-resume.md)。
 - 需要分工或整合不同意見：讀 [協作與驗收](references/collaboration-and-quality.md)。

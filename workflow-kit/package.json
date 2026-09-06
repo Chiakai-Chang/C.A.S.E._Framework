@@ -10,5 +10,5 @@
   "pi": { "skills": ["skills"], "extensions": ["integrations/pi/extension.mjs"] },
   "peerDependencies": { "@earendil-works/pi-coding-agent": "*" },
   "peerDependenciesMeta": { "@earendil-works/pi-coding-agent": { "optional": true } },
-  "scripts": { "test": "node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs tests/core-v2.test.mjs tests/pi-runner.test.mjs tests/pi-tools.test.mjs tests/pi-sdk.test.mjs tests/pi-extension.test.mjs tests/package.test.mjs tests/feedback.test.mjs tests/context-policy.test.mjs tests/approved-checks.test.mjs" }
+  "scripts": { "test": "node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs tests/core-v2.test.mjs tests/pi-runner.test.mjs tests/pi-tools.test.mjs tests/pi-sdk.test.mjs tests/pi-extension.test.mjs tests/package.test.mjs tests/feedback.test.mjs tests/context-policy.test.mjs tests/approved-checks.test.mjs tests/value-evaluation.test.mjs tests/discoveries.test.mjs tests/pi-discovery-sdk.test.mjs tests/real-task-evaluation.test.mjs" }
 }

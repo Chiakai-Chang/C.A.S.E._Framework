@@ -6,7 +6,7 @@ import { createStore } from './core/index.mjs';
 import { need, fail } from './core/io.mjs';
 export function run(args) {
     if (args.length === 1 && ['--help', '-h'].includes(args[0]))
-        return 'CASE v2: init | migrate | project | set-project --data FILE --revision N --reason TEXT | create --data FILE | get --case ID | list | dispatch --case ID --data FILE --revision N --request ID | context --case ID --packet ID [--max-chars N]\nEvery command requires --project PATH. JSON action/contract files are read as data. set-project requires user-authorized consensus; it does not edit existing instruction files.\n';
+        return 'CASE v2: init | migrate | project | set-project --data FILE --revision N --reason TEXT | create --data FILE | get --case ID | list | dispatch --case ID --data FILE --revision N --request ID | context --case ID --packet ID [--max-chars N]\nEvery command requires --project PATH. JSON action/contract files are read as data. set-project requires user-authorized consensus; it does not edit existing instruction files.\nDiscovery actions through dispatch: report_discovery (packetId, attemptId, discovery), resolve_discoveries (decisions; optional packets, rerunPacketIds, reason), reopen_discovery (id, reason). First discovery upgrades case state to case-workflow/2.1; older cores must not read it.\n';
     const [command, ...rest] = args, opts = {};
     for (let i = 0; i < rest.length; i += 2) {
         need(rest[i]?.startsWith('--') && rest[i + 1] && !Object.hasOwn(opts, rest[i]), 'Invalid options');

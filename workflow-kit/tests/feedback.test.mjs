@@ -77,22 +77,28 @@ for(const status of ['running','submitted'])test(`amendment refuses ${status} si
 function sessions(f,respond){let n=0;return async request=>{const sessionId=`s-${++n}`;await request.onStart(sessionId);return {sessionId,text:JSON.stringify(await respond(request)),usage:'unknown'};};}
 const reviewed={passed:true,findings:[],evidence:'read actual output'};
 const integrated={results:[{criterionId:'a',passed:true,evidence:'read complete output'}],summary:'complete'};
-test('worker change request adds prerequisite and finishes with fresh work',async t=>{
+for(const feedbackKind of ['changeRequest','blocked'])test(`worker ${feedbackKind} adds prerequisite and finishes with fresh work`,async t=>{
   const f=fixture(t);let planners=0,workers=0;
   const result=await runCase({store:f.store,caseId:f.state.id,runSession:sessions(f,request=>{
-    if(request.role==='planner')return ++planners===1?{packets:[packet()]}:{packets:[packet('prep'),packet('p',{dependsOn:['prep'],inputs:[{path:'out/prep',required:true}]})],reason:'prepare material'};
+    if(['worker','reviewer'].includes(request.role))assert.deepEqual(request.criterionIds,['a']);
+    if(request.role==='planner'){
+      assert.equal(typeof request.validateResult,'function');
+      assert.throws(()=>request.validateResult({packets:[packet('bad',{checks:[]})],reason:'incomplete'}),{code:'INVALID_ARGUMENT'});
+      const result=++planners===1?{packets:[packet()]}:{packets:[packet('prep'),packet('p',{dependsOn:['prep'],inputs:[{path:'out/prep',required:true}]})],reason:'prepare material'};
+      request.validateResult(result);return result;
+    }
     if(request.role==='worker'){
-      if(++workers===1)return {changeRequest:{reason:'need prepared material'}};
+      if(++workers===1)return {[feedbackKind]:{reason:'need prepared material'}};
       const filename=workers===2?'prep':'p';fs.writeFileSync(path.join(f.project,'out',filename),'correct');return {summary:'written'};
     }
     return request.role==='reviewer'?reviewed:integrated;
   })});
-  assert.equal(result.state.status,'completed');assert.equal(result.state.packetHistory[0][0].attempts[0].feedback.kind,'changeRequest');
+  assert.equal(result.state.status,'completed');assert.equal(result.state.packetHistory[0][0].attempts[0].feedback.kind,feedbackKind);
 });
-test('worker external blocker is saved without invented output or planner rerun',async t=>{
+test('planner triages worker external blocker and stops without invented output',async t=>{
   const f=fixture(t);const roles=[];
-  await assert.rejects(runCase({store:f.store,caseId:f.state.id,runSession:sessions(f,r=>{roles.push(r.role);return r.role==='planner'?{packets:[packet()]}:{blocked:{reason:'external price list missing'}};})}),{code:'BLOCKED'});
-  assert.deepEqual(roles,['planner','worker']);assert.equal(fs.existsSync(path.join(f.project,'out/p')),false);
+  await assert.rejects(runCase({store:f.store,caseId:f.state.id,runSession:sessions(f,r=>{roles.push(r.role);return roles.length===1?{packets:[packet()]}:{blocked:{reason:'external price list missing'}};})}),{code:'BLOCKED'});
+  assert.deepEqual(roles,['planner','worker','planner']);assert.equal(fs.existsSync(path.join(f.project,'out/p')),false);
   const p=f.store.get(f.state.id).packets[0];assert.equal(p.status,'blocked');assert.equal(p.attempts[0].feedback.reason,'external price list missing');
 });
 test('integration false requires actual rerun before reintegration',async t=>{
@@ -162,14 +168,14 @@ test('explicit recovery of interrupted work permits a fresh worker',async t=>{
 test('input delivery rejects unknown modes',t=>{
   const f=fixture(t);assert.throws(()=>f.send({type:'plan',packets:[packet('p',{inputs:[{path:'source',required:true,delivery:'skip'}]})]}),{code:'INVALID_ARGUMENT'});
 });
-test('resuming a rejected integration cannot obtain a new pass without rework',async t=>{
+test('resuming a rejected integration waits without new model work until explicit state change',async t=>{
   const f=fixture(t);f.send({type:'plan',packets:[packet()]});verify(f);
   await assert.rejects(runCase({store:f.store,caseId:f.state.id,runSession:sessions(f,r=>r.role==='integrator'?{results:[{criterionId:'a',passed:false,evidence:'incorrect'}],summary:'failed'}:{blocked:{reason:'need source'}})}),{code:'BLOCKED'});
   const roles=[];
   await assert.rejects(runCase({store:f.store,caseId:f.state.id,runSession:async r=>{
     roles.push(r.role);const sessionId='second-run';await r.onStart(sessionId);return {sessionId,text:JSON.stringify(r.role==='planner'?{blocked:{reason:'still need source'}}:integrated),usage:'unknown'};
   }}),{code:'BLOCKED'});
-  assert.deepEqual(roles,['planner']);assert.notEqual(f.store.get(f.state.id).status,'completed');
+  assert.deepEqual(roles,[]);assert.notEqual(f.store.get(f.state.id).status,'completed');
 });
 test('malformed replanning after integration rejection cannot trigger format reintegration',async t=>{
   const f=fixture(t);f.send({type:'plan',packets:[packet()]});verify(f);const roles=[];

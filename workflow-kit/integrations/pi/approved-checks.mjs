@@ -13,14 +13,20 @@ export function approveChecks(input) {
   })));
 }
 
+export function checksForRole(checks, role, criterionIds = []) {
+  if (role === 'integrator') return checks;
+  if (!['worker','reviewer'].includes(role)) return {};
+  return Object.fromEntries(Object.entries(checks).filter(([,check]) => check.criterionIds?.some(id => criterionIds.includes(id))));
+}
+
 export function createCheckExecutor(project, checks) {
   const tool = createScopedTools({ project, role: 'reviewer', checks }).find(t => t.name === 'case_check');
   return async ({ role, state, packetId, signal }) => {
-    const criteria = role === 'reviewer'
+    const criteria = ['worker','reviewer'].includes(role)
       ? new Set(state.packets.find(p => p.id === packetId)?.checks.flatMap(c => c.criterionIds) ?? [])
       : null;
     const results = [];
-    for (const [id, check] of Object.entries(checks)) {
+    for (const [id, check] of Object.entries(checksForRole(checks, role, [...(criteria ?? [])]))) {
       // Explicit criterion checks apply only to matching work. Unscoped checks
       // are whole-case checks: running them on a half-built project is misleading.
       if (criteria && (!check.criterionIds || !check.criterionIds.some(c => criteria.has(c)))) continue;

@@ -4,6 +4,8 @@
 
 ## v2 共用核心與整合
 
+`core/io.mjs` 定義共用材料路徑保護，核心組裝／雜湊與 pi 讀寫／列目錄均套用，避免 inline 材料繞過工具的設定目錄限制。一般指引檔仍可引用；不是秘密掃描或 OS sandbox。
+
 [v2 指南](V2.md) 說明新流程；以下 v1 詞彙與操作仍供舊任務使用。v2 的 `scripts/core/index.mjs` 匯出 `createStore(project)`，提供 init、migrate、create、get、list、dispatch、context 及 run artifacts 保存；`case-v2.mjs` 和 pi extension 共用狀態規則。v1 `case.mjs` 保留，兩種格式不混寫。
 
 卷宗契約保存目標、限制、驗收與預算，工作包保存材料版本、相依、寫入範圍、產物及 checks。核心處理 revision／requestId、SHA256 與狀態轉移；pi SDK 整合負責新 session、限定工具、取消、用量及依序執行。核對 session 與 worker 分開，全域 integrate 不只相信包的 pass。詳情按需讀[契約參照](../skills/case-workflow/references/v2-contracts.md)。
@@ -12,7 +14,13 @@ v2 權威資料在 `.case-agent/cases/<UUID>/state.json`，run 紀錄在 `artifa
 
 `amendments.mjs` 驗證契約不變的計畫修正，依語意、來源／產物版本、相依與寫入重疊判斷哪些成果可保留；packetHistory 保存被替換嘗試，預算依 attempt ID 去重。`runner.mjs` 將 worker changeRequest、重複核對缺陷及整體失敗送回 planner，run 保存 pendingFeedback，跨次啟動也不能跳過尚未補做的缺口。
 
+`discoveries.mjs` 管執行中待辦：來源與證據、重送、採納／合併／等待／不採納、重開及整合門檻。SDK 的 `case_discover` 透過 runner 回呼立即保存；規劃者以 `resolve_discoveries` 原子處置及補包，worker 不直接派工或改全域契約。blocking 只停止受影響包；待外部條件的案可先完成獨立工作。state 啟用此功能才升為 `case-workflow/2.1`，manifest 保持 2，舊讀者拒絕新 state。
+
+提交分三層：worker 在原 session 實作、自查、修復；SDK await 核心 `validateAction(submit)` 與本包核准檢查，失敗仍允許修正；正式提交後由不同 session 核對，再做全域整合。預檢不寫狀態、不提高權限、不增加預算，驗證期間工具不可並行穿插，最終文字同樣不能跳過驗證。這些機制防止已知缺檔或失敗被當成完成，不保證模型能發現所有問題。
+
 `approved-checks.mjs` 將人類確認過的命令／引數凍結，pi 原生命令負責確認；runner 在核對／整合前執行並保存實際結果，不允許模型覆蓋失敗。沒有啟動外部命令的權限身分隔離：同使用者權限的程式仍可改資料，需強隔離時由外部沙箱提供。
+
+發現資料的完整 evidence／history 仍只在 state。`discoveryIndex` 產生短索引；`store.readDiscovery` 提供有 revision 的唯讀分頁。pi `case_discovery_read` 固定當前卷宗，worker／reviewer 另限當包相關 ID。這避免新增佇列反過來占滿 context，不宣稱所有材料或模型壓縮都能無損自動接續。接受 `case_result` 後程式主動停止生成，不再依賴模型自行停止；相同重送只取回原收據。
 
 ## v1 四個部分各做什麼
 

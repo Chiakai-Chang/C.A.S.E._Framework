@@ -7,7 +7,88 @@ import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { run as v1 } from '../skills/case-workflow/scripts/case.mjs';
+import { digest } from '../skills/case-workflow/scripts/core/io.mjs';
 const mod = await import('../skills/case-workflow/scripts/core/index.mjs').catch(() => null);
+
+for (const input of [
+    { required: true, delivery: 'inline' },
+    { required: true, delivery: 'indexed' },
+    { required: false }
+]) {
+    test(`受保護材料不得加入計畫：${input.delivery ?? 'optional'}`, async t => {
+        const f = setup(t);
+        for (const segment of ['.git', '.pi', '.agents', '.codex', '.claude', '.case-agent']) {
+            for (const name of [`${segment}/tasks/fixture.txt`, `nested/${segment.toUpperCase()}/fixture.txt`]) {
+                await t.test(name, () => {
+                    // All settings here are synthetic files beneath the temporary fixture.
+                    const file = path.join(f.dir, name);
+                    fs.mkdirSync(path.dirname(file), { recursive: true });
+                    fs.writeFileSync(file, 'synthetic protected material');
+                    const action = { type: 'plan', packets: [{ ...packet(), inputs: [{ ...input, path: name }] }] };
+                    assert.throws(() => f.store.validatePlan(f.state.id, action, { expectedRevision: f.state.revision }), { code: 'UNSAFE_PATH' });
+                    assert.throws(() => f.send(action), { code: 'UNSAFE_PATH' });
+                    assert.equal(f.store.get(f.state.id).revision, 0);
+                });
+            }
+        }
+    });
+}
+
+test('舊有不安全工作包的 context 與 digest 也拒絕受保護材料', async t => {
+    for (const input of [
+        { path: '.git/config', required: true, delivery: 'inline' },
+        { path: 'nested/.CASE-AGENT/fixture.txt', required: true, delivery: 'indexed' },
+        { path: 'nested/.Pi/settings.json', required: false }
+    ]) {
+        await t.test(input.delivery ?? 'optional', () => {
+            const f = setup(t);
+            f.send({ type: 'plan', packets: [packet()] });
+            const file = path.join(f.dir, input.path);
+            fs.mkdirSync(path.dirname(file), { recursive: true });
+            fs.writeFileSync(file, '原始材料');
+            const state = f.store.get(f.state.id);
+            state.packets[0].inputs[0] = { ...state.packets[0].inputs[0], ...input };
+            fs.writeFileSync(path.join(f.dir, '.case-agent', 'cases', state.id, 'state.json'), JSON.stringify(state));
+            assert.throws(() => f.store.context(state.id, 'p'), { code: 'UNSAFE_PATH' });
+            assert.throws(() => digest(f.dir, input), { code: 'UNSAFE_PATH' });
+        });
+    }
+});
+
+test('不存在的選用受保護材料仍拒絕，並保留頂層 CASE 狀態前綴排除', t => {
+    const f = setup(t);
+    for (const name of ['nested/.codex/missing.json', '.case-agent-backup/state.json', './.CASE-AGENT-migration-state.json']) {
+        const input = { path: name, required: false };
+        assert.throws(() => f.send({ type: 'plan', packets: [{ ...packet(), inputs: [input] }] }), { code: 'UNSAFE_PATH' });
+        assert.throws(() => digest(f.dir, input), { code: 'UNSAFE_PATH' });
+    }
+});
+
+test('一般 AGENTS.md 與正常來源仍可組裝 context', t => {
+    const f = setup(t);
+    const paths = ['AGENTS.md', 'nested/AGENTS.md', 'src/git/config.txt', '.github/workflows/check.yml'];
+    for (const name of paths) {
+        fs.mkdirSync(path.dirname(path.join(f.dir, name)), { recursive: true });
+        fs.writeFileSync(path.join(f.dir, name), `source: ${name}`);
+    }
+    f.send({ type: 'plan', packets: [{ ...packet(), inputs: paths.map(name => ({ path: name, required: true })) }] });
+    assert.deepEqual(JSON.parse(f.store.context(f.state.id, 'p')).requiredMaterials.map(i => i.content), paths.map(name => `source: ${name}`));
+});
+
+test('plan validation returns actionable errors without committing or weakening authority', t => {
+    const f = setup(t);
+    const before = JSON.stringify(f.store.get(f.state.id));
+    const options = {expectedRevision:f.state.revision};
+    assert.throws(() => f.store.validatePlan(f.state.id, {type:'plan',packets:[{...packet(),checks:[]}]}, options), failure=>failure.code==='INVALID_ARGUMENT' && /missing a/.test(failure.message));
+    assert.deepEqual(f.store.validatePlan(f.state.id, {type:'plan',packets:[packet()]}, options), {valid:true});
+    assert.equal(JSON.stringify(f.store.get(f.state.id)), before);
+    assert.throws(() => f.store.validatePlan(f.state.id, {type:'cancel'}, options), {code:'INVALID_ARGUMENT'});
+    assert.throws(() => f.store.validatePlan(f.state.id, {type:'plan',packets:[packet()]}, {expectedRevision:999}), {code:'REVISION_CONFLICT'});
+    f.send({type:'plan',packets:[packet()]});
+    const planned = JSON.stringify(f.store.get(f.state.id));
+    assert.deepEqual(f.store.validatePlan(f.state.id, {type:'amend_plan',packets:[{...packet(),purpose:'revised approach'}],reason:'new legal plan'}, {expectedRevision:f.state.revision}), {valid:true});
+    assert.equal(JSON.stringify(f.store.get(f.state.id)), planned);
+});
 test('畸形操作始終提供結構化錯誤碼', t => {
     const f = setup(t);
     assert.throws(() => f.send({ type: 'plan', packets: [{ ...packet(), deliverables: [null] }] }), { code: 'INVALID_ARGUMENT' });

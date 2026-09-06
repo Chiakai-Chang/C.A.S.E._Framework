@@ -1,69 +1,104 @@
 # C.A.S.E. Framework
 
-讓本地模型在有限 context 下完成符合要求的工作，換對話後能接續，交付時有可核對的成果。
+讓 AI 分工時少帶無關脈絡，遇到問題能補做，換對話後能接續，交付時有成果可核對。
 
-C.A.S.E. 把專案共識、整體計畫與當前交辦分開：規劃者掌握目標，執行者拿必要材料做事；發現缺口可回到規劃者補做，最後核對整體成果。共用核心保存版本與證據，pi 整合負責自動建立不同 context。Codex、Claude Code、Antigravity 可讀寫同一套交辦資料，但目前沒有自動指揮這些產品協作的原生 runner。
+C.A.S.E. 是一套**檔案式協作框架**：把專案共識、整體計畫與當前交辦分開保存，再讓 agent 依工作需要取得材料。它由可攜技能、本地狀態工具與 pi 整合組成，不是另一個模型服務，也不要求使用 GitHub Issue／PR。
 
-目前本地版本是 **2.0.0-preview.1**，v2 核心與 pi 自動 context 流程已實作；本輪工作分支尚未合併或推送。既有 `main` 的 v1 任務記錄工具繼續保留。模型品質與成本的普遍改善仍未證明，實測與限制見 [READINESS](workflow-kit/docs/READINESS.md)。
+[開始使用](#開始使用) · [操作指南](workflow-kit/docs/V2.md) · [實測與限制](workflow-kit/docs/READINESS.md) · [文件地圖／Wiki](MAP.md) · [English](workflow-kit/docs/GUIDE.en.md)
 
-Portable workflow skill and versioned local core, with a pi integration for fresh planning, execution, review and integration sessions. Other AI tools use the portable skill/core without a native CASE runner. [English guide](workflow-kit/docs/GUIDE.en.md).
+目前為 **2.0.0-preview.1 預覽版**。pi 的自動流程已在本機模型完成指定案例驗收；其他 AI 工具可使用技能與共同資料，但自動化程度不同。尚未證明普遍提高模型品質或節省 tokens。
 
-## 實際幫助什麼？
+## 它解決什麼問題？
 
-長工作常把限制、失敗原因與下一步散落在聊天裡；規劃探索也可能占掉執行時真正需要的 context。CASE 把全域目標與不能違反的條件保留在契約中，每個工作包只帶當前必要材料及可回查的來源。核對者重新讀產物，最後對照整體要求，避免把「每包都說完成」當成全部完成。
+長工作不只需要「記得之前說過什麼」，還需要知道哪些要求仍有效、誰在做什麼、成果是否真的合格。
 
-例如交代：「整理訂單、價格、退貨與匯率，保留原始檔，交付可追溯的營收報告。」不是讓每個 agent 重讀全部聊天，而是：
+| 常見問題 | CASE 的處理方式 |
+|---|---|
+| 規劃討論太長，執行者反而找不到重點 | 全域要求與當前工作包分層；執行者取得必要限制、材料與可回查的來源 |
+| 做到一半才發現原計畫漏了工作 | 立即保存缺口與證據，由規劃者在原授權內去重、補做與調整相依 |
+| agent 說完成，卻沒產物或沒通過檢查 | 提交先查產物與核准的檢查；遭拒可原回合修復，之後仍須獨立核對 |
+| 換對話後重做、漏做，或拿舊結果繼續 | 保存工作狀態、來源版本與未決問題；保留有效成果，重新核對受影響部分 |
 
-1. 專案共識保留「資料不外傳、原始檔不可改」等長期要求；每次工作繼承確認過的版本。
-2. 規劃者建立本次成果、整體驗收與工作包；執行者只取得限制、相關材料與允許改動的範圍。
-3. 報告工作發現缺少可由既有資料產生的前置成果，就回報並補包，不要求人重新交代整件事；真正缺外部資料才明示停下。
-4. 不同 context 核對實際產物，最後檢查整體目標。缺陷要補做，不能反覆問驗收者直到改口；未受影響的有效成果保留。
+**何時值得用？** 需要分階段接續、來源版本追蹤、清楚交辦或獨立核對紀錄時。短問答、小修改或一次能完成的工作直接做即可；檔案多不代表一定要分工。分離 context 是方法，不是越多越好的指標。
 
-這是已實作的工作機制，是否比你的原有工作方式更好，仍須看實際成果與成本。詳見 [使用旅程與設定](workflow-kit/docs/V2.md)。
+## 實際怎麼運作？
 
-這個設計的價值取決於工作是否更正確、是否減少遺漏與人的介入，不取決於記錄或角色數。新 session 需要額外時間；短問答或一次可完成的小修改直接做即可。長且緊密相依的工作也可使用 v1 記錄分階段接續，不強制拆包。
+例如你交代：
+
+> 用 CASE 整理訂單、價格、退貨與匯率，產出可追溯的營收報告。保留原始檔，只寫入 reports/；自行檢查結果，總時間最多十分鐘。
+
+1. **對齊要求。** 保存成果、限制、驗收與預算；有跨任務共識時沿用其版本，不必每次填表。
+2. **清楚交辦。** 規劃者拆出必要工作包。執行者使用新的對話脈絡，只拿當包需要的指引與材料。
+3. **邊做邊修正。** 缺前置成果便回報證據，規劃者補做；不相關的工作繼續。遇到新權限、改目標或真正缺外部資料，才需要你決定。
+4. **核對再交付。** 執行者自查，另一個 context 核對產物，最後對照整體要求與未解待辦。失敗與部分成果都保留，不用「完成」標記掩蓋問題。
+
+這對應原案的「大憲法 → 小憲法」：大憲法保留共同目的與限制，小憲法是當次可執行的交辦。技能說明工作方法；本地核心保存同一份權威狀態；pi 整合負責自動交接。沒有要求每項任務固定開幾個角色。
 
 ## 開始使用
 
-pi 的完整 v2 流程從 [安裝指南](workflow-kit/docs/HOSTS.md) 與 [v2 操作指南](workflow-kit/docs/V2.md) 開始。先取得包含本輪 v2 的本機 checkout，再在實際工作專案執行，路徑換成自己的 checkout：
+### pi：自動交辦、執行與核對
+
+需要 Git，以及可正常使用的 pi／模型設定。本次驗證使用 pi 0.84.2、Node.js 22.19 以上；本地核心本身需要 Node.js 20 以上。
+
+先把本專案下載到打算保留的位置：
 
 ```text
-pi install -l "D:/MyProject/C.A.S.E._Framework/workflow-kit"
+git clone https://github.com/Chiakai-Chang/C.A.S.E._Framework.git
 ```
 
-已以 pi 0.84.2 實測原生本機安裝及實際 extension loader，註冊 `case_workflow` 與 `/case` 無載入錯誤；模型端到端及維護操作的最新結果集中於 READINESS。核心需 Node.js 20+，本次 pi 版本需 Node.js 22.19+。這種安裝引用本機目錄，需保留該路徑。
+接著**在你要工作的專案目錄**安裝，將下列路徑換成剛才下載位置的絕對路徑：
 
-先在 pi 選定預期模型，再交代工作。agent 用 `case_workflow` 建立契約；`/case list`、`/case show <id>`、`/case run <id>`、`/case stop` 用於查看、執行及請求停止。只安裝 skill 不會安裝這個 extension。
+```text
+pi install -l "<CASE下載位置>/workflow-kit"
+```
 
-既有公開 `main` 的可攜技能仍可沿用下列 v1 發行入口；這個 URL 不代表本輪 v2 已發布：
+這是 pi 的專案範圍套件安裝，引用本機目錄，因此不要移走該目錄。不需在 CASE 根目錄執行 npm install，也不要對此 repository 根目錄直接做 pi Git 安裝。[安裝、更新與移除](workflow-kit/docs/HOSTS.md)
+
+重新載入 pi、選定模型後，直接用上面的方式交代工作。agent 透過 `case_workflow` 建立任務，你可以：
+
+```text
+/case list
+/case show <id>
+/case run <id>
+/case stop
+```
+
+`<id>` 使用建立任務或 list 回傳的值；stop 是取消請求。需要執行專案測試時，先由你確認 `/case checks <設定檔>` 的命令與權限；沒有核准檢查時，不會宣稱已跑測試。詳見[完整操作與接續](workflow-kit/docs/V2.md)。
+
+### Codex、Claude Code、Antigravity：可攜技能
+
+在工作專案使用 Skills 安裝器，依提示選擇 AI 工具與專案範圍：
 
 ```text
 npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy
 ```
 
-依提示選 AI 工具並採專案範圍，更新／移除使用同一安裝管理工具。Codex 使用 `$case-workflow`，Claude Code 使用 `/case-workflow`，pi 技能入口為 `/skill:case-workflow`；Antigravity 可在 Skills 安裝器選擇。平台差異、離線安裝與同名技能處理見 [HOSTS](workflow-kit/docs/HOSTS.md)。
+安裝後請 agent 使用 `case-workflow` 處理工作；Codex 可用 `$case-workflow`，Claude Code 可用 `/case-workflow`。技能包含本地核心與操作參照，但**只裝技能不會安裝 pi extension，也不會自動建立其他產品的子代理流程**。若已裝 pi 套件，不要再疊裝同名技能。
 
-## 能保證到哪裡？
-
-| 部分 | 已實作的行為 | 邊界 |
+| 使用方式 | 可攜技能／共同資料 | 本套件自動建立獨立 session |
 |---|---|---|
-| 版本化核心 | 專案共識、契約、相依、SHA256、計畫修正及全域驗收 | 檢查結構與版本，不替文字證據內容背書 |
-| Context 組裝 | 全域限制、小型必讀材料、大型必要來源索引 | 超出字元預算報錯；索引不代表可以省略必要資料 |
-| pi 整合 | 新 session、依序執行、限定工具、取消與用量保存 | 不是 OS sandbox；其他 AI 工具沒有本套件的原生 runner |
-| 接續與升級 | 保存失敗、修訂後使舊驗收失效、顯式 v1 遷移 | 舊寫者須先停止；遷移在資料目錄外保留備份 |
+| pi 原生套件 | 有 | 有，工作包依序執行 |
+| Codex／Claude Code | 有 | 尚未提供原生整合 |
+| Antigravity（agy） | 技能格式／路徑相容；未實測完整模型任務 | 尚未提供原生整合 |
 
-pi 不提供任意 shell；使用者可透過 `/case checks <設定檔>` 確認可信檢查清單，runner 執行並保存真實結果，失敗不能被模型自評覆蓋。沒有清單就不宣稱執行了測試。這些命令及其執行的專案程式仍具有使用者權限，並非沙箱。資料雖存在本機，AI 工具仍可能將讀取內容送往你選定的模型服務。
+跨工具共用資料不等於自動互相指揮。接手前確認舊寫者已停止；其他機器須自行安全同步。[平台差異](workflow-kit/docs/HOSTS.md)
 
-真實本地模型的[開發比較與完整失敗紀錄](docs/evaluation/case-v2-local-report.md) 已保存。格式指引修正後一組，單 context 23.538 秒／SDK total tokens 6069，分離 115.405 秒／21198，兩者產物核對通過；這個簡單工作未顯示品質收益，卻增加成本。修正前後樣本不能合成固定版本統計，也不支持普遍品質提升或省 token 的宣稱。[既有六組跨平台 CI](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/33968299883) 屬 v1 提交 `2a81bc8`，不是目前 v2 的遠端驗收。
+## 可信嗎？目前證據到哪裡？
 
-## 文件入口
+- **流程可執行：** 本機模型完成即時發現、補前置、兩份產物及獨立整合；也完成缺檔拒收後同 context 修復。程式測試涵蓋相依、來源變更、權限、預算與失敗接續。[生命週期驗收與完整失敗紀錄](docs/evaluation/case-discovery-repair-report.md)
+- **效益仍需區分：** 先前固定版六次比較中，簡單流程三案成功，CASE 兩案成功、一案失敗，成功案成本也較高。這些歷史結果沒有被後續修復覆寫；不能因此宣稱全面提升品質或省 tokens。[比較方法與結果](docs/evaluation/case-value-validation-report.md)
+- **最新真實任務：** 將本專案四份來源整理成可核對的採用資訊，一般 pi 與 CASE 都未完成合格產物，分別耗時約 81 秒與 596 秒。這次未顯示 CASE 優勢；它不是可以放心無人監督處理任何工作的成熟方案。[完整比較](docs/evaluation/2026-09-06-real-task-report.md)
+- **不保證零失敗：** 模型可能漏報問題或在預算內無法修復。CASE 保存可追查的失敗，拒絕明確不合格的結案，不保證發現一切錯誤。
 
-- [v2 流程](workflow-kit/docs/V2.md) · [安裝、更新與移除](workflow-kit/docs/HOSTS.md)
-- [架構與責任](workflow-kit/docs/ARCHITECTURE.md) · [驗證範圍](workflow-kit/docs/READINESS.md)
-- [可攜套件](workflow-kit/README.md) · [v1 操作實例](workflow-kit/docs/WORKFLOW.md) · [可選範本](workflow-kit/docs/TEMPLATES.md)
-- [目標](docs/GOALS.md) · [現況](docs/STATUS.md) · [驗收](docs/ACCEPTANCE.md) · [文件地圖](MAP.md)
-- [貢獻方式](CONTRIBUTING.md) · [維護關聯與翻譯](docs/MAINTENANCE.md)
+資料存在專案的 `.case-agent/`，不覆寫既有 AGENTS.md／CLAUDE.md。**本地儲存不等於資料一定不出機器**：模型服務由你選擇。pi 的限定工具不是作業系統沙箱，核准檢查仍以你的使用者權限執行。更新／移除技能不刪任務；舊 v1 資料需要[顯式遷移](workflow-kit/docs/V2.md#v1-升級)。
 
-主要文件採臺灣慣用正體中文，英文指南同步使用介面。`workflow-kit/` 是產品入口；歷史研究由 [MAP](MAP.md) 按需查閱，不是使用前置條件。原始構想保留於 [Local-Agent-Workspace](https://github.com/Chiakai-Chang/Local-Agent-Workspace/tree/main/C.A.S.E._Framework)，作為復盤參照，不盲目照抄。
+## 進一步閱讀
 
-公開授權尚未選定，npm package 保持 private，未發布 registry；不要把 repository 可見性當成已授予開源使用權。合併、推送與正式發布狀態以 [STATUS](docs/STATUS.md) 為準。
+- 使用：[操作指南](workflow-kit/docs/V2.md) · [安裝維護](workflow-kit/docs/HOSTS.md) · [可選範本](workflow-kit/docs/TEMPLATES.md)
+- 理解：[架構與責任](workflow-kit/docs/ARCHITECTURE.md) · [目前驗證範圍](workflow-kit/docs/READINESS.md) · [目標](docs/GOALS.md)
+- 接手：[文件地圖／Wiki](MAP.md) · [貢獻方式](CONTRIBUTING.md) · [修改連動與翻譯](docs/MAINTENANCE.md)
+- 歷史：[v1 輕量記錄](workflow-kit/docs/WORKFLOW.md) · [原始構想](https://github.com/Chiakai-Chang/Local-Agent-Workspace/tree/main/C.A.S.E._Framework)
+
+主要文件使用臺灣慣用正體中文，英文指南同步使用介面。產品在 `workflow-kit/`；歷史研究不必預先閱讀。研究是為了改善實際工作，不是本專案的最終目的。
+
+公開授權尚未選定，npm 套件保持 private、未發布 registry；repository 公開不等於已授予開源使用權。版本與 Git 交付狀態見 [STATUS](docs/STATUS.md)。
