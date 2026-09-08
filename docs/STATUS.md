@@ -1,5 +1,7 @@
 # 目前狀態
 
+9/9 接續：[既有核對與修復實測](evaluation/2026-09-09-review-repair-report.md)正確發現漏欄並退回，但 worker 未寫入，約 601 秒取消，未到整體驗收。下一步先分離修復執行設定的影響，暫緩新增檢查器；不推定 reviewer 失效或品質目標完成。
+
 更新：2026-09-08。產品版本 **2.0.0-preview.1**。這是流程已實作、指定本機案例已驗證的預覽版，不是普遍提升模型品質的已證實方案。
 
 [開始使用](../README.md#開始使用) · [v2 操作](../workflow-kit/docs/V2.md) · [驗證範圍](../workflow-kit/docs/READINESS.md) · [版本紀錄](../CHANGELOG.md)

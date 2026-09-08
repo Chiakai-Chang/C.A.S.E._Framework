@@ -4,6 +4,8 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
+| 接續驗證既有核對與修復 | [9/9 修復旅程](docs/evaluation/2026-09-09-review-repair-report.md) | reviewer 找出缺欄，worker 未寫入即逾時；不等於整案完成 |
+| 改善漏驗、修復與驗收負擔 | [復盤與建議](docs/research/2026-09-08-acceptance-improvement-review.md)、[一手來源](docs/research/2026-09-08-acceptance-feedback-sources.md) | 先驗既有 reviewer／repair，再比較結構檢查；研究方案非已實作能力 |
 | 規劃是否提前解題、執行是否重讀或漏驗 | [交辦分界修正與實測](docs/evaluation/2026-09-08-planning-handoff-report.md) | 材料概況、交辦分界、SDK 接線及單獨 worker 重播；保留失敗與驗收限制 |
 | 解決最新反覆操作與未產出 | [驗證與復盤](docs/evaluation/2026-09-06-read-receipt-report.md)、[執行計畫](docs/design/2026-09-06-read-receipt-implementation.md)、[修正設計](docs/design/2026-09-06-stalled-execution-resolution.md)、[審閱裁定](docs/design/2026-09-06-stalled-execution-review.md)、[一手來源](docs/research/2026-09-06-stalled-execution-sources.md) | 讀取語意、context／trace 邊界與有限對照；工程修正與模型效果分開，不宣稱唯一根因 |
 | 查看預覽版交付與升級 | [版本紀錄](CHANGELOG.md)、[採用與發布核對](docs/evaluation/2026-09-06-preview-release-checks.md)、[本輪交付計畫](docs/design/2026-09-06-preview-release-plan.md) | 安裝、獨立審閱、Git 交付與授權界線 |

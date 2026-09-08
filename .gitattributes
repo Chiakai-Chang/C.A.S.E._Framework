@@ -11,3 +11,4 @@ docs/evaluation/2026-09-06-real-task-evidence.json -text
 docs/evaluation/2026-09-08-read-receipt-*.json -text
 docs/evaluation/2026-09-08-planning-handoff-*.json -text
 docs/evaluation/2026-09-08-worker-*-evidence.json -text
+docs/evaluation/2026-09-09-review-repair-evidence.json -text
