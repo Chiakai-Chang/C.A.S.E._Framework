@@ -57,6 +57,7 @@ export async function callSession(runSession, { onStart, ...input }) {
       text: reply?.text ?? '', usage: reply?.usage ?? 'unknown', observations: reply?.observations ?? [],
       rawFinalText: reply?.rawFinalText ?? null, resultTransport: reply?.resultTransport ?? 'unknown', replyCorrections:reply?.replyCorrections??[],
       model: reply?.model ?? null, toolCalls: reply?.toolCalls ?? 'unknown', cost: reply?.cost ?? 'unknown',
+      ...(reply?.trace ? {trace:reply.trace} : {}),
     } });
   };
   if (!started || reply?.sessionId !== started) rejectReply('SESSION_MISMATCH', 'Session identity changed or was not reported');
@@ -95,8 +96,34 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
   if (signal?.aborted) cancel();
   signal?.addEventListener('abort', cancel, { once: true });
   const timer = setTimeout(() => controller.abort('time budget'), duration);
-  const save = () => { run.elapsedMs = Date.now() - started; store.saveRun(caseId, run.id, run); };
+  let persistenceFailure;
+  const save = () => {
+    if (persistenceFailure) throw persistenceFailure;
+    run.elapsedMs = Date.now() - started;
+    try { store.saveRun(caseId, run.id, run); }
+    catch (failure) {
+      persistenceFailure = failure;
+      // A failed write is not permission to replay a session or its side effects.
+      controller.abort('run persistence failed');
+      throw failure;
+    }
+  };
+  const retainFailure = failure => {
+    // Preserve the primary operation error even if the failure record cannot be saved.
+    if (!persistenceFailure) { try { save(); } catch {} }
+    if (persistenceFailure) {
+      const code = ['ENOSPC','EACCES','EPERM','EIO','EROFS','EDQUOT'].includes(persistenceFailure.code)
+        ? persistenceFailure.code : 'PERSISTENCE_FAILED';
+      failure.persistenceErrors = [{code}];
+    }
+    failure.run = run;
+  };
+  const savePreserving = primary => {
+    try { save(); }
+    catch { retainFailure(primary); throw primary; }
+  };
   const dispatch = action => {
+    if (persistenceFailure) throw persistenceFailure;
     state = store.dispatch(caseId, action, { expectedRevision: state.revision, requestId: randomUUID() });
     return state;
   };
@@ -109,7 +136,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     onProgress({ role, status: 'starting' });
     try {
       const {discoveryPacketId,...sessionExtra}=extra;
-      const reply = await callSession(runSession, { role, prompt, signal: controller.signal, ...sessionExtra,
+      const reply = await callSession(runSession, { role, prompt, signal: controller.signal, runId:run.id, ...sessionExtra,
         ...(state.discoveries?.length ? {readDiscovery: async args => {
           if (controller.signal.aborted) throw error('CANCELLED','Discovery read cancelled');
           if (!args || Object.keys(args).some(key=>!['id','start','maxChars'].includes(key))) throw error('INVALID_ARGUMENT','Unknown discovery read field');
@@ -129,9 +156,15 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
       Object.assign(record, { status: 'returned', text: reply.text, usage: reply.usage ?? 'unknown',
         rawFinalText: reply.rawFinalText ?? null, resultTransport: reply.resultTransport ?? 'unknown', replyCorrections:reply.replyCorrections??[],
         observations: reply.observations ?? [], model: reply.model ?? null, toolCalls: reply.toolCalls ?? 'unknown', cost: reply.cost ?? 'unknown' });
+      if (reply.trace) record.trace = reply.trace;
       save();
       return reply;
     } catch (failure) {
+      if (persistenceFailure && failure.code === 'CANCELLED') {
+        // The SDK may normalize our persistence-triggered abort to CANCELLED.
+        if (failure.sessionEvidence) persistenceFailure.sessionEvidence = failure.sessionEvidence;
+        failure = persistenceFailure;
+      }
       record.status = 'failed';
       const evidence = failure.sessionEvidence;
       if (evidence) Object.assign(record, {
@@ -140,9 +173,10 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
         cost: evidence.cost ?? 'unknown', text: evidence.text ?? '',
         rawFinalText: evidence.rawFinalText ?? null, resultTransport: evidence.resultTransport ?? 'unknown', replyCorrections:evidence.replyCorrections??[],
         statsError: evidence.statsError ?? null,
+        ...(evidence.trace ? {trace:evidence.trace} : {}),
       });
       record.error = { code: failure.code ?? 'SESSION_FAILED', message: failure.message };
-      save();
+      retainFailure(failure);
       throw failure;
     }
   };
@@ -198,14 +232,15 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     }
   };
   const waitForInput = reason => {
-    run.waitingRevision = state.revision; run.waitingReason = reason; save();
-    throw error('BLOCKED',reason);
+    const failure = error('BLOCKED',reason);
+    run.waitingRevision = state.revision; run.waitingReason = reason; savePreserving(failure);
+    throw failure;
   };
   const handleFeedback = async feedback => {
     try { await replan(feedback); }
     catch (failure) {
       if (failure.code !== 'BLOCKED') throw failure;
-      run.waitingReason = failure.message; save();
+      run.waitingReason = failure.message; savePreserving(failure);
     }
   };
   try {
@@ -336,7 +371,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
       } catch (failure) {
         if (substantiveFailure) throw failure;
         run.sessions.at(-1).validationError = { code: failure.code ?? 'INVALID_REPLY', message: failure.message };
-        save();
+        savePreserving(failure);
         if (attempt > 0 || !['ACCEPTANCE_INCOMPLETE', 'INVALID_REPLY'].includes(failure.code)) throw failure;
         correction = `\nThe previous integration reply was rejected: ${failure.code}: ${failure.message}. Recheck actual outputs in this fresh session. Return exactly the acceptance IDs ${JSON.stringify(acceptanceIds)}, excluding constraint IDs. Correct the reply; do not rerun workers or assume acceptance passed.`;
       }
@@ -347,9 +382,9 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     return { state, run };
   } catch (failure) {
     if (failure.code === 'BLOCKED') { run.waitingRevision = state.revision; run.waitingReason = failure.message; }
-    run.status = controller.signal.aborted ? 'cancelled' : 'failed';
+    run.status = controller.signal.aborted && !persistenceFailure ? 'cancelled' : 'failed';
     run.error = { code: failure.code ?? 'RUN_FAILED', message: failure.message };
-    save();
+    retainFailure(failure);
     // A failed worker can have partial side effects. Preserve its attempt and require explicit recovery.
     failure.run = run;
     throw failure;

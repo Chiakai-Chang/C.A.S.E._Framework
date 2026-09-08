@@ -1,12 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { isProtectedMaterialPart } from '../../skills/case-workflow/scripts/core/io.mjs';
 
 const fail = message => { throw Object.assign(new Error(message), { code: 'UNSAFE_TOOL_PATH' }); };
 const schema = properties => ({ type: 'object', properties, required: Object.keys(properties).filter(k => !['startLine', 'maxLines'].includes(k)), additionalProperties: false });
 const string = description => ({ type: 'string', description });
 const content = (text, details = {}) => ({ content: [{ type: 'text', text }], details });
+const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+const readError = (code, message) => { throw Object.assign(new Error(message), { code }); };
+const readLimit = 24000; // UTF-16 code units, including the model-visible receipt.
 
 export function createScopedTools({ project, role, writeScope = [], checks = {} }) {
   const root = fs.realpathSync(project);
@@ -27,7 +31,7 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
     return target;
   }
   const tools = [{
-    name: 'case_read', label: 'Read project material', description: 'Read a project file. Large results require explicit line pagination.',
+    name: 'case_read', label: 'Read project material', description: 'Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.',
     parameters: schema({ path: string('Relative file path'), startLine: { type: 'integer', minimum: 1 }, maxLines: { type: 'integer', minimum: 1, maximum: 200 } }),
     async execute(_id, args) {
       const file = resolve(args.path);
@@ -36,11 +40,36 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
       const start = args.startLine ?? 1;
       const count = args.maxLines ?? 200;
       if (!Number.isInteger(start) || start < 1 || !Number.isInteger(count) || count < 1 || count > 200) fail('Invalid line range');
-      const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
-      const selected = lines.slice(start - 1, start - 1 + count).join('\n');
-      if (selected.length > 24000) fail('Selected lines exceed output budget; choose fewer lines');
-      const more = start - 1 + count < lines.length;
-      return content(selected + (more ? `\n[More material: continue at line ${start + count}]` : ''), { lines: lines.length, startLine: start, truncated: more });
+      const bytes = fs.readFileSync(file);
+      if (bytes.length > 1024 * 1024) fail('Expected a regular file of at most 1 MiB; pre-process larger data');
+      const lines = bytes.toString('utf8').split(/\r?\n/);
+      const sourceSha256 = sha256(bytes);
+      const relative = path.relative(root, fs.realpathSync(file)).split(path.sep).join('/');
+      const makePage = (pageStart, pageCount) => {
+        const empty = bytes.length === 0;
+        const outOfRange = pageStart > lines.length;
+        const end = Math.min(pageStart - 1 + pageCount, lines.length);
+        const body = lines.slice(pageStart - 1, end).join('\n');
+        const more = pageStart - 1 + pageCount < lines.length;
+        const details = { lines: lines.length, startLine: pageStart, truncated: more,
+          receiptVersion: 1, path: relative, sourceSha256, resultSha256: sha256(body),
+          range: empty || outOfRange ? null : { startLine: pageStart, endLine: end },
+          eof: !more, wholeFile: pageStart === 1 && !more && !outOfRange,
+          empty, outOfRange, nextStartLine: more ? end + 1 : null };
+        return { body, details, header: `CASE_READ ${JSON.stringify(details)}\n` };
+      };
+      const page = makePage(start, count);
+      if (page.header.length > readLimit) readError('READ_RECEIPT_TOO_LARGE', 'Read receipt exceeds the output budget. This source path cannot be represented by this tool; use the existing discovery process for required material preparation.');
+      if (page.header.length + page.body.length > readLimit) {
+        // Distinguish an impossible line-page retry from a recoverable aggregate limit.
+        for (let line = start; line <= Math.min(start - 1 + count, lines.length); line++) {
+          const single = makePage(line, 1);
+          if (single.header.length + single.body.length > readLimit)
+            readError('LINE_TOO_LONG', 'A selected line cannot fit with its receipt in 24000 UTF-16 units. Line pagination cannot recover it. Do not change frozen sources or run unapproved preprocessing; report the material limitation through the existing discovery process.');
+        }
+        readError('READ_OUTPUT_TOO_LARGE', 'Selected lines plus receipt exceed 24000 UTF-16 units; choose fewer lines with maxLines. No source text was returned or silently shortened.');
+      }
+      return content(page.header + page.body, page.details);
     },
   }, {
     name: 'case_list', label: 'List project material', description: 'List one directory, excluding agent settings and CASE state. No recursive dumping.',
@@ -60,8 +89,10 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
       if (typeof args.content !== 'string' || Buffer.byteLength(args.content) > 1024 * 1024) fail('Content must be text of at most 1 MiB');
       fs.mkdirSync(path.dirname(file), { recursive: true });
       resolve(args.path, true);
-      fs.writeFileSync(file, args.content, { encoding: 'utf8', flag: 'w' });
-      return content(`Wrote ${args.path}`);
+      const bytes = Buffer.from(args.content, 'utf8');
+      fs.writeFileSync(file, bytes, { flag: 'w' });
+      return content(`Wrote ${args.path}`, { path: path.relative(root, fs.realpathSync(file)).split(path.sep).join('/'),
+        bytes: bytes.length, sourceSha256: sha256(bytes) });
     },
   });
   if (Object.keys(checks).length) tools.push({

@@ -10,6 +10,12 @@
 
 卷宗契約保存目標、限制、驗收與預算，工作包保存材料版本、相依、寫入範圍、產物及 checks。核心處理 revision／requestId、SHA256 與狀態轉移；pi SDK 整合負責新 session、限定工具、取消、用量及依序執行。核對 session 與 worker 分開，全域 integrate 不只相信包的 pass。詳情按需讀[契約參照](../skills/case-workflow/references/v2-contracts.md)。
 
+session 隔離指不承接另一角色的對話 history；現有 pi loader 仍載入 agentDir 與工作目錄祖先的適用指引，不等於只含工作包或完全空白的 context。run 紀錄可包含工具正文、檢查輸出及模型回覆，不保證自動去敏；分享前需檢查完整紀錄。
+
+pi 的 `scoped-tools.mjs` 產生模型可見讀取回條，`session-trace.mjs` 只收必要診斷欄位，SDK 將 trace 隨 session 回傳，runner 隨 run 保存。traceVersion 1 每事件最多 4 KiB、每 session 最多 128 事件與 256 KiB；溢位、缺少成對工具／請求／壓縮事件均明示不完整。trace 記錄指引作用域及版本，不複製正文、不整份送回模型，也不推定壓縮後仍保有先前文字。舊 run 沒有 trace 仍可讀，表示當時沒有這份證據。
+
+保存失敗會停止派工，保留原操作錯誤、另外的保存錯誤與可用記憶體 run；沒有自動重播。trace 是 session 結束時回傳，不保證程序硬中斷時已落盤。這些可觀察性與可靠性修正不提供階段額度分配或停滯控制器，也不構成模型品質保證。
+
 v2 權威資料在 `.case-agent/cases/<UUID>/state.json`，run 紀錄在 `artifacts/`；v1 `tasks/` 遷移後保留歷史。既有 manifest 可選 `projectPolicy`／`projectHistory` 保存跨卷宗共識，store 的 `project`／`setProject` 管查詢與明示修訂，create 繼承快照。沒有新增根目錄檔名或第二份可編輯狀態。核心無額外 runtime 相依，pi 以既有 SDK 執行；新 session 和工具路徑檢查不是 OS sandbox、身分認證或防竄改。Codex／Claude／Antigravity 尚無本套件的自動 session 整合。
 
 `amendments.mjs` 驗證契約不變的計畫修正，依語意、來源／產物版本、相依與寫入重疊判斷哪些成果可保留；packetHistory 保存被替換嘗試，預算依 attempt ID 去重。`runner.mjs` 將 worker changeRequest、重複核對缺陷及整體失敗送回 planner，run 保存 pendingFeedback，跨次啟動也不能跳過尚未補做的缺口。

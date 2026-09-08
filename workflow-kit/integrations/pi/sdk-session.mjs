@@ -2,6 +2,7 @@ import { createScopedTools } from './scoped-tools.mjs';
 import { jsonValue, fingerprint } from '../../skills/case-workflow/scripts/core/io.mjs';
 import { checksForRole } from './approved-checks.mjs';
 import { parseReply, validateWorkerReply } from './runner.mjs';
+import { createSessionTrace } from './session-trace.mjs';
 
 const fail = (code, message) => Object.assign(new Error(message), { code });
 
@@ -15,11 +16,11 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     catch (cause) { throw fail('PI_SDK_MISSING', `Install the pi integration dependencies first: ${cause.message}`); }
   }
   if (!modelRuntime) throw fail('CONFIG_REQUIRED', 'Supply the selected pi ModelRuntime explicitly');
-  return async ({ role, prompt, writeScope = [], criterionIds = [], validateResult:validateProvidedResult, onDiscovery, readDiscovery, onStart, signal }) => {
+  return async ({ role, prompt, runId, writeScope = [], criterionIds = [], validateResult:validateProvidedResult, onDiscovery, readDiscovery, onStart, signal }) => {
     if (signal?.aborted) throw fail('CANCELLED', 'Session cancelled');
     const validateResult = role === 'worker' ? async reply => {validateWorkerReply(reply);await validateProvidedResult?.(reply);} : validateProvidedResult;
     const settingsManager = sdk.SettingsManager.inMemory({ compaction: { enabled: true }, retry: { enabled: false } });
-    let resultText, completionFailure, blockingDiscovery, validatedFinalText, validating = false, activeTools = 0;
+    let resultText, completionFailure, blockingDiscovery, validatedFinalText, trace, validating = false, activeTools = 0;
     const requireOpen = () => {
       if (signal?.aborted) throw fail('CANCELLED','Session cancelled');
       if (blockingDiscovery) throw fail('DISCOVERY_BLOCKED','Blocking discovery recorded; this session has handed control back to the planner');
@@ -109,7 +110,14 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
       },
     });
     // pi renders its system tool list from promptSnippet, not description.
-    for (const tool of tools) tool.promptSnippet = tool.description;
+    for (const tool of tools) {
+      tool.promptSnippet = tool.description;
+      const execute=tool.execute;
+      tool.execute=async (...args)=>{
+        try {return await execute(...args);}
+        catch(failure){trace?.recordToolError(args[0],tool.name,failure);throw failure;}
+      };
+    }
     const availableTools = tools.map(tool => tool.name);
     const capabilities = {role,availableTools,
       writeScope:availableTools.includes('case_write')?[...writeScope]:[],
@@ -126,6 +134,8 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
       tools: availableTools, customTools: tools,
     });
     const session = created.session;
+    trace = createSessionTrace({runId,sessionId:session.sessionId,role,project,agentDir,approvedCheckIds:Object.keys(scopedChecks)});
+    trace.recordPolicy(resourceLoader,session);
     let abortPromise, abortFailure;
     const abort = () => {
       abortPromise ??= Promise.resolve().then(() => session.abort()).catch(failure => { abortFailure = failure; });
@@ -137,6 +147,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     let turns = 0;
     let budgetExceeded = false;
     const unsubscribe = session.subscribe(event => {
+      trace.observe(event);
       if (event.type === 'turn_start' && ++turns > maxTurns) { budgetExceeded = true; abort(); }
       if (event.type === 'tool_execution_start' && event.toolName === 'case_write') {
         writeRequests.set(event.toolCallId, {path:typeof event.args?.path === 'string' ? event.args.path : null,writeScope:[...writeScope]});
@@ -198,6 +209,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     catch (caught) { failure ??= caught; }
     try { session.dispose(); }
     catch (caught) { failure ??= caught; }
+    sessionEvidence.trace=trace.finish(signal?.aborted?'cancelled':budgetExceeded?'turn_limit':failure?'failed':'completed');
     if (failure) {
       failure.sessionEvidence = sessionEvidence;
       throw failure;

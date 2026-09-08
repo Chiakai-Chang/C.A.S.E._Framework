@@ -27,7 +27,7 @@ test('scoped tools exclude protected settings at every depth and preserve ordina
             await assert.rejects(list.execute('list', { path: path.posix.dirname(name) }), { code: 'UNSAFE_TOOL_PATH' });
         }
     }
-    assert.equal((await read.execute('normal', { path: 'nested/AGENTS.md' })).content[0].text, 'ordinary project instructions');
+    assert.equal((await read.execute('normal', { path: 'nested/AGENTS.md' })).content[0].text.split('\n').slice(1).join('\n'), 'ordinary project instructions');
     assert.equal((await list.execute('root', { path: '.' })).content[0].text, 'nested/');
     assert.equal((await list.execute('nested', { path: 'nested' })).content[0].text, 'AGENTS.md');
 });
@@ -76,7 +76,7 @@ test('review tools can inspect actual files but have no write or arbitrary shell
     const tools = toolsModule.createScopedTools({ project: dir, role: 'reviewer' });
     assert.deepEqual(tools.map(x => x.name).sort(), ['case_list', 'case_read']);
     const result = await tools.find(x => x.name === 'case_read').execute('1', { path: 'source.txt' });
-    assert.equal(result.content[0].text, 'grounded material');
+    assert.equal(result.content[0].text.split('\n').slice(1).join('\n'), 'grounded material');
 });
 test('approved checks execute argv without interpreting model-provided shell text', async (t) => {
     assert.equal(typeof toolsModule.createScopedTools, 'function', 'scoped tools are not implemented');
