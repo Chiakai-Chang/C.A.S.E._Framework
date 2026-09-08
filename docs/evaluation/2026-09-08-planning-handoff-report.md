@@ -55,3 +55,37 @@
 下一步集中成一個可重現的「執行者收到工作包後，能否寫入並修復」問題：使用本批已生成的工作包與相同材料，先獨立核對 worker 實際工具 schema、角色提示與請求／回覆關聯，再以工作包重播分離規劃成本。應保留首次達輸出上限、錯誤角色回報、缺檔拒收及其後實際工具動作，驗收仍看真實產物；不能把修正回報 JSON 當成修好檔案。
 
 不直接把責任推給 pi、模型或 context 大小。只有邊界核對及固定 worker 測試指向特定原因，才選擇一項後續改動（例如更明確的修復回饋，或另行確認模型呼叫額度／推理設定）；不一次調整多個因素、不改全域設定。本批生成至此停止，沒有再跑整案找成功樣本。
+
+## 使用者完成模型研究後的接續：2026-09-08
+
+使用者先要求停止模型以便自行研究，完成後要求接續。重新完整閱讀本機 `C:\models\AGENTS.md`／`README.md`：使用者比較後已回到 STRIX_LEAN 主力，Flash-Next 為備援。README 的工具測試與速度是模型研究紀錄，不是 CASE 任務品質證據。本輪不修改模型、BAT、全域 pi 或產品提示；只縮小到 worker 的接線與產物診斷。
+
+### 真實 SDK、受控回覆的離線核對
+
+開發診斷 `workflow-kit/evaluation/worker-boundary-audit.mjs` 使用 pi 0.84.2、上一批 B 的原工作包及來源，連到本機臨時 HTTP 服務；服務回傳五個事前寫好的回覆，不呼叫模型。順序：只有合成思考的 `length` → planner 形狀回報 → 缺檔的 summary → 寫入合成檔 → summary。這不是模型能力測試，合成檔也不是正確 adoption-map。
+
+[原始接線證據](2026-09-08-worker-boundary-evidence.json)確認：每次實際請求都是 worker 系統指引、原工作包與 worker 專用 result schema；schema 沒有 packets、拒絕額外欄位，且有 case_write。每個 tool result 都有對應 assistant tool call ID；缺檔拒收後，同 session 寫入再提交可以被接受。來源雜湊未變。
+
+首次診斷程式將 SDK 的 user content array 誤當字串而失敗，尚未送出合成回覆；修正為抽取文字後比較 SHA256，第二次五步通過。不是產品修正的 RED→GREEN，也不能忽略首次診斷失敗（本機 `.npm-cache/worker-boundary-audit-1.json` 保留）。
+
+可重現的接續限制：第一次只含合成思考的 assistant 回覆，在第二個 wire request 中消失，只剩 system/user/user。已核對該 SDK `pi-ai/dist/api/openai-completions.js` 的 `convertMessages`：沒有正文或 tool calls 的 assistant message 會被略過。這解釋上一批觀測到的 message 形狀，**不證明隱藏推理內容、不證明角色混淆的唯一根因，也不表示應直接把隱藏推理改成正文**。
+
+本機請求的 thinkingLevel=medium 經目前 qwen-chat-template 相容設定變成 enable_thinking=true／preserve_thinking=true，不是明確的 medium 推理額度。保留 max_tokens=4096，不將設定標籤誤當伺服器實際額度。後續如測推理設定，應另列變因，不能與本批默默混合。
+
+### 單次真實 worker 重播
+
+`worker-replay.mjs` 沿用上一批 B 的完整 prompt（SHA256 `c4658e83afda15076164dad3b038bb247b6bd498dc03ad32f13e82b8d52564be`）、凍結來源與 oracle，在新臨時目錄及新 pi 設定目錄執行一次。只交辦 worker，沒有規劃／核對／整合，也不把 oracle 答案送入模型。前置檢查僅檔案存在與來源未變，沒有註冊語意檢查；這是分離成本的診斷，不是完整 runCase 的重跑。允許回饋留在本次證據，未實作後續 planner 採納。
+
+沿用 medium、32768 context 宣告、4096 回覆上限、16 turns、單次 600 秒，不改產品指引／全域設定。重新啟動既有 BAT，server 仍回報 `b11502-764051bfb`；沒有凍結 GGUF／執行檔全部位元組，不能稱與前批完全同環境或因果比較。wire 未指定 temperature/top_p，服務預設記錄為 1／約 0.95，不是 temperature=0。`/props` 的預設值不代表所有逐請求或 MTP 旗標實際生效。
+
+[原始重播證據](2026-09-08-worker-replay-evidence.json)：210.787 秒，7 次送往模型的請求，工具順序為 list → 四次 read → write → result；所有配對正常、來源未變、無額外檔案。SDK tokens 為 input 18,835／output 3,610／cacheRead 91,427／total 113,872；不是純新增推理 tokens 或全成本。沒有 reply correction，沒有重現 length 或 planner-shaped 回報。接受後結束過程 trace 另有 error 事件，不能將「7 次 wire 請求」改稱所有 trace 事件都成功。
+
+**產物仍不合格**：缺少明列的 `maintenance.installerRelated`，應為 `["ARCHITECTURE","GUIDE.en","HOSTS","README","help","封裝設定"]`；其餘既定欄位與 oracle 相符。summary 宣稱完成不能代替完整欄位檢查。沒有獨立 reviewer，不能據此斷言完整 CASE 一定也會漏掉，亦不能宣稱問題修好。本批到此只跑一次，不補抽成功樣本。
+
+原始重播 SHA256：`85790b1d67099ffa8202f5b755a8a1c3c500341e46598aa12a83ea98026d3d7e`；離線接線證據 SHA256：`fe0158551d710b8a2d74944396e53534219be78f2b64bc0acb331d3b8fc4eeb2`。完整 kit 回歸 259/259；新增兩支開發診斷不隨套件發布。
+
+### 下一步裁定
+
+已排除本次受控路徑上的錯誤 worker schema／工具配對；尚未排除模型隨機性、角色理解或回覆額度的影響。不能再把「完全不寫」當成每次必然發生的單一故障。
+
+優先處理可重現的驗收缺口：將使用者明列、可機械核對的輸出結構化為工作包可用的可信檢查，回報具體缺欄而不是只判存在；讓 worker 用自己的來源補齊，檢查本身不餵正確值、不取代獨立核對。先以這份確實缺欄的成果建立拒收／修復驗證，再決定是否需要一般化核心能力；不要把任務專用 oracle 硬編進框架，也不重建 pi 或追加規劃角色。這承接原案的小憲法、實際驗收及微觀修復，而非增加記錄工具。

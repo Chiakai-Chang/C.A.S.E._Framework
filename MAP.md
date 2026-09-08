@@ -4,7 +4,7 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
-| 規劃是否提前解題、執行是否重讀 | [交辦分界修正與實測](docs/evaluation/2026-09-08-planning-handoff-report.md) | 材料概況、已附全文與待讀參照；保留驗收與權限 |
+| 規劃是否提前解題、執行是否重讀或漏驗 | [交辦分界修正與實測](docs/evaluation/2026-09-08-planning-handoff-report.md) | 材料概況、交辦分界、SDK 接線及單獨 worker 重播；保留失敗與驗收限制 |
 | 解決最新反覆操作與未產出 | [驗證與復盤](docs/evaluation/2026-09-06-read-receipt-report.md)、[執行計畫](docs/design/2026-09-06-read-receipt-implementation.md)、[修正設計](docs/design/2026-09-06-stalled-execution-resolution.md)、[審閱裁定](docs/design/2026-09-06-stalled-execution-review.md)、[一手來源](docs/research/2026-09-06-stalled-execution-sources.md) | 讀取語意、context／trace 邊界與有限對照；工程修正與模型效果分開，不宣稱唯一根因 |
 | 查看預覽版交付與升級 | [版本紀錄](CHANGELOG.md)、[採用與發布核對](docs/evaluation/2026-09-06-preview-release-checks.md)、[本輪交付計畫](docs/design/2026-09-06-preview-release-plan.md) | 安裝、獨立審閱、Git 交付與授權界線 |
 | 比較真實專案資訊整理 | [結果與復盤](docs/evaluation/2026-09-06-real-task-report.md)、[事前設計](docs/evaluation/2026-09-06-real-task-plan.md)、[原始證據](docs/evaluation/2026-09-06-real-task-evidence.json) | 相同凍結來源，一般 pi 原生工具與 CASE 兩組均失敗；沒有顯示品質優勢，不追加抽樣美化結果 |

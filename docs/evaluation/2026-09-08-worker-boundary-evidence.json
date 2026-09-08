@@ -1,0 +1,400 @@
+{
+  "kind": "scripted-sdk-boundary-audit/1",
+  "modelGenerated": false,
+  "priorSha256": "70e67fe0665dce7adf30428d93b375ca33c28c838cacd62f341b97c84bcab379",
+  "promptSha256": "c4658e83afda15076164dad3b038bb247b6bd498dc03ad32f13e82b8d52564be",
+  "project": "C:\\Users\\User\\AppData\\Local\\Temp\\case-worker-boundary-KBpPEs\\project",
+  "requests": [
+    {
+      "roles": [
+        "system",
+        "user"
+      ],
+      "maxTokens": 4096,
+      "workerResultSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocked": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          },
+          "changeRequest": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "summary"
+            ]
+          },
+          {
+            "required": [
+              "blocked"
+            ]
+          },
+          {
+            "required": [
+              "changeRequest"
+            ]
+          }
+        ]
+      },
+      "tools": [
+        "case_read",
+        "case_list",
+        "case_write",
+        "case_result",
+        "case_discover"
+      ],
+      "toolMessages": []
+    },
+    {
+      "roles": [
+        "system",
+        "user",
+        "user"
+      ],
+      "maxTokens": 4096,
+      "workerResultSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocked": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          },
+          "changeRequest": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "summary"
+            ]
+          },
+          {
+            "required": [
+              "blocked"
+            ]
+          },
+          {
+            "required": [
+              "changeRequest"
+            ]
+          }
+        ]
+      },
+      "tools": [
+        "case_read",
+        "case_list",
+        "case_write",
+        "case_result",
+        "case_discover"
+      ],
+      "toolMessages": []
+    },
+    {
+      "roles": [
+        "system",
+        "user",
+        "user",
+        "assistant",
+        "tool"
+      ],
+      "maxTokens": 4096,
+      "workerResultSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocked": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          },
+          "changeRequest": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "summary"
+            ]
+          },
+          {
+            "required": [
+              "blocked"
+            ]
+          },
+          {
+            "required": [
+              "changeRequest"
+            ]
+          }
+        ]
+      },
+      "tools": [
+        "case_read",
+        "case_list",
+        "case_write",
+        "case_result",
+        "case_discover"
+      ],
+      "toolMessages": [
+        {
+          "id": "call_1",
+          "content": "Validation failed for tool \"case_result\":\n  - result: must not have additional properties\n\nReceived arguments:\n{\n  \"result\": {\n    \"summary\": \"Plan submitted\",\n    \"packets\": [\n      {\n        \"id\": \"wrong-role\"\n      }\n    ]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "roles": [
+        "system",
+        "user",
+        "user",
+        "assistant",
+        "tool",
+        "assistant",
+        "tool"
+      ],
+      "maxTokens": 4096,
+      "workerResultSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocked": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          },
+          "changeRequest": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "summary"
+            ]
+          },
+          {
+            "required": [
+              "blocked"
+            ]
+          },
+          {
+            "required": [
+              "changeRequest"
+            ]
+          }
+        ]
+      },
+      "tools": [
+        "case_read",
+        "case_list",
+        "case_write",
+        "case_result",
+        "case_discover"
+      ],
+      "toolMessages": [
+        {
+          "id": "call_1",
+          "content": "Validation failed for tool \"case_result\":\n  - result: must not have additional properties\n\nReceived arguments:\n{\n  \"result\": {\n    \"summary\": \"Plan submitted\",\n    \"packets\": [\n      {\n        \"id\": \"wrong-role\"\n      }\n    ]\n  }\n}"
+        },
+        {
+          "id": "call_2",
+          "content": "Missing adoption-map.json. Reply not recorded. Correct the result and call case_result again; do not repeat completed work."
+        }
+      ]
+    },
+    {
+      "roles": [
+        "system",
+        "user",
+        "user",
+        "assistant",
+        "tool",
+        "assistant",
+        "tool",
+        "assistant",
+        "tool"
+      ],
+      "maxTokens": 4096,
+      "workerResultSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocked": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          },
+          "changeRequest": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "summary"
+            ]
+          },
+          {
+            "required": [
+              "blocked"
+            ]
+          },
+          {
+            "required": [
+              "changeRequest"
+            ]
+          }
+        ]
+      },
+      "tools": [
+        "case_read",
+        "case_list",
+        "case_write",
+        "case_result",
+        "case_discover"
+      ],
+      "toolMessages": [
+        {
+          "id": "call_1",
+          "content": "Validation failed for tool \"case_result\":\n  - result: must not have additional properties\n\nReceived arguments:\n{\n  \"result\": {\n    \"summary\": \"Plan submitted\",\n    \"packets\": [\n      {\n        \"id\": \"wrong-role\"\n      }\n    ]\n  }\n}"
+        },
+        {
+          "id": "call_2",
+          "content": "Missing adoption-map.json. Reply not recorded. Correct the result and call case_result again; do not repeat completed work."
+        },
+        {
+          "id": "call_3",
+          "content": "Wrote adoption-map.json"
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "replyCorrections": [
+    {
+      "reason": "Reply must be one complete JSON object without surrounding prose",
+      "priorText": ""
+    }
+  ],
+  "conclusion": "Worker schema and tool-call pairing correct; length-only synthetic response omitted; same-session file repair accepted. No model-quality claim."
+}

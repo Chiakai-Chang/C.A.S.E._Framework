@@ -1,0 +1,2572 @@
+{
+  "kind": "worker-only-replay/1",
+  "startedAt": "2026-09-08T14:57:59.029Z",
+  "project": "C:\\Users\\User\\AppData\\Local\\Temp\\case-worker-replay-tZks8c\\project",
+  "priorSha256": "70e67fe0665dce7adf30428d93b375ca33c28c838cacd62f341b97c84bcab379",
+  "promptSha256": "c4658e83afda15076164dad3b038bb247b6bd498dc03ad32f13e82b8d52564be",
+  "configuration": {
+    "endpoint": "http://127.0.0.1:8080/v1",
+    "thinkingLevel": "medium",
+    "contextWindow": 32768,
+    "maxTokens": 4096,
+    "maxTurns": 16,
+    "maxAttempts": 5,
+    "maxDurationMs": 600000
+  },
+  "requests": [
+    {
+      "atMs": 1245.672,
+      "maxTokens": 4096,
+      "kwargs": {
+        "enable_thinking": true,
+        "preserve_thinking": true
+      },
+      "sampling": {
+        "temperature": null,
+        "topP": null
+      },
+      "messages": [
+        {
+          "role": "system",
+          "calls": [],
+          "contentSha256": "9b7c18d2b41c89c44e306368be63868a900dc4a913ab3237db425a696d8e6816"
+        },
+        {
+          "role": "user",
+          "calls": [],
+          "contentSha256": "4259e692adee3f75fd253d611902361ad2d69638632b79305f91cd60bb491f01"
+        }
+      ],
+      "paired": true,
+      "tools": [
+        {
+          "name": "case_read",
+          "description": "Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative file path"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_list",
+          "description": "List one directory, excluding agent settings and CASE state. No recursive dumping.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative directory, or ."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_write",
+          "description": "Write a complete UTF-8 file inside the packet writeScope. Cannot change agent settings or CASE records.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Declared relative deliverable path"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete file contents"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_result",
+          "description": "Submit the requested result after completing the work. Validation can reject missing artifacts, stale sources or failed approved checks: repair the actual files/check failures within scope, then resubmit in this same session. Only an ACCEPTED result finishes the session and prevents further tools. Does not authorize CASE actions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "blocked": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  },
+                  "changeRequest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "summary"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blocked"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "changeRequest"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_discover",
+          "description": "Immediately persist evidence of work needed for the original goal. Nonblocking reports allow this packet to continue. Blocking reports stop this session and hand the obstacle to the planner. Reporting does not authorize new work.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "nonblocking"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "summary",
+              "evidence",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ]
+    },
+    {
+      "atMs": 46342.6722,
+      "maxTokens": 4096,
+      "kwargs": {
+        "enable_thinking": true,
+        "preserve_thinking": true
+      },
+      "sampling": {
+        "temperature": null,
+        "topP": null
+      },
+      "messages": [
+        {
+          "role": "system",
+          "calls": [],
+          "contentSha256": "9b7c18d2b41c89c44e306368be63868a900dc4a913ab3237db425a696d8e6816"
+        },
+        {
+          "role": "user",
+          "calls": [],
+          "contentSha256": "4259e692adee3f75fd253d611902361ad2d69638632b79305f91cd60bb491f01"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+              "name": "case_list"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "contentSha256": "67e3f8fc6536cf640326226a67a83a855904226bb942895a9ffc7d1671dcb54a",
+          "content": "HOSTS.md\ninstall.mjs\nMAINTENANCE.md\npackage.json\nrequirements.md"
+        }
+      ],
+      "paired": true,
+      "tools": [
+        {
+          "name": "case_read",
+          "description": "Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative file path"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_list",
+          "description": "List one directory, excluding agent settings and CASE state. No recursive dumping.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative directory, or ."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_write",
+          "description": "Write a complete UTF-8 file inside the packet writeScope. Cannot change agent settings or CASE records.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Declared relative deliverable path"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete file contents"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_result",
+          "description": "Submit the requested result after completing the work. Validation can reject missing artifacts, stale sources or failed approved checks: repair the actual files/check failures within scope, then resubmit in this same session. Only an ACCEPTED result finishes the session and prevents further tools. Does not authorize CASE actions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "blocked": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  },
+                  "changeRequest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "summary"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blocked"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "changeRequest"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_discover",
+          "description": "Immediately persist evidence of work needed for the original goal. Nonblocking reports allow this packet to continue. Blocking reports stop this session and hand the obstacle to the planner. Reporting does not authorize new work.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "nonblocking"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "summary",
+              "evidence",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ]
+    },
+    {
+      "atMs": 48387.0993,
+      "maxTokens": 4096,
+      "kwargs": {
+        "enable_thinking": true,
+        "preserve_thinking": true
+      },
+      "sampling": {
+        "temperature": null,
+        "topP": null
+      },
+      "messages": [
+        {
+          "role": "system",
+          "calls": [],
+          "contentSha256": "9b7c18d2b41c89c44e306368be63868a900dc4a913ab3237db425a696d8e6816"
+        },
+        {
+          "role": "user",
+          "calls": [],
+          "contentSha256": "4259e692adee3f75fd253d611902361ad2d69638632b79305f91cd60bb491f01"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+              "name": "case_list"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "contentSha256": "67e3f8fc6536cf640326226a67a83a855904226bb942895a9ffc7d1671dcb54a",
+          "content": "HOSTS.md\ninstall.mjs\nMAINTENANCE.md\npackage.json\nrequirements.md"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+          "contentSha256": "7b90fe748bca3fd312561af8b05547be3967175e976d53a200685d8e032fe61b",
+          "content": "CASE_READ {\"lines\":155,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"install.mjs\",\"sourceSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"resultSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"range\":{\"startLine\":1,\"endLine\":155},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n#!/usr/bin/env node\nimport { mkdir, lstat, readdir, readFile, writeFile, rename, rm, rmdir } from 'node:fs/promises';\nimport { resolve, join, dirname, parse } from 'node:path';\nimport { fileURLToPath, pathToFileURL } from 'node:url';\nimport { createHash, randomUUID } from 'node:crypto';\n\nconst SOURCE = fileURLToPath(new URL('./skills/case-workflow/', import.meta.url));\nconst MARKER = '.case-install.json';\nconst FORMAT = 'case-workflow-install/1';\nconst hash = bytes => createHash('sha256').update(bytes).digest('hex');\nconst fail = message => { throw new Error(message); };\n\nasync function exists(path) {\n  try { return await lstat(path); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }\n}\n\nasync function safeDirectory(path, required = false) {\n  const absolute = resolve(path);\n  let current = parse(absolute).root;\n  for (const part of absolute.slice(current.length).split(/[\\\\/]/).filter(Boolean)) {\n    current = join(current, part);\n    const stat = await exists(current);\n    if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail(`Expected an ordinary directory: ${current}`);\n    if (!stat && required) fail(`Directory does not exist: ${current}`);\n  }\n}\n\nasync function fileMap(directory, prefix = '') {\n  const result = {};\n  for (const entry of await readdir(directory, { withFileTypes: true })) {\n    if (entry.name === MARKER && !prefix) continue;\n    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;\n    const path = join(directory, entry.name);\n    if (entry.isSymbolicLink()) fail(`Linked skill content is not supported: ${path}`);\n    if (entry.isDirectory()) Object.assign(result, await fileMap(path, relative));\n    else if (entry.isFile()) result[relative] = await readFile(path);\n    else fail(`Unsupported skill content: ${path}`);\n  }\n  return result;\n}\n\nfunction digestMap(files) {\n  return Object.fromEntries(Object.keys(files).sort().map(path => [path, hash(files[path])]));\n}\n\nasync function inspectInstalled(destination) {\n  if (!await exists(destination)) return null;\n  await safeDirectory(destination, true);\n  const marker = join(destination, MARKER);\n  const stat = await exists(marker);\n  if (!stat?.isFile() || stat.isSymbolicLink()) fail(`Foreign or incomplete installation: ${destination}`);\n  let metadata;\n  try { metadata = JSON.parse(await readFile(marker, 'utf8')); } catch { fail(`Invalid installation manifest: ${destination}`); }\n  if (metadata.format !== FORMAT || !metadata.files || typeof metadata.files !== 'object' || Array.isArray(metadata.files)) fail(`Unknown installation owner: ${destination}`);\n  const actual = digestMap(await fileMap(destination));\n  const expected = Object.fromEntries(Object.entries(metadata.files).sort(([a], [b]) => a.localeCompare(b, 'en')));\n  if (JSON.stringify(Object.keys(actual).sort().map(k => [k, actual[k]])) !== JSON.stringify(Object.keys(expected).sort().map(k => [k, expected[k]]))) {\n    fail(`Installation was edited; preserve or move your custom copy before retrying: ${destination}`);\n  }\n  return actual;\n}\n\nexport async function installSkill({ project, host = 'all', update = false, uninstall = false, source = SOURCE }) {\n  if (!['pi', 'codex', 'claude', 'all'].includes(host)) fail('host must be pi, codex, claude or all');\n  if (update && uninstall) fail('update and uninstall cannot be combined');\n  const root = resolve(project);\n  await safeDirectory(root, true);\n  await safeDirectory(source, true);\n  const files = await fileMap(source);\n  if (!files['SKILL.md'] || !files['scripts/case.mjs']) fail('Skill source is incomplete');\n  const expected = digestMap(files);\n  // Pi and Codex both discover .agents/skills. One copy avoids duplicate Pi names.\n  const locations = host === 'all' ? ['.agents', '.claude'] : [host === 'claude' ? '.claude' : '.agents'];\n  const targets = [];\n  for (const location of locations) {\n    const base = join(root, location);\n    const destination = join(base, 'skills', 'case-workflow');\n    await safeDirectory(destination);\n    await safeDirectory(join(base, 'case-workflow-backups'));\n    const old = await inspectInstalled(destination);\n    const same = old && JSON.stringify(old) === JSON.stringify(expected);\n    if (old && !same && !update && !uninstall) fail(`Different managed version exists; use --update: ${destination}`);\n    targets.push({ base, destination, old, same });\n  }\n  const results = [];\n  for (const target of targets) {\n    const { base, destination } = target;\n    if (uninstall && !target.old) { results.push({ destination, action: 'absent' }); continue; }\n    if (!uninstall && target.same) { results.push({ destination, action: 'unchanged' }); continue; }\n    await mkdir(base, { recursive: true });\n    const lockPath = join(base, '.case-workflow-install.lock');\n    let lock;\n    try {\n      // mkdir is an exclusive cooperative reservation; never remove someone else's lock.\n      await mkdir(lockPath);\n      lock = true;\n      await safeDirectory(destination);\n      const current = await inspectInstalled(destination);\n      if (JSON.stringify(current) !== JSON.stringify(target.old)) fail(`Installation changed during setup: ${destination}`);\n      const id = randomUUID();\n      let backup = null;\n      let stage = null;\n      try {\n        if (!uninstall) {\n          stage = join(base, `.case-workflow-stage-${id}`);\n          await mkdir(stage);\n          for (const [relative, bytes] of Object.entries(files)) {\n            const path = join(stage, relative);\n            await mkdir(dirname(path), { recursive: true });\n            await writeFile(path, bytes, { flag: 'wx' });\n          }\n          await writeFile(join(stage, MARKER), `${JSON.stringify({ format: FORMAT, files: expected }, null, 2)}\\n`, { flag: 'wx' });\n          await mkdir(dirname(destination), { recursive: true });\n        }\n        if (target.old) {\n          const backups = join(base, 'case-workflow-backups');\n          await mkdir(backups, { recursive: true });\n          backup = join(backups, id);\n          await rename(destination, backup);\n        }\n        if (stage) {\n          try { await rename(stage, destination); stage = null; }\n          catch (error) { if (backup) await rename(backup, destination); throw error; }\n        }\n        results.push({ destination, action: uninstall ? 'removed' : target.old ? 'updated' : 'installed', backup });\n      } finally {\n        if (stage) await rm(stage, { recursive: true, force: true });\n      }\n    } finally {\n      if (lock) await rmdir(lockPath);\n    }\n  }\n  return { ok: true, host, project: root, results, note: 'Shared .agents installation serves both Pi and Codex; task data is unchanged.' };\n}\n\nasync function main(args) {\n  if (args.includes('--help') || args.length === 0) {\n    console.log('C.A.S.E. project skill installer\\nnode install.mjs --project PATH --host pi|codex|claude|all [--update | --uninstall]\\nDefault host: all. Existing custom files are never overwritten. Update/removal retains a backup.\\nPi and Codex share .agents/skills/case-workflow; Claude uses .claude/skills/case-workflow.\\nNo global config, credentials, project instruction files, or task data are changed.');\n    return;\n  }\n  const options = {};\n  for (let i = 0; i < args.length; i++) {\n    const key = args[i];\n    if (!['--project', '--host', '--update', '--uninstall'].includes(key) || Object.hasOwn(options, key.slice(2))) fail(`Unknown or duplicate option: ${key}`);\n    options[key.slice(2)] = ['--update', '--uninstall'].includes(key) ? true : args[++i];\n    if (typeof options[key.slice(2)] === 'string' && (!options[key.slice(2)].trim() || options[key.slice(2)].startsWith('--'))) fail(`Missing value: ${key}`);\n  }\n  if (!options.project || (Object.hasOwn(options, 'host') && !options.host)) fail('--project PATH and valid option values are required');\n  console.log(JSON.stringify(await installSkill(options), null, 2));\n}\n\nif (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {\n  main(process.argv.slice(2)).catch(error => { console.error(JSON.stringify({ ok: false, code: 'CASE_INSTALL_ERROR', message: error.message })); process.exitCode = 1; });\n}\n"
+        }
+      ],
+      "paired": true,
+      "tools": [
+        {
+          "name": "case_read",
+          "description": "Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative file path"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_list",
+          "description": "List one directory, excluding agent settings and CASE state. No recursive dumping.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative directory, or ."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_write",
+          "description": "Write a complete UTF-8 file inside the packet writeScope. Cannot change agent settings or CASE records.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Declared relative deliverable path"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete file contents"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_result",
+          "description": "Submit the requested result after completing the work. Validation can reject missing artifacts, stale sources or failed approved checks: repair the actual files/check failures within scope, then resubmit in this same session. Only an ACCEPTED result finishes the session and prevents further tools. Does not authorize CASE actions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "blocked": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  },
+                  "changeRequest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "summary"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blocked"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "changeRequest"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_discover",
+          "description": "Immediately persist evidence of work needed for the original goal. Nonblocking reports allow this packet to continue. Blocking reports stop this session and hand the obstacle to the planner. Reporting does not authorize new work.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "nonblocking"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "summary",
+              "evidence",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ]
+    },
+    {
+      "atMs": 82436.0306,
+      "maxTokens": 4096,
+      "kwargs": {
+        "enable_thinking": true,
+        "preserve_thinking": true
+      },
+      "sampling": {
+        "temperature": null,
+        "topP": null
+      },
+      "messages": [
+        {
+          "role": "system",
+          "calls": [],
+          "contentSha256": "9b7c18d2b41c89c44e306368be63868a900dc4a913ab3237db425a696d8e6816"
+        },
+        {
+          "role": "user",
+          "calls": [],
+          "contentSha256": "4259e692adee3f75fd253d611902361ad2d69638632b79305f91cd60bb491f01"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+              "name": "case_list"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "contentSha256": "67e3f8fc6536cf640326226a67a83a855904226bb942895a9ffc7d1671dcb54a",
+          "content": "HOSTS.md\ninstall.mjs\nMAINTENANCE.md\npackage.json\nrequirements.md"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+          "contentSha256": "7b90fe748bca3fd312561af8b05547be3967175e976d53a200685d8e032fe61b",
+          "content": "CASE_READ {\"lines\":155,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"install.mjs\",\"sourceSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"resultSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"range\":{\"startLine\":1,\"endLine\":155},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n#!/usr/bin/env node\nimport { mkdir, lstat, readdir, readFile, writeFile, rename, rm, rmdir } from 'node:fs/promises';\nimport { resolve, join, dirname, parse } from 'node:path';\nimport { fileURLToPath, pathToFileURL } from 'node:url';\nimport { createHash, randomUUID } from 'node:crypto';\n\nconst SOURCE = fileURLToPath(new URL('./skills/case-workflow/', import.meta.url));\nconst MARKER = '.case-install.json';\nconst FORMAT = 'case-workflow-install/1';\nconst hash = bytes => createHash('sha256').update(bytes).digest('hex');\nconst fail = message => { throw new Error(message); };\n\nasync function exists(path) {\n  try { return await lstat(path); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }\n}\n\nasync function safeDirectory(path, required = false) {\n  const absolute = resolve(path);\n  let current = parse(absolute).root;\n  for (const part of absolute.slice(current.length).split(/[\\\\/]/).filter(Boolean)) {\n    current = join(current, part);\n    const stat = await exists(current);\n    if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail(`Expected an ordinary directory: ${current}`);\n    if (!stat && required) fail(`Directory does not exist: ${current}`);\n  }\n}\n\nasync function fileMap(directory, prefix = '') {\n  const result = {};\n  for (const entry of await readdir(directory, { withFileTypes: true })) {\n    if (entry.name === MARKER && !prefix) continue;\n    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;\n    const path = join(directory, entry.name);\n    if (entry.isSymbolicLink()) fail(`Linked skill content is not supported: ${path}`);\n    if (entry.isDirectory()) Object.assign(result, await fileMap(path, relative));\n    else if (entry.isFile()) result[relative] = await readFile(path);\n    else fail(`Unsupported skill content: ${path}`);\n  }\n  return result;\n}\n\nfunction digestMap(files) {\n  return Object.fromEntries(Object.keys(files).sort().map(path => [path, hash(files[path])]));\n}\n\nasync function inspectInstalled(destination) {\n  if (!await exists(destination)) return null;\n  await safeDirectory(destination, true);\n  const marker = join(destination, MARKER);\n  const stat = await exists(marker);\n  if (!stat?.isFile() || stat.isSymbolicLink()) fail(`Foreign or incomplete installation: ${destination}`);\n  let metadata;\n  try { metadata = JSON.parse(await readFile(marker, 'utf8')); } catch { fail(`Invalid installation manifest: ${destination}`); }\n  if (metadata.format !== FORMAT || !metadata.files || typeof metadata.files !== 'object' || Array.isArray(metadata.files)) fail(`Unknown installation owner: ${destination}`);\n  const actual = digestMap(await fileMap(destination));\n  const expected = Object.fromEntries(Object.entries(metadata.files).sort(([a], [b]) => a.localeCompare(b, 'en')));\n  if (JSON.stringify(Object.keys(actual).sort().map(k => [k, actual[k]])) !== JSON.stringify(Object.keys(expected).sort().map(k => [k, expected[k]]))) {\n    fail(`Installation was edited; preserve or move your custom copy before retrying: ${destination}`);\n  }\n  return actual;\n}\n\nexport async function installSkill({ project, host = 'all', update = false, uninstall = false, source = SOURCE }) {\n  if (!['pi', 'codex', 'claude', 'all'].includes(host)) fail('host must be pi, codex, claude or all');\n  if (update && uninstall) fail('update and uninstall cannot be combined');\n  const root = resolve(project);\n  await safeDirectory(root, true);\n  await safeDirectory(source, true);\n  const files = await fileMap(source);\n  if (!files['SKILL.md'] || !files['scripts/case.mjs']) fail('Skill source is incomplete');\n  const expected = digestMap(files);\n  // Pi and Codex both discover .agents/skills. One copy avoids duplicate Pi names.\n  const locations = host === 'all' ? ['.agents', '.claude'] : [host === 'claude' ? '.claude' : '.agents'];\n  const targets = [];\n  for (const location of locations) {\n    const base = join(root, location);\n    const destination = join(base, 'skills', 'case-workflow');\n    await safeDirectory(destination);\n    await safeDirectory(join(base, 'case-workflow-backups'));\n    const old = await inspectInstalled(destination);\n    const same = old && JSON.stringify(old) === JSON.stringify(expected);\n    if (old && !same && !update && !uninstall) fail(`Different managed version exists; use --update: ${destination}`);\n    targets.push({ base, destination, old, same });\n  }\n  const results = [];\n  for (const target of targets) {\n    const { base, destination } = target;\n    if (uninstall && !target.old) { results.push({ destination, action: 'absent' }); continue; }\n    if (!uninstall && target.same) { results.push({ destination, action: 'unchanged' }); continue; }\n    await mkdir(base, { recursive: true });\n    const lockPath = join(base, '.case-workflow-install.lock');\n    let lock;\n    try {\n      // mkdir is an exclusive cooperative reservation; never remove someone else's lock.\n      await mkdir(lockPath);\n      lock = true;\n      await safeDirectory(destination);\n      const current = await inspectInstalled(destination);\n      if (JSON.stringify(current) !== JSON.stringify(target.old)) fail(`Installation changed during setup: ${destination}`);\n      const id = randomUUID();\n      let backup = null;\n      let stage = null;\n      try {\n        if (!uninstall) {\n          stage = join(base, `.case-workflow-stage-${id}`);\n          await mkdir(stage);\n          for (const [relative, bytes] of Object.entries(files)) {\n            const path = join(stage, relative);\n            await mkdir(dirname(path), { recursive: true });\n            await writeFile(path, bytes, { flag: 'wx' });\n          }\n          await writeFile(join(stage, MARKER), `${JSON.stringify({ format: FORMAT, files: expected }, null, 2)}\\n`, { flag: 'wx' });\n          await mkdir(dirname(destination), { recursive: true });\n        }\n        if (target.old) {\n          const backups = join(base, 'case-workflow-backups');\n          await mkdir(backups, { recursive: true });\n          backup = join(backups, id);\n          await rename(destination, backup);\n        }\n        if (stage) {\n          try { await rename(stage, destination); stage = null; }\n          catch (error) { if (backup) await rename(backup, destination); throw error; }\n        }\n        results.push({ destination, action: uninstall ? 'removed' : target.old ? 'updated' : 'installed', backup });\n      } finally {\n        if (stage) await rm(stage, { recursive: true, force: true });\n      }\n    } finally {\n      if (lock) await rmdir(lockPath);\n    }\n  }\n  return { ok: true, host, project: root, results, note: 'Shared .agents installation serves both Pi and Codex; task data is unchanged.' };\n}\n\nasync function main(args) {\n  if (args.includes('--help') || args.length === 0) {\n    console.log('C.A.S.E. project skill installer\\nnode install.mjs --project PATH --host pi|codex|claude|all [--update | --uninstall]\\nDefault host: all. Existing custom files are never overwritten. Update/removal retains a backup.\\nPi and Codex share .agents/skills/case-workflow; Claude uses .claude/skills/case-workflow.\\nNo global config, credentials, project instruction files, or task data are changed.');\n    return;\n  }\n  const options = {};\n  for (let i = 0; i < args.length; i++) {\n    const key = args[i];\n    if (!['--project', '--host', '--update', '--uninstall'].includes(key) || Object.hasOwn(options, key.slice(2))) fail(`Unknown or duplicate option: ${key}`);\n    options[key.slice(2)] = ['--update', '--uninstall'].includes(key) ? true : args[++i];\n    if (typeof options[key.slice(2)] === 'string' && (!options[key.slice(2)].trim() || options[key.slice(2)].startsWith('--'))) fail(`Missing value: ${key}`);\n  }\n  if (!options.project || (Object.hasOwn(options, 'host') && !options.host)) fail('--project PATH and valid option values are required');\n  console.log(JSON.stringify(await installSkill(options), null, 2));\n}\n\nif (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {\n  main(process.argv.slice(2)).catch(error => { console.error(JSON.stringify({ ok: false, code: 'CASE_INSTALL_ERROR', message: error.message })); process.exitCode = 1; });\n}\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+          "contentSha256": "a14bde02eff9048e4ea81e6e817e7bab8121d4a03b598e399a04ecbd34d66c1b",
+          "content": "CASE_READ {\"lines\":15,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"package.json\",\"sourceSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"resultSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"range\":{\"startLine\":1,\"endLine\":15},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n{\n  \"name\": \"case-workflow-kit\",\n  \"version\": \"2.0.0-preview.1\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"description\": \"Portable C.A.S.E. workflow skill and local task tools for coding agents\",\n  \"engines\": { \"node\": \">=20\" },\n  \"bin\": { \"case-workflow\": \"skills/case-workflow/scripts/case.mjs\", \"case-workflow-v2\": \"skills/case-workflow/scripts/case-v2.mjs\" },\n  \"files\": [\"skills\", \"integrations\", \"install.mjs\", \"README.md\", \"docs\"],\n  \"pi\": { \"skills\": [\"skills\"], \"extensions\": [\"integrations/pi/extension.mjs\"] },\n  \"peerDependencies\": { \"@earendil-works/pi-coding-agent\": \"*\" },\n  \"peerDependenciesMeta\": { \"@earendil-works/pi-coding-agent\": { \"optional\": true } },\n  \"scripts\": { \"test\": \"node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs tests/core-v2.test.mjs tests/pi-runner.test.mjs tests/pi-tools.test.mjs tests/pi-sdk.test.mjs tests/pi-extension.test.mjs tests/package.test.mjs tests/feedback.test.mjs tests/context-policy.test.mjs tests/approved-checks.test.mjs tests/value-evaluation.test.mjs tests/discoveries.test.mjs tests/pi-discovery-sdk.test.mjs\" }\n}\n"
+        }
+      ],
+      "paired": true,
+      "tools": [
+        {
+          "name": "case_read",
+          "description": "Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative file path"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_list",
+          "description": "List one directory, excluding agent settings and CASE state. No recursive dumping.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative directory, or ."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_write",
+          "description": "Write a complete UTF-8 file inside the packet writeScope. Cannot change agent settings or CASE records.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Declared relative deliverable path"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete file contents"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_result",
+          "description": "Submit the requested result after completing the work. Validation can reject missing artifacts, stale sources or failed approved checks: repair the actual files/check failures within scope, then resubmit in this same session. Only an ACCEPTED result finishes the session and prevents further tools. Does not authorize CASE actions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "blocked": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  },
+                  "changeRequest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "summary"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blocked"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "changeRequest"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_discover",
+          "description": "Immediately persist evidence of work needed for the original goal. Nonblocking reports allow this packet to continue. Blocking reports stop this session and hand the obstacle to the planner. Reporting does not authorize new work.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "nonblocking"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "summary",
+              "evidence",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ]
+    },
+    {
+      "atMs": 90315.8551,
+      "maxTokens": 4096,
+      "kwargs": {
+        "enable_thinking": true,
+        "preserve_thinking": true
+      },
+      "sampling": {
+        "temperature": null,
+        "topP": null
+      },
+      "messages": [
+        {
+          "role": "system",
+          "calls": [],
+          "contentSha256": "9b7c18d2b41c89c44e306368be63868a900dc4a913ab3237db425a696d8e6816"
+        },
+        {
+          "role": "user",
+          "calls": [],
+          "contentSha256": "4259e692adee3f75fd253d611902361ad2d69638632b79305f91cd60bb491f01"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+              "name": "case_list"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "contentSha256": "67e3f8fc6536cf640326226a67a83a855904226bb942895a9ffc7d1671dcb54a",
+          "content": "HOSTS.md\ninstall.mjs\nMAINTENANCE.md\npackage.json\nrequirements.md"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+          "contentSha256": "7b90fe748bca3fd312561af8b05547be3967175e976d53a200685d8e032fe61b",
+          "content": "CASE_READ {\"lines\":155,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"install.mjs\",\"sourceSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"resultSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"range\":{\"startLine\":1,\"endLine\":155},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n#!/usr/bin/env node\nimport { mkdir, lstat, readdir, readFile, writeFile, rename, rm, rmdir } from 'node:fs/promises';\nimport { resolve, join, dirname, parse } from 'node:path';\nimport { fileURLToPath, pathToFileURL } from 'node:url';\nimport { createHash, randomUUID } from 'node:crypto';\n\nconst SOURCE = fileURLToPath(new URL('./skills/case-workflow/', import.meta.url));\nconst MARKER = '.case-install.json';\nconst FORMAT = 'case-workflow-install/1';\nconst hash = bytes => createHash('sha256').update(bytes).digest('hex');\nconst fail = message => { throw new Error(message); };\n\nasync function exists(path) {\n  try { return await lstat(path); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }\n}\n\nasync function safeDirectory(path, required = false) {\n  const absolute = resolve(path);\n  let current = parse(absolute).root;\n  for (const part of absolute.slice(current.length).split(/[\\\\/]/).filter(Boolean)) {\n    current = join(current, part);\n    const stat = await exists(current);\n    if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail(`Expected an ordinary directory: ${current}`);\n    if (!stat && required) fail(`Directory does not exist: ${current}`);\n  }\n}\n\nasync function fileMap(directory, prefix = '') {\n  const result = {};\n  for (const entry of await readdir(directory, { withFileTypes: true })) {\n    if (entry.name === MARKER && !prefix) continue;\n    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;\n    const path = join(directory, entry.name);\n    if (entry.isSymbolicLink()) fail(`Linked skill content is not supported: ${path}`);\n    if (entry.isDirectory()) Object.assign(result, await fileMap(path, relative));\n    else if (entry.isFile()) result[relative] = await readFile(path);\n    else fail(`Unsupported skill content: ${path}`);\n  }\n  return result;\n}\n\nfunction digestMap(files) {\n  return Object.fromEntries(Object.keys(files).sort().map(path => [path, hash(files[path])]));\n}\n\nasync function inspectInstalled(destination) {\n  if (!await exists(destination)) return null;\n  await safeDirectory(destination, true);\n  const marker = join(destination, MARKER);\n  const stat = await exists(marker);\n  if (!stat?.isFile() || stat.isSymbolicLink()) fail(`Foreign or incomplete installation: ${destination}`);\n  let metadata;\n  try { metadata = JSON.parse(await readFile(marker, 'utf8')); } catch { fail(`Invalid installation manifest: ${destination}`); }\n  if (metadata.format !== FORMAT || !metadata.files || typeof metadata.files !== 'object' || Array.isArray(metadata.files)) fail(`Unknown installation owner: ${destination}`);\n  const actual = digestMap(await fileMap(destination));\n  const expected = Object.fromEntries(Object.entries(metadata.files).sort(([a], [b]) => a.localeCompare(b, 'en')));\n  if (JSON.stringify(Object.keys(actual).sort().map(k => [k, actual[k]])) !== JSON.stringify(Object.keys(expected).sort().map(k => [k, expected[k]]))) {\n    fail(`Installation was edited; preserve or move your custom copy before retrying: ${destination}`);\n  }\n  return actual;\n}\n\nexport async function installSkill({ project, host = 'all', update = false, uninstall = false, source = SOURCE }) {\n  if (!['pi', 'codex', 'claude', 'all'].includes(host)) fail('host must be pi, codex, claude or all');\n  if (update && uninstall) fail('update and uninstall cannot be combined');\n  const root = resolve(project);\n  await safeDirectory(root, true);\n  await safeDirectory(source, true);\n  const files = await fileMap(source);\n  if (!files['SKILL.md'] || !files['scripts/case.mjs']) fail('Skill source is incomplete');\n  const expected = digestMap(files);\n  // Pi and Codex both discover .agents/skills. One copy avoids duplicate Pi names.\n  const locations = host === 'all' ? ['.agents', '.claude'] : [host === 'claude' ? '.claude' : '.agents'];\n  const targets = [];\n  for (const location of locations) {\n    const base = join(root, location);\n    const destination = join(base, 'skills', 'case-workflow');\n    await safeDirectory(destination);\n    await safeDirectory(join(base, 'case-workflow-backups'));\n    const old = await inspectInstalled(destination);\n    const same = old && JSON.stringify(old) === JSON.stringify(expected);\n    if (old && !same && !update && !uninstall) fail(`Different managed version exists; use --update: ${destination}`);\n    targets.push({ base, destination, old, same });\n  }\n  const results = [];\n  for (const target of targets) {\n    const { base, destination } = target;\n    if (uninstall && !target.old) { results.push({ destination, action: 'absent' }); continue; }\n    if (!uninstall && target.same) { results.push({ destination, action: 'unchanged' }); continue; }\n    await mkdir(base, { recursive: true });\n    const lockPath = join(base, '.case-workflow-install.lock');\n    let lock;\n    try {\n      // mkdir is an exclusive cooperative reservation; never remove someone else's lock.\n      await mkdir(lockPath);\n      lock = true;\n      await safeDirectory(destination);\n      const current = await inspectInstalled(destination);\n      if (JSON.stringify(current) !== JSON.stringify(target.old)) fail(`Installation changed during setup: ${destination}`);\n      const id = randomUUID();\n      let backup = null;\n      let stage = null;\n      try {\n        if (!uninstall) {\n          stage = join(base, `.case-workflow-stage-${id}`);\n          await mkdir(stage);\n          for (const [relative, bytes] of Object.entries(files)) {\n            const path = join(stage, relative);\n            await mkdir(dirname(path), { recursive: true });\n            await writeFile(path, bytes, { flag: 'wx' });\n          }\n          await writeFile(join(stage, MARKER), `${JSON.stringify({ format: FORMAT, files: expected }, null, 2)}\\n`, { flag: 'wx' });\n          await mkdir(dirname(destination), { recursive: true });\n        }\n        if (target.old) {\n          const backups = join(base, 'case-workflow-backups');\n          await mkdir(backups, { recursive: true });\n          backup = join(backups, id);\n          await rename(destination, backup);\n        }\n        if (stage) {\n          try { await rename(stage, destination); stage = null; }\n          catch (error) { if (backup) await rename(backup, destination); throw error; }\n        }\n        results.push({ destination, action: uninstall ? 'removed' : target.old ? 'updated' : 'installed', backup });\n      } finally {\n        if (stage) await rm(stage, { recursive: true, force: true });\n      }\n    } finally {\n      if (lock) await rmdir(lockPath);\n    }\n  }\n  return { ok: true, host, project: root, results, note: 'Shared .agents installation serves both Pi and Codex; task data is unchanged.' };\n}\n\nasync function main(args) {\n  if (args.includes('--help') || args.length === 0) {\n    console.log('C.A.S.E. project skill installer\\nnode install.mjs --project PATH --host pi|codex|claude|all [--update | --uninstall]\\nDefault host: all. Existing custom files are never overwritten. Update/removal retains a backup.\\nPi and Codex share .agents/skills/case-workflow; Claude uses .claude/skills/case-workflow.\\nNo global config, credentials, project instruction files, or task data are changed.');\n    return;\n  }\n  const options = {};\n  for (let i = 0; i < args.length; i++) {\n    const key = args[i];\n    if (!['--project', '--host', '--update', '--uninstall'].includes(key) || Object.hasOwn(options, key.slice(2))) fail(`Unknown or duplicate option: ${key}`);\n    options[key.slice(2)] = ['--update', '--uninstall'].includes(key) ? true : args[++i];\n    if (typeof options[key.slice(2)] === 'string' && (!options[key.slice(2)].trim() || options[key.slice(2)].startsWith('--'))) fail(`Missing value: ${key}`);\n  }\n  if (!options.project || (Object.hasOwn(options, 'host') && !options.host)) fail('--project PATH and valid option values are required');\n  console.log(JSON.stringify(await installSkill(options), null, 2));\n}\n\nif (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {\n  main(process.argv.slice(2)).catch(error => { console.error(JSON.stringify({ ok: false, code: 'CASE_INSTALL_ERROR', message: error.message })); process.exitCode = 1; });\n}\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+          "contentSha256": "a14bde02eff9048e4ea81e6e817e7bab8121d4a03b598e399a04ecbd34d66c1b",
+          "content": "CASE_READ {\"lines\":15,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"package.json\",\"sourceSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"resultSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"range\":{\"startLine\":1,\"endLine\":15},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n{\n  \"name\": \"case-workflow-kit\",\n  \"version\": \"2.0.0-preview.1\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"description\": \"Portable C.A.S.E. workflow skill and local task tools for coding agents\",\n  \"engines\": { \"node\": \">=20\" },\n  \"bin\": { \"case-workflow\": \"skills/case-workflow/scripts/case.mjs\", \"case-workflow-v2\": \"skills/case-workflow/scripts/case-v2.mjs\" },\n  \"files\": [\"skills\", \"integrations\", \"install.mjs\", \"README.md\", \"docs\"],\n  \"pi\": { \"skills\": [\"skills\"], \"extensions\": [\"integrations/pi/extension.mjs\"] },\n  \"peerDependencies\": { \"@earendil-works/pi-coding-agent\": \"*\" },\n  \"peerDependenciesMeta\": { \"@earendil-works/pi-coding-agent\": { \"optional\": true } },\n  \"scripts\": { \"test\": \"node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs tests/core-v2.test.mjs tests/pi-runner.test.mjs tests/pi-tools.test.mjs tests/pi-sdk.test.mjs tests/pi-extension.test.mjs tests/package.test.mjs tests/feedback.test.mjs tests/context-policy.test.mjs tests/approved-checks.test.mjs tests/value-evaluation.test.mjs tests/discoveries.test.mjs tests/pi-discovery-sdk.test.mjs\" }\n}\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+          "contentSha256": "6d99543f4de9f5526d095322e64ff7310e0543a2ad6d25642bbbc68408db2cf1",
+          "content": "CASE_READ {\"lines\":80,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"HOSTS.md\",\"sourceSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"resultSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"range\":{\"startLine\":1,\"endLine\":80},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n# 安裝與維護\n\n## pi v2：原生本機套件安裝\n\n已在隔離專案以 pi 0.84.2 安裝本機 checkout，實際 loader 註冊 `case_workflow` 工具與 `/case` 指令，載入無錯誤。先取得包含 v2 的本機版本，在實際工作專案執行（換成自己的 checkout 絕對路徑）：\n\n```text\npi install -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"\n```\n\n這會在專案設定引用該目錄，不複製套件；保留 checkout 路徑。核心需 Node.js 20+，本次 pi 0.84.2 需 Node.js 22.19+。SDK 由 pi 提供，套件以 optional peer dependency 宣告；本地 CLI 不需 SDK。重啟／重新載入 pi 後使用 [v2 指南](V2.md)。只裝技能不會有 `/case`，不要同時疊裝同名 skill。\n\n更新本機 checkout 後重新載入 pi；移除使用 `pi remove -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"`，不要改用下方 Node installer 管理 pi package。這是 pi 套件管理方式；移除與模型端到端實測狀態見 [READINESS](READINESS.md)。未刊登 registry 套件，也未驗證此 repository 根目錄的 Git 遠端安裝。\n\n## 可攜技能：使用既有技能安裝器\n\n下列 main URL 屬既有 v1 發行；本輪 `2.0.0-preview.1` 尚未合併或推送，請勿將該 URL 當作已提供新 extension 的版本。\n\n在實際工作專案執行（需要 Node.js 20+ 與 Git）：\n\n```text\nnpx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy\n```\n\n依提示選 AI 工具，保留專案範圍、不加 `--global`。這是 [Vercel Labs Skills](https://github.com/vercel-labs/skills) 的標準 GitHub 子路徑安裝方式。`--copy` 避免連結權限問題。它會依平台放置技能，位置可能與下面自製安裝器不同，例如 pi 使用 `.pi/skills`，並保存共用 `.agents/skills`；若 pi 提示同名技能，確認兩份來源一致，不再疊裝第三份。\n\n更新與移除使用 `npx skills update case-workflow`、`npx skills remove case-workflow`。安裝器版本與權限設定可能改變行為，執行前看提示；不要混用下方 Node 安裝器管理第三方安裝。第三方不保證我們自製安裝器的備份或修改檔案保護規則。\n\n本次以 skills 1.5.23 在隔離專案完成 GitHub 技能發現與四種工具目標的複製安裝；本機 npm exec 遇快取鎖錯誤，改以隔離安裝的同一 CLI 驗證成功。這不是全域 npm 修復，也不是完整模型任務實測。\n\n## 原生機制與目前限制\n\npi 的本機專案範圍安裝已按上節實測。暫不推薦對本 repo 根目錄直接 Git 安裝：它仍是 M0 研究套件，會帶入研究用相依套件。[pi 官方套件文件](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)\n\nCodex 也可使用其 `$skill-installer`，指定本技能 GitHub 資料夾。Claude Code 的 plugin marketplace 是另一種標準方式，但本 repo 尚未提供 marketplace，不能用不存在的 plugin 指令安裝。單一技能目前無需為此多建一套框架。\n\n## 進階／離線：本套件安裝器\n\n從 framework repository 執行 `node workflow-kit/install.mjs --project \"<實際專案目錄>\" --host pi`；從本套件目錄則使用 `node install.mjs ...`。project 必須已存在。安裝拒絕連結／junction 路徑與外來同名內容。\n\n| Host | 相對 project 的安裝位置 | 使用方式 |\n|---|---|---|\n| pi | `.agents/skills/case-workflow/` | `/skill:case-workflow` |\n| Codex | `.agents/skills/case-workflow/` | `$case-workflow` |\n| Claude Code | `.claude/skills/case-workflow/` | `/case-workflow` |\n| all | 以上兩個不同目錄 | pi／Codex 共用一份，避免 pi 重複名稱 |\n\n2026-09-05 查核官方來源：[pi skills](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/skills.md)、[Codex skills](https://learn.chatgpt.com/docs/build-skills)、[Claude Code skills](https://code.claude.com/docs/en/skills)。實際載入受版本、專案信任與設定影響；文件相容和實測分列於 [READINESS](READINESS.md)。\n\n安裝後在 project 開啟或重新載入AI 工具，確認技能清單有 case-workflow。沒有時核對啟動位置、信任／skill 設定與同名技能；也可明確請 agent 讀安裝位置的 SKILL.md。不需修改 AGENTS.md、CLAUDE.md 或全域設定。\n\n## Antigravity（agy）與其他AI 工具\n\n[Antigravity 官方技能文件](https://antigravity.google/docs/skills) 目前以 `.agents/skills` 為預設，保留 `.agent/skills` 相容。可用上面的 installer 搭配 `--host codex`，安裝到共用 `.agents/skills/case-workflow/`；不需要另一套任務格式。`--host agy`／`antigravity` 尚不是有效參數，`all` 仍只建立兩個不同目錄。\n\n在 Antigravity 的目標專案確認技能已被辨識，或明確要求讀取 `.agents/skills/case-workflow/SKILL.md`。本專案尚未執行 agy 真實 session；這是官方格式／路徑相容性判斷。使用舊版或非標準設定時先核對該版本的技能目錄，不覆蓋全域設定。移除共用技能目錄會影響所有使用該目錄的AI 工具。\n\n其他能讀檔、執行 Node 並寫入專案的 agent，可以由使用者指定讀取 SKILL.md 後使用相同本地工具；沒有這些能力的聊天介面不能直接操作 CLI。不同產品的自動技能發現及分工功能，不因支援 Markdown 就一律成立。\n\n## 更新與移除\n\n```text\nnode install.mjs --project \"<project>\" --host pi --update\nnode install.mjs --project \"<project>\" --host pi --uninstall\n```\n\n同版本為 unchanged。更新需所有檔案符合 `.case-install.json`，否則拒絕，不提供 force 覆蓋自訂內容。更新／移除把舊安裝移到 `.agents/case-workflow-backups/<id>/` 或 `.claude/case-workflow-backups/<id>/`，回傳完整位置。備份不在標準 skills 搜尋目錄內；還原前先移開現有安裝，不混合兩版。\n\npi／Codex 共用入口，移除共享目錄會同時影響兩者。all 操作若 I/O 中止可能只完成部分入口，核對目錄後重跑。安裝中斷若留下 `.case-workflow-install.lock`，確認安裝程序停止後再處理。本工具不宣稱抵禦惡意程序同時改檔。\n\n移除保留 `.case-agent` 任務，不改其他技能、agent 或模型設定。需要刪任務時，先備份並確認保存需求；工具不自動清空。\n\n## 跨 session／AI 工具\n\n在同一 project 使用相同 task ID 讀 context，再讀下一步必要來源即可。不同機器需另外同步專案與狀態，不能同時寫。handoff 不自動停止舊 agent；接手前確認原寫者已停止。\n\n## Pi 環境問題\n\npi 若因缺失模組而無法載入技能，是AI 工具安裝問題。使用正常的 pi 安裝或隔離環境驗證；CLI 仍可用 Node 直接運作。不要為套件清除既有設定、憑證或模型。人工／明確讀取技能的入口可用，但不能代稱該AI 工具的模型行為實測。\n"
+        }
+      ],
+      "paired": true,
+      "tools": [
+        {
+          "name": "case_read",
+          "description": "Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative file path"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_list",
+          "description": "List one directory, excluding agent settings and CASE state. No recursive dumping.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative directory, or ."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_write",
+          "description": "Write a complete UTF-8 file inside the packet writeScope. Cannot change agent settings or CASE records.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Declared relative deliverable path"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete file contents"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_result",
+          "description": "Submit the requested result after completing the work. Validation can reject missing artifacts, stale sources or failed approved checks: repair the actual files/check failures within scope, then resubmit in this same session. Only an ACCEPTED result finishes the session and prevents further tools. Does not authorize CASE actions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "blocked": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  },
+                  "changeRequest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "summary"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blocked"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "changeRequest"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_discover",
+          "description": "Immediately persist evidence of work needed for the original goal. Nonblocking reports allow this packet to continue. Blocking reports stop this session and hand the obstacle to the planner. Reporting does not authorize new work.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "nonblocking"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "summary",
+              "evidence",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ]
+    },
+    {
+      "atMs": 112928.3438,
+      "maxTokens": 4096,
+      "kwargs": {
+        "enable_thinking": true,
+        "preserve_thinking": true
+      },
+      "sampling": {
+        "temperature": null,
+        "topP": null
+      },
+      "messages": [
+        {
+          "role": "system",
+          "calls": [],
+          "contentSha256": "9b7c18d2b41c89c44e306368be63868a900dc4a913ab3237db425a696d8e6816"
+        },
+        {
+          "role": "user",
+          "calls": [],
+          "contentSha256": "4259e692adee3f75fd253d611902361ad2d69638632b79305f91cd60bb491f01"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+              "name": "case_list"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "contentSha256": "67e3f8fc6536cf640326226a67a83a855904226bb942895a9ffc7d1671dcb54a",
+          "content": "HOSTS.md\ninstall.mjs\nMAINTENANCE.md\npackage.json\nrequirements.md"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+          "contentSha256": "7b90fe748bca3fd312561af8b05547be3967175e976d53a200685d8e032fe61b",
+          "content": "CASE_READ {\"lines\":155,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"install.mjs\",\"sourceSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"resultSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"range\":{\"startLine\":1,\"endLine\":155},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n#!/usr/bin/env node\nimport { mkdir, lstat, readdir, readFile, writeFile, rename, rm, rmdir } from 'node:fs/promises';\nimport { resolve, join, dirname, parse } from 'node:path';\nimport { fileURLToPath, pathToFileURL } from 'node:url';\nimport { createHash, randomUUID } from 'node:crypto';\n\nconst SOURCE = fileURLToPath(new URL('./skills/case-workflow/', import.meta.url));\nconst MARKER = '.case-install.json';\nconst FORMAT = 'case-workflow-install/1';\nconst hash = bytes => createHash('sha256').update(bytes).digest('hex');\nconst fail = message => { throw new Error(message); };\n\nasync function exists(path) {\n  try { return await lstat(path); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }\n}\n\nasync function safeDirectory(path, required = false) {\n  const absolute = resolve(path);\n  let current = parse(absolute).root;\n  for (const part of absolute.slice(current.length).split(/[\\\\/]/).filter(Boolean)) {\n    current = join(current, part);\n    const stat = await exists(current);\n    if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail(`Expected an ordinary directory: ${current}`);\n    if (!stat && required) fail(`Directory does not exist: ${current}`);\n  }\n}\n\nasync function fileMap(directory, prefix = '') {\n  const result = {};\n  for (const entry of await readdir(directory, { withFileTypes: true })) {\n    if (entry.name === MARKER && !prefix) continue;\n    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;\n    const path = join(directory, entry.name);\n    if (entry.isSymbolicLink()) fail(`Linked skill content is not supported: ${path}`);\n    if (entry.isDirectory()) Object.assign(result, await fileMap(path, relative));\n    else if (entry.isFile()) result[relative] = await readFile(path);\n    else fail(`Unsupported skill content: ${path}`);\n  }\n  return result;\n}\n\nfunction digestMap(files) {\n  return Object.fromEntries(Object.keys(files).sort().map(path => [path, hash(files[path])]));\n}\n\nasync function inspectInstalled(destination) {\n  if (!await exists(destination)) return null;\n  await safeDirectory(destination, true);\n  const marker = join(destination, MARKER);\n  const stat = await exists(marker);\n  if (!stat?.isFile() || stat.isSymbolicLink()) fail(`Foreign or incomplete installation: ${destination}`);\n  let metadata;\n  try { metadata = JSON.parse(await readFile(marker, 'utf8')); } catch { fail(`Invalid installation manifest: ${destination}`); }\n  if (metadata.format !== FORMAT || !metadata.files || typeof metadata.files !== 'object' || Array.isArray(metadata.files)) fail(`Unknown installation owner: ${destination}`);\n  const actual = digestMap(await fileMap(destination));\n  const expected = Object.fromEntries(Object.entries(metadata.files).sort(([a], [b]) => a.localeCompare(b, 'en')));\n  if (JSON.stringify(Object.keys(actual).sort().map(k => [k, actual[k]])) !== JSON.stringify(Object.keys(expected).sort().map(k => [k, expected[k]]))) {\n    fail(`Installation was edited; preserve or move your custom copy before retrying: ${destination}`);\n  }\n  return actual;\n}\n\nexport async function installSkill({ project, host = 'all', update = false, uninstall = false, source = SOURCE }) {\n  if (!['pi', 'codex', 'claude', 'all'].includes(host)) fail('host must be pi, codex, claude or all');\n  if (update && uninstall) fail('update and uninstall cannot be combined');\n  const root = resolve(project);\n  await safeDirectory(root, true);\n  await safeDirectory(source, true);\n  const files = await fileMap(source);\n  if (!files['SKILL.md'] || !files['scripts/case.mjs']) fail('Skill source is incomplete');\n  const expected = digestMap(files);\n  // Pi and Codex both discover .agents/skills. One copy avoids duplicate Pi names.\n  const locations = host === 'all' ? ['.agents', '.claude'] : [host === 'claude' ? '.claude' : '.agents'];\n  const targets = [];\n  for (const location of locations) {\n    const base = join(root, location);\n    const destination = join(base, 'skills', 'case-workflow');\n    await safeDirectory(destination);\n    await safeDirectory(join(base, 'case-workflow-backups'));\n    const old = await inspectInstalled(destination);\n    const same = old && JSON.stringify(old) === JSON.stringify(expected);\n    if (old && !same && !update && !uninstall) fail(`Different managed version exists; use --update: ${destination}`);\n    targets.push({ base, destination, old, same });\n  }\n  const results = [];\n  for (const target of targets) {\n    const { base, destination } = target;\n    if (uninstall && !target.old) { results.push({ destination, action: 'absent' }); continue; }\n    if (!uninstall && target.same) { results.push({ destination, action: 'unchanged' }); continue; }\n    await mkdir(base, { recursive: true });\n    const lockPath = join(base, '.case-workflow-install.lock');\n    let lock;\n    try {\n      // mkdir is an exclusive cooperative reservation; never remove someone else's lock.\n      await mkdir(lockPath);\n      lock = true;\n      await safeDirectory(destination);\n      const current = await inspectInstalled(destination);\n      if (JSON.stringify(current) !== JSON.stringify(target.old)) fail(`Installation changed during setup: ${destination}`);\n      const id = randomUUID();\n      let backup = null;\n      let stage = null;\n      try {\n        if (!uninstall) {\n          stage = join(base, `.case-workflow-stage-${id}`);\n          await mkdir(stage);\n          for (const [relative, bytes] of Object.entries(files)) {\n            const path = join(stage, relative);\n            await mkdir(dirname(path), { recursive: true });\n            await writeFile(path, bytes, { flag: 'wx' });\n          }\n          await writeFile(join(stage, MARKER), `${JSON.stringify({ format: FORMAT, files: expected }, null, 2)}\\n`, { flag: 'wx' });\n          await mkdir(dirname(destination), { recursive: true });\n        }\n        if (target.old) {\n          const backups = join(base, 'case-workflow-backups');\n          await mkdir(backups, { recursive: true });\n          backup = join(backups, id);\n          await rename(destination, backup);\n        }\n        if (stage) {\n          try { await rename(stage, destination); stage = null; }\n          catch (error) { if (backup) await rename(backup, destination); throw error; }\n        }\n        results.push({ destination, action: uninstall ? 'removed' : target.old ? 'updated' : 'installed', backup });\n      } finally {\n        if (stage) await rm(stage, { recursive: true, force: true });\n      }\n    } finally {\n      if (lock) await rmdir(lockPath);\n    }\n  }\n  return { ok: true, host, project: root, results, note: 'Shared .agents installation serves both Pi and Codex; task data is unchanged.' };\n}\n\nasync function main(args) {\n  if (args.includes('--help') || args.length === 0) {\n    console.log('C.A.S.E. project skill installer\\nnode install.mjs --project PATH --host pi|codex|claude|all [--update | --uninstall]\\nDefault host: all. Existing custom files are never overwritten. Update/removal retains a backup.\\nPi and Codex share .agents/skills/case-workflow; Claude uses .claude/skills/case-workflow.\\nNo global config, credentials, project instruction files, or task data are changed.');\n    return;\n  }\n  const options = {};\n  for (let i = 0; i < args.length; i++) {\n    const key = args[i];\n    if (!['--project', '--host', '--update', '--uninstall'].includes(key) || Object.hasOwn(options, key.slice(2))) fail(`Unknown or duplicate option: ${key}`);\n    options[key.slice(2)] = ['--update', '--uninstall'].includes(key) ? true : args[++i];\n    if (typeof options[key.slice(2)] === 'string' && (!options[key.slice(2)].trim() || options[key.slice(2)].startsWith('--'))) fail(`Missing value: ${key}`);\n  }\n  if (!options.project || (Object.hasOwn(options, 'host') && !options.host)) fail('--project PATH and valid option values are required');\n  console.log(JSON.stringify(await installSkill(options), null, 2));\n}\n\nif (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {\n  main(process.argv.slice(2)).catch(error => { console.error(JSON.stringify({ ok: false, code: 'CASE_INSTALL_ERROR', message: error.message })); process.exitCode = 1; });\n}\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+          "contentSha256": "a14bde02eff9048e4ea81e6e817e7bab8121d4a03b598e399a04ecbd34d66c1b",
+          "content": "CASE_READ {\"lines\":15,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"package.json\",\"sourceSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"resultSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"range\":{\"startLine\":1,\"endLine\":15},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n{\n  \"name\": \"case-workflow-kit\",\n  \"version\": \"2.0.0-preview.1\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"description\": \"Portable C.A.S.E. workflow skill and local task tools for coding agents\",\n  \"engines\": { \"node\": \">=20\" },\n  \"bin\": { \"case-workflow\": \"skills/case-workflow/scripts/case.mjs\", \"case-workflow-v2\": \"skills/case-workflow/scripts/case-v2.mjs\" },\n  \"files\": [\"skills\", \"integrations\", \"install.mjs\", \"README.md\", \"docs\"],\n  \"pi\": { \"skills\": [\"skills\"], \"extensions\": [\"integrations/pi/extension.mjs\"] },\n  \"peerDependencies\": { \"@earendil-works/pi-coding-agent\": \"*\" },\n  \"peerDependenciesMeta\": { \"@earendil-works/pi-coding-agent\": { \"optional\": true } },\n  \"scripts\": { \"test\": \"node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs tests/core-v2.test.mjs tests/pi-runner.test.mjs tests/pi-tools.test.mjs tests/pi-sdk.test.mjs tests/pi-extension.test.mjs tests/package.test.mjs tests/feedback.test.mjs tests/context-policy.test.mjs tests/approved-checks.test.mjs tests/value-evaluation.test.mjs tests/discoveries.test.mjs tests/pi-discovery-sdk.test.mjs\" }\n}\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+          "contentSha256": "6d99543f4de9f5526d095322e64ff7310e0543a2ad6d25642bbbc68408db2cf1",
+          "content": "CASE_READ {\"lines\":80,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"HOSTS.md\",\"sourceSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"resultSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"range\":{\"startLine\":1,\"endLine\":80},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n# 安裝與維護\n\n## pi v2：原生本機套件安裝\n\n已在隔離專案以 pi 0.84.2 安裝本機 checkout，實際 loader 註冊 `case_workflow` 工具與 `/case` 指令，載入無錯誤。先取得包含 v2 的本機版本，在實際工作專案執行（換成自己的 checkout 絕對路徑）：\n\n```text\npi install -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"\n```\n\n這會在專案設定引用該目錄，不複製套件；保留 checkout 路徑。核心需 Node.js 20+，本次 pi 0.84.2 需 Node.js 22.19+。SDK 由 pi 提供，套件以 optional peer dependency 宣告；本地 CLI 不需 SDK。重啟／重新載入 pi 後使用 [v2 指南](V2.md)。只裝技能不會有 `/case`，不要同時疊裝同名 skill。\n\n更新本機 checkout 後重新載入 pi；移除使用 `pi remove -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"`，不要改用下方 Node installer 管理 pi package。這是 pi 套件管理方式；移除與模型端到端實測狀態見 [READINESS](READINESS.md)。未刊登 registry 套件，也未驗證此 repository 根目錄的 Git 遠端安裝。\n\n## 可攜技能：使用既有技能安裝器\n\n下列 main URL 屬既有 v1 發行；本輪 `2.0.0-preview.1` 尚未合併或推送，請勿將該 URL 當作已提供新 extension 的版本。\n\n在實際工作專案執行（需要 Node.js 20+ 與 Git）：\n\n```text\nnpx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy\n```\n\n依提示選 AI 工具，保留專案範圍、不加 `--global`。這是 [Vercel Labs Skills](https://github.com/vercel-labs/skills) 的標準 GitHub 子路徑安裝方式。`--copy` 避免連結權限問題。它會依平台放置技能，位置可能與下面自製安裝器不同，例如 pi 使用 `.pi/skills`，並保存共用 `.agents/skills`；若 pi 提示同名技能，確認兩份來源一致，不再疊裝第三份。\n\n更新與移除使用 `npx skills update case-workflow`、`npx skills remove case-workflow`。安裝器版本與權限設定可能改變行為，執行前看提示；不要混用下方 Node 安裝器管理第三方安裝。第三方不保證我們自製安裝器的備份或修改檔案保護規則。\n\n本次以 skills 1.5.23 在隔離專案完成 GitHub 技能發現與四種工具目標的複製安裝；本機 npm exec 遇快取鎖錯誤，改以隔離安裝的同一 CLI 驗證成功。這不是全域 npm 修復，也不是完整模型任務實測。\n\n## 原生機制與目前限制\n\npi 的本機專案範圍安裝已按上節實測。暫不推薦對本 repo 根目錄直接 Git 安裝：它仍是 M0 研究套件，會帶入研究用相依套件。[pi 官方套件文件](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)\n\nCodex 也可使用其 `$skill-installer`，指定本技能 GitHub 資料夾。Claude Code 的 plugin marketplace 是另一種標準方式，但本 repo 尚未提供 marketplace，不能用不存在的 plugin 指令安裝。單一技能目前無需為此多建一套框架。\n\n## 進階／離線：本套件安裝器\n\n從 framework repository 執行 `node workflow-kit/install.mjs --project \"<實際專案目錄>\" --host pi`；從本套件目錄則使用 `node install.mjs ...`。project 必須已存在。安裝拒絕連結／junction 路徑與外來同名內容。\n\n| Host | 相對 project 的安裝位置 | 使用方式 |\n|---|---|---|\n| pi | `.agents/skills/case-workflow/` | `/skill:case-workflow` |\n| Codex | `.agents/skills/case-workflow/` | `$case-workflow` |\n| Claude Code | `.claude/skills/case-workflow/` | `/case-workflow` |\n| all | 以上兩個不同目錄 | pi／Codex 共用一份，避免 pi 重複名稱 |\n\n2026-09-05 查核官方來源：[pi skills](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/skills.md)、[Codex skills](https://learn.chatgpt.com/docs/build-skills)、[Claude Code skills](https://code.claude.com/docs/en/skills)。實際載入受版本、專案信任與設定影響；文件相容和實測分列於 [READINESS](READINESS.md)。\n\n安裝後在 project 開啟或重新載入AI 工具，確認技能清單有 case-workflow。沒有時核對啟動位置、信任／skill 設定與同名技能；也可明確請 agent 讀安裝位置的 SKILL.md。不需修改 AGENTS.md、CLAUDE.md 或全域設定。\n\n## Antigravity（agy）與其他AI 工具\n\n[Antigravity 官方技能文件](https://antigravity.google/docs/skills) 目前以 `.agents/skills` 為預設，保留 `.agent/skills` 相容。可用上面的 installer 搭配 `--host codex`，安裝到共用 `.agents/skills/case-workflow/`；不需要另一套任務格式。`--host agy`／`antigravity` 尚不是有效參數，`all` 仍只建立兩個不同目錄。\n\n在 Antigravity 的目標專案確認技能已被辨識，或明確要求讀取 `.agents/skills/case-workflow/SKILL.md`。本專案尚未執行 agy 真實 session；這是官方格式／路徑相容性判斷。使用舊版或非標準設定時先核對該版本的技能目錄，不覆蓋全域設定。移除共用技能目錄會影響所有使用該目錄的AI 工具。\n\n其他能讀檔、執行 Node 並寫入專案的 agent，可以由使用者指定讀取 SKILL.md 後使用相同本地工具；沒有這些能力的聊天介面不能直接操作 CLI。不同產品的自動技能發現及分工功能，不因支援 Markdown 就一律成立。\n\n## 更新與移除\n\n```text\nnode install.mjs --project \"<project>\" --host pi --update\nnode install.mjs --project \"<project>\" --host pi --uninstall\n```\n\n同版本為 unchanged。更新需所有檔案符合 `.case-install.json`，否則拒絕，不提供 force 覆蓋自訂內容。更新／移除把舊安裝移到 `.agents/case-workflow-backups/<id>/` 或 `.claude/case-workflow-backups/<id>/`，回傳完整位置。備份不在標準 skills 搜尋目錄內；還原前先移開現有安裝，不混合兩版。\n\npi／Codex 共用入口，移除共享目錄會同時影響兩者。all 操作若 I/O 中止可能只完成部分入口，核對目錄後重跑。安裝中斷若留下 `.case-workflow-install.lock`，確認安裝程序停止後再處理。本工具不宣稱抵禦惡意程序同時改檔。\n\n移除保留 `.case-agent` 任務，不改其他技能、agent 或模型設定。需要刪任務時，先備份並確認保存需求；工具不自動清空。\n\n## 跨 session／AI 工具\n\n在同一 project 使用相同 task ID 讀 context，再讀下一步必要來源即可。不同機器需另外同步專案與狀態，不能同時寫。handoff 不自動停止舊 agent；接手前確認原寫者已停止。\n\n## Pi 環境問題\n\npi 若因缺失模組而無法載入技能，是AI 工具安裝問題。使用正常的 pi 安裝或隔離環境驗證；CLI 仍可用 Node 直接運作。不要為套件清除既有設定、憑證或模型。人工／明確讀取技能的入口可用，但不能代稱該AI 工具的模型行為實測。\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "JVl194hqEShKmzAEuWwz8ZUzwnQ54t1S",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "JVl194hqEShKmzAEuWwz8ZUzwnQ54t1S",
+          "contentSha256": "cdf53ebb9f249a657768b6c0fba5d44d6e82dda7344b08b4b0d654395b15a5c9",
+          "content": "CASE_READ {\"lines\":66,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"MAINTENANCE.md\",\"sourceSha256\":\"395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36\",\"resultSha256\":\"395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36\",\"range\":{\"startLine\":1,\"endLine\":66},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n# 維護關聯與語言原則\n\n目的：接手者先知道修改會影響哪裡，避免程式、技能、文件和翻譯各自演進。這是導航，不是新增審批流程；只處理本次真正受影響的項目。\n\n## 語言與主要定義\n\n首頁先回答「做什麼、給誰用、怎麼運作、為何有價值、證據與限制」，再提供安裝。以具體情境呈現設計，不用功能清單或測試數代替價值說明；相關技術敘述同步套件首頁與英文指南。\n\n公開文件直接稱「AI 工具」、具體產品名稱，或在指作業系統時寫「Windows／macOS／Linux」；不將英文 host 直譯為「宿主」。任務、接續、分工用一般語言說明，不要求讀者先學一套框架術語。既有 `--host` 旗標與 HOSTS.md 路徑維持相容，中文標題與說明不必跟著直譯。歷史研究與不可變證據保留原文，避免改寫紀錄。\n\n安裝與操作入口優先沿用各工具的官方機制或成熟社群慣例。採用自訂做法前，先列出現有方案及無法滿足的具體需求；沒有明確好處就不另造入口。研究結論與實際安裝驗證分開記錄，不能把範例指令當成已測可用。\n\n主要文件採臺灣慣用的正體中文（zh-TW）：使用「專案、檔案、資料夾、資訊、軟體、程式碼、設定、預設、建立、支援、品質、使用者、相依套件」等用語。保留 pi、Codex、Claude Code 等產品名稱及必要技術名稱；首次出現時可加中文說明。\n\n命令、旗標、JSON 欄位、格式識別碼及檔名是介面，不因翻譯而改名。中文文件沿用現有路徑，不為語系重新搬動整個專案。其他語言以 `GUIDE.en.md` 等清楚標記，從 README 互相導航；新增語言不複製一套程式或資料規格。\n\n目前英文指南對應 Kit README、HOSTS、V2、WORKFLOW、ARCHITECTURE、TEMPLATES 與 READINESS 中的使用說明，不是歷史研究的完整翻譯。技術內容必須一致，無需逐句直譯。翻譯若未同步，明確標記缺漏並連到最新中文來源，不讓過期說明冒充現況。\n\n發生衝突時：使用者已確認的目標以 [GOALS](GOALS.md) 為準；程式描述目前實際行為，文件描述應有用途，兩者不一致要確認並修正，不能直接認定任一方永遠正確。[READINESS](../workflow-kit/docs/READINESS.md) 是實測範圍的集中記錄，翻譯不得擴大宣稱。舊 M0 規格只管 M0。\n\n## 修改影響對照\n\n以下路徑除特別標示外，以 `workflow-kit/` 為起點。\n\n| 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |\n|---|---|---|\n| 目標、交付邊界：根目錄 `docs/GOALS.md` | 根 README、STATUS、MAP；Kit README、ARCHITECTURE、技能入口 | 確認是否改變使用承諾，不拿舊計畫當新需求 |\n| v2 契約、版本、遷移與狀態：`skills/case-workflow/scripts/core/`、`case-v2.mjs` | help、`references/v2-contracts.md`、SKILL、V2、ARCHITECTURE、READINESS、GUIDE.en | core-v2 與相關整合測試；來源過期、全域驗收、revision、預算與資料升級 |\n| pi 原生 session 與工具：`integrations/pi/` | `extension.mjs` 靜態 SDK 入口與 `extension-core.mjs` 注入介面、package 的 pi／peer metadata、HOSTS、V2、READINESS、GUIDE.en | runner／tools／SDK／extension 與 package 測試；原生載入和真實模型結果分開 |\n| 執行中發現／自查：`core/discoveries.mjs`、`state.mjs`、`store.mjs`、pi runner／SDK | `references/v2-contracts.md`、協作 reference、範本、V2、ARCHITECTURE、GUIDE.en；設計追蹤見 `docs/design/2026-09-06-discovery-and-repair.md` | discovery／SDK 真實狀態反例、完整 kit；本機模型探測另存，不取代或覆寫舊比較 |\n| v1 任務命令、欄位、狀態：`skills/case-workflow/scripts/case.mjs` | 程式 help、`references/state-and-resume.md`、SKILL、README、WORKFLOW、ARCHITECTURE、GUIDE.en | workflow 與 journey 測試；成功、失敗及接續行為 |\n| 安裝位置、更新、移除：`install.mjs` | help、HOSTS、兩份 README、GUIDE.en、ARCHITECTURE、封裝設定 | install 與 journey 測試；共用目錄、備份及既有檔案保留 |\n| 工作方法、分工、驗收：`skills/case-workflow/SKILL.md` 與 `references/` | `assets/task-notes.md`、WORKFLOW、TEMPLATES、GUIDE.en；涉及新命令時回查 CLI | 技能與情境核對；工具行為變更才增加對應測試 |\n| 範本：`skills/case-workflow/assets/task-notes.md` | TEMPLATES、協作 reference、WORKFLOW、英文範本段落 | 欄位與工具能力一致，不強制重複記錄 |\n| AI 工具支援與測試證據：HOSTS、READINESS | README、GUIDE.en、根 STATUS；改路徑時回查 installer | 官方來源與實際結果分開，未測不寫通過 |\n| 效益比較：`evaluation/value-comparison.mjs`、`value-fixtures.mjs` | 根 `docs/evaluation/` 的事前設計／結果、READINESS、STATUS、README、GUIDE.en；新增測試同步 package test 清單 | 評分器拒絕錯誤成果／來源變更、失敗不可漏記、接續不灌入答案；比較期間不改凍結程式 |\n| 檔案新增、移動或刪除 | 根 MAP、引用連結、兩份 README、`package.json` 的 files；必要時 CI 路徑 | 連結、封裝內容；技能安裝後的相對路徑仍可用 |\n| 支援環境／封裝：`package.json` | README、HOSTS、READINESS、根 CONTRIBUTING、`.github/workflows/workflow-kit.yml` | 執行受影響環境測試；設定不等於已實測 |\n| 使用文件的技術敘述 | GUIDE.en 的對應主題與其他語言版本 | 語意、命令、限制一致；純中文用字修正不必更動英文 |\n\n## 每次修改的實際做法\n\n先從 MAP 找入口，再以檔名、命令或術語搜尋引用，閱讀必要實作與測試；上表是起點，不取代實際搜尋。完成修改後核對受影響文件與翻譯，再執行相稱驗證。交付時簡述修改與證據即可，不另產生一份例行稽核報告。\n\nKit 變更跑 `npm test --prefix workflow-kit`（package 明列全部測試，避開 Windows／Node 20 萬用字元限制）；新增測試檔時同步清單。純文件小修核對來源、連結與命令。若交付壓縮套件，從最新內容重新打包，避免下載檔仍是舊版。只有觸及 M0 才跑 M0 完整套件。保留歷史記錄與原始證據，不為符合新文字而覆寫舊結果。\n\n新增模組、語言或改變責任邊界時更新本表與 MAP。沒有關聯的文件不必為了「同步」而改動；不新增排程或固定審閱輪數。\n\n## 保存知識，但不讓紀錄取代工作\n\n### 原始構想參照\n\n使用者指定長期保留的來源：[Local-Agent-Workspace／C.A.S.E._Framework](https://github.com/Chiakai-Chang/Local-Agent-Workspace/tree/main/C.A.S.E._Framework)。這是理解框架起心動念與演進的參考，不是必須照抄的現行規格。\n\n重要變更完成、階段交付或發現目標可能偏移時，對照原案的專案憲法、宏觀規劃、小憲法交辦、獨立核對、雙層回饋與可接續脈絡，判斷當前成果是否仍幫助本地模型把工作做好，而不是只增加記錄工具或流程。先讀[已整理的對照與修正建議](research/2026-09-05-layered-cooperation-direction.md)，必要時再回查原始相關章節；不為小修重讀所有歷史，不另建排程或固定報告。\n\nmain 連結用於回查來源演進；研究筆記另保留固定提交版本，避免把新內容混入舊結論。原案與目前使用者要求或實測證據不同時，保留脈絡並說明取捨，不盲目復刻舊檔名、規則或未驗證保證。只有因此改變決策，才留下簡短修正紀錄。\n\n### 決策與證據的保存\n\n主要目標始終是本地模型的實際工作品質，不是寫論文。重要設計決策記錄日期、使用者需求、採用理由、其他選擇與未知事項；研究記錄可追溯來源及適用限制，清楚區分假設、觀察與結論。從 MAP 按需導航，不把全部研究變成 agent 必讀材料。\n\n實驗保存使用版本、模型與設定、任務及驗收方法、原始輸出／工具結果的位置、成本、失敗與無效樣本；公開前移除密鑰與私人資料。不要求保存模型隱藏推理或所有聊天。沒有原始證據時明示限制，不補寫成已測事實。\n\n結論可滾動修正：新增修正理由與新證據，標示取代哪個判斷，不覆寫過去結果。只為有意義的決策、實驗或可重用教訓留紀錄，不為每次工具操作、例行復盤或未改變結論的討論新增文件。\n"
+        }
+      ],
+      "paired": true,
+      "tools": [
+        {
+          "name": "case_read",
+          "description": "Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative file path"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_list",
+          "description": "List one directory, excluding agent settings and CASE state. No recursive dumping.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative directory, or ."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_write",
+          "description": "Write a complete UTF-8 file inside the packet writeScope. Cannot change agent settings or CASE records.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Declared relative deliverable path"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete file contents"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_result",
+          "description": "Submit the requested result after completing the work. Validation can reject missing artifacts, stale sources or failed approved checks: repair the actual files/check failures within scope, then resubmit in this same session. Only an ACCEPTED result finishes the session and prevents further tools. Does not authorize CASE actions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "blocked": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  },
+                  "changeRequest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "summary"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blocked"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "changeRequest"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_discover",
+          "description": "Immediately persist evidence of work needed for the original goal. Nonblocking reports allow this packet to continue. Blocking reports stop this session and hand the obstacle to the planner. Reporting does not authorize new work.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "nonblocking"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "summary",
+              "evidence",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ]
+    },
+    {
+      "atMs": 172266.3178,
+      "maxTokens": 4096,
+      "kwargs": {
+        "enable_thinking": true,
+        "preserve_thinking": true
+      },
+      "sampling": {
+        "temperature": null,
+        "topP": null
+      },
+      "messages": [
+        {
+          "role": "system",
+          "calls": [],
+          "contentSha256": "9b7c18d2b41c89c44e306368be63868a900dc4a913ab3237db425a696d8e6816"
+        },
+        {
+          "role": "user",
+          "calls": [],
+          "contentSha256": "4259e692adee3f75fd253d611902361ad2d69638632b79305f91cd60bb491f01"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+              "name": "case_list"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "contentSha256": "67e3f8fc6536cf640326226a67a83a855904226bb942895a9ffc7d1671dcb54a",
+          "content": "HOSTS.md\ninstall.mjs\nMAINTENANCE.md\npackage.json\nrequirements.md"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+          "contentSha256": "7b90fe748bca3fd312561af8b05547be3967175e976d53a200685d8e032fe61b",
+          "content": "CASE_READ {\"lines\":155,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"install.mjs\",\"sourceSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"resultSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"range\":{\"startLine\":1,\"endLine\":155},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n#!/usr/bin/env node\nimport { mkdir, lstat, readdir, readFile, writeFile, rename, rm, rmdir } from 'node:fs/promises';\nimport { resolve, join, dirname, parse } from 'node:path';\nimport { fileURLToPath, pathToFileURL } from 'node:url';\nimport { createHash, randomUUID } from 'node:crypto';\n\nconst SOURCE = fileURLToPath(new URL('./skills/case-workflow/', import.meta.url));\nconst MARKER = '.case-install.json';\nconst FORMAT = 'case-workflow-install/1';\nconst hash = bytes => createHash('sha256').update(bytes).digest('hex');\nconst fail = message => { throw new Error(message); };\n\nasync function exists(path) {\n  try { return await lstat(path); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }\n}\n\nasync function safeDirectory(path, required = false) {\n  const absolute = resolve(path);\n  let current = parse(absolute).root;\n  for (const part of absolute.slice(current.length).split(/[\\\\/]/).filter(Boolean)) {\n    current = join(current, part);\n    const stat = await exists(current);\n    if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail(`Expected an ordinary directory: ${current}`);\n    if (!stat && required) fail(`Directory does not exist: ${current}`);\n  }\n}\n\nasync function fileMap(directory, prefix = '') {\n  const result = {};\n  for (const entry of await readdir(directory, { withFileTypes: true })) {\n    if (entry.name === MARKER && !prefix) continue;\n    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;\n    const path = join(directory, entry.name);\n    if (entry.isSymbolicLink()) fail(`Linked skill content is not supported: ${path}`);\n    if (entry.isDirectory()) Object.assign(result, await fileMap(path, relative));\n    else if (entry.isFile()) result[relative] = await readFile(path);\n    else fail(`Unsupported skill content: ${path}`);\n  }\n  return result;\n}\n\nfunction digestMap(files) {\n  return Object.fromEntries(Object.keys(files).sort().map(path => [path, hash(files[path])]));\n}\n\nasync function inspectInstalled(destination) {\n  if (!await exists(destination)) return null;\n  await safeDirectory(destination, true);\n  const marker = join(destination, MARKER);\n  const stat = await exists(marker);\n  if (!stat?.isFile() || stat.isSymbolicLink()) fail(`Foreign or incomplete installation: ${destination}`);\n  let metadata;\n  try { metadata = JSON.parse(await readFile(marker, 'utf8')); } catch { fail(`Invalid installation manifest: ${destination}`); }\n  if (metadata.format !== FORMAT || !metadata.files || typeof metadata.files !== 'object' || Array.isArray(metadata.files)) fail(`Unknown installation owner: ${destination}`);\n  const actual = digestMap(await fileMap(destination));\n  const expected = Object.fromEntries(Object.entries(metadata.files).sort(([a], [b]) => a.localeCompare(b, 'en')));\n  if (JSON.stringify(Object.keys(actual).sort().map(k => [k, actual[k]])) !== JSON.stringify(Object.keys(expected).sort().map(k => [k, expected[k]]))) {\n    fail(`Installation was edited; preserve or move your custom copy before retrying: ${destination}`);\n  }\n  return actual;\n}\n\nexport async function installSkill({ project, host = 'all', update = false, uninstall = false, source = SOURCE }) {\n  if (!['pi', 'codex', 'claude', 'all'].includes(host)) fail('host must be pi, codex, claude or all');\n  if (update && uninstall) fail('update and uninstall cannot be combined');\n  const root = resolve(project);\n  await safeDirectory(root, true);\n  await safeDirectory(source, true);\n  const files = await fileMap(source);\n  if (!files['SKILL.md'] || !files['scripts/case.mjs']) fail('Skill source is incomplete');\n  const expected = digestMap(files);\n  // Pi and Codex both discover .agents/skills. One copy avoids duplicate Pi names.\n  const locations = host === 'all' ? ['.agents', '.claude'] : [host === 'claude' ? '.claude' : '.agents'];\n  const targets = [];\n  for (const location of locations) {\n    const base = join(root, location);\n    const destination = join(base, 'skills', 'case-workflow');\n    await safeDirectory(destination);\n    await safeDirectory(join(base, 'case-workflow-backups'));\n    const old = await inspectInstalled(destination);\n    const same = old && JSON.stringify(old) === JSON.stringify(expected);\n    if (old && !same && !update && !uninstall) fail(`Different managed version exists; use --update: ${destination}`);\n    targets.push({ base, destination, old, same });\n  }\n  const results = [];\n  for (const target of targets) {\n    const { base, destination } = target;\n    if (uninstall && !target.old) { results.push({ destination, action: 'absent' }); continue; }\n    if (!uninstall && target.same) { results.push({ destination, action: 'unchanged' }); continue; }\n    await mkdir(base, { recursive: true });\n    const lockPath = join(base, '.case-workflow-install.lock');\n    let lock;\n    try {\n      // mkdir is an exclusive cooperative reservation; never remove someone else's lock.\n      await mkdir(lockPath);\n      lock = true;\n      await safeDirectory(destination);\n      const current = await inspectInstalled(destination);\n      if (JSON.stringify(current) !== JSON.stringify(target.old)) fail(`Installation changed during setup: ${destination}`);\n      const id = randomUUID();\n      let backup = null;\n      let stage = null;\n      try {\n        if (!uninstall) {\n          stage = join(base, `.case-workflow-stage-${id}`);\n          await mkdir(stage);\n          for (const [relative, bytes] of Object.entries(files)) {\n            const path = join(stage, relative);\n            await mkdir(dirname(path), { recursive: true });\n            await writeFile(path, bytes, { flag: 'wx' });\n          }\n          await writeFile(join(stage, MARKER), `${JSON.stringify({ format: FORMAT, files: expected }, null, 2)}\\n`, { flag: 'wx' });\n          await mkdir(dirname(destination), { recursive: true });\n        }\n        if (target.old) {\n          const backups = join(base, 'case-workflow-backups');\n          await mkdir(backups, { recursive: true });\n          backup = join(backups, id);\n          await rename(destination, backup);\n        }\n        if (stage) {\n          try { await rename(stage, destination); stage = null; }\n          catch (error) { if (backup) await rename(backup, destination); throw error; }\n        }\n        results.push({ destination, action: uninstall ? 'removed' : target.old ? 'updated' : 'installed', backup });\n      } finally {\n        if (stage) await rm(stage, { recursive: true, force: true });\n      }\n    } finally {\n      if (lock) await rmdir(lockPath);\n    }\n  }\n  return { ok: true, host, project: root, results, note: 'Shared .agents installation serves both Pi and Codex; task data is unchanged.' };\n}\n\nasync function main(args) {\n  if (args.includes('--help') || args.length === 0) {\n    console.log('C.A.S.E. project skill installer\\nnode install.mjs --project PATH --host pi|codex|claude|all [--update | --uninstall]\\nDefault host: all. Existing custom files are never overwritten. Update/removal retains a backup.\\nPi and Codex share .agents/skills/case-workflow; Claude uses .claude/skills/case-workflow.\\nNo global config, credentials, project instruction files, or task data are changed.');\n    return;\n  }\n  const options = {};\n  for (let i = 0; i < args.length; i++) {\n    const key = args[i];\n    if (!['--project', '--host', '--update', '--uninstall'].includes(key) || Object.hasOwn(options, key.slice(2))) fail(`Unknown or duplicate option: ${key}`);\n    options[key.slice(2)] = ['--update', '--uninstall'].includes(key) ? true : args[++i];\n    if (typeof options[key.slice(2)] === 'string' && (!options[key.slice(2)].trim() || options[key.slice(2)].startsWith('--'))) fail(`Missing value: ${key}`);\n  }\n  if (!options.project || (Object.hasOwn(options, 'host') && !options.host)) fail('--project PATH and valid option values are required');\n  console.log(JSON.stringify(await installSkill(options), null, 2));\n}\n\nif (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {\n  main(process.argv.slice(2)).catch(error => { console.error(JSON.stringify({ ok: false, code: 'CASE_INSTALL_ERROR', message: error.message })); process.exitCode = 1; });\n}\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+          "contentSha256": "a14bde02eff9048e4ea81e6e817e7bab8121d4a03b598e399a04ecbd34d66c1b",
+          "content": "CASE_READ {\"lines\":15,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"package.json\",\"sourceSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"resultSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"range\":{\"startLine\":1,\"endLine\":15},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n{\n  \"name\": \"case-workflow-kit\",\n  \"version\": \"2.0.0-preview.1\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"description\": \"Portable C.A.S.E. workflow skill and local task tools for coding agents\",\n  \"engines\": { \"node\": \">=20\" },\n  \"bin\": { \"case-workflow\": \"skills/case-workflow/scripts/case.mjs\", \"case-workflow-v2\": \"skills/case-workflow/scripts/case-v2.mjs\" },\n  \"files\": [\"skills\", \"integrations\", \"install.mjs\", \"README.md\", \"docs\"],\n  \"pi\": { \"skills\": [\"skills\"], \"extensions\": [\"integrations/pi/extension.mjs\"] },\n  \"peerDependencies\": { \"@earendil-works/pi-coding-agent\": \"*\" },\n  \"peerDependenciesMeta\": { \"@earendil-works/pi-coding-agent\": { \"optional\": true } },\n  \"scripts\": { \"test\": \"node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs tests/core-v2.test.mjs tests/pi-runner.test.mjs tests/pi-tools.test.mjs tests/pi-sdk.test.mjs tests/pi-extension.test.mjs tests/package.test.mjs tests/feedback.test.mjs tests/context-policy.test.mjs tests/approved-checks.test.mjs tests/value-evaluation.test.mjs tests/discoveries.test.mjs tests/pi-discovery-sdk.test.mjs\" }\n}\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+          "contentSha256": "6d99543f4de9f5526d095322e64ff7310e0543a2ad6d25642bbbc68408db2cf1",
+          "content": "CASE_READ {\"lines\":80,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"HOSTS.md\",\"sourceSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"resultSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"range\":{\"startLine\":1,\"endLine\":80},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n# 安裝與維護\n\n## pi v2：原生本機套件安裝\n\n已在隔離專案以 pi 0.84.2 安裝本機 checkout，實際 loader 註冊 `case_workflow` 工具與 `/case` 指令，載入無錯誤。先取得包含 v2 的本機版本，在實際工作專案執行（換成自己的 checkout 絕對路徑）：\n\n```text\npi install -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"\n```\n\n這會在專案設定引用該目錄，不複製套件；保留 checkout 路徑。核心需 Node.js 20+，本次 pi 0.84.2 需 Node.js 22.19+。SDK 由 pi 提供，套件以 optional peer dependency 宣告；本地 CLI 不需 SDK。重啟／重新載入 pi 後使用 [v2 指南](V2.md)。只裝技能不會有 `/case`，不要同時疊裝同名 skill。\n\n更新本機 checkout 後重新載入 pi；移除使用 `pi remove -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"`，不要改用下方 Node installer 管理 pi package。這是 pi 套件管理方式；移除與模型端到端實測狀態見 [READINESS](READINESS.md)。未刊登 registry 套件，也未驗證此 repository 根目錄的 Git 遠端安裝。\n\n## 可攜技能：使用既有技能安裝器\n\n下列 main URL 屬既有 v1 發行；本輪 `2.0.0-preview.1` 尚未合併或推送，請勿將該 URL 當作已提供新 extension 的版本。\n\n在實際工作專案執行（需要 Node.js 20+ 與 Git）：\n\n```text\nnpx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy\n```\n\n依提示選 AI 工具，保留專案範圍、不加 `--global`。這是 [Vercel Labs Skills](https://github.com/vercel-labs/skills) 的標準 GitHub 子路徑安裝方式。`--copy` 避免連結權限問題。它會依平台放置技能，位置可能與下面自製安裝器不同，例如 pi 使用 `.pi/skills`，並保存共用 `.agents/skills`；若 pi 提示同名技能，確認兩份來源一致，不再疊裝第三份。\n\n更新與移除使用 `npx skills update case-workflow`、`npx skills remove case-workflow`。安裝器版本與權限設定可能改變行為，執行前看提示；不要混用下方 Node 安裝器管理第三方安裝。第三方不保證我們自製安裝器的備份或修改檔案保護規則。\n\n本次以 skills 1.5.23 在隔離專案完成 GitHub 技能發現與四種工具目標的複製安裝；本機 npm exec 遇快取鎖錯誤，改以隔離安裝的同一 CLI 驗證成功。這不是全域 npm 修復，也不是完整模型任務實測。\n\n## 原生機制與目前限制\n\npi 的本機專案範圍安裝已按上節實測。暫不推薦對本 repo 根目錄直接 Git 安裝：它仍是 M0 研究套件，會帶入研究用相依套件。[pi 官方套件文件](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)\n\nCodex 也可使用其 `$skill-installer`，指定本技能 GitHub 資料夾。Claude Code 的 plugin marketplace 是另一種標準方式，但本 repo 尚未提供 marketplace，不能用不存在的 plugin 指令安裝。單一技能目前無需為此多建一套框架。\n\n## 進階／離線：本套件安裝器\n\n從 framework repository 執行 `node workflow-kit/install.mjs --project \"<實際專案目錄>\" --host pi`；從本套件目錄則使用 `node install.mjs ...`。project 必須已存在。安裝拒絕連結／junction 路徑與外來同名內容。\n\n| Host | 相對 project 的安裝位置 | 使用方式 |\n|---|---|---|\n| pi | `.agents/skills/case-workflow/` | `/skill:case-workflow` |\n| Codex | `.agents/skills/case-workflow/` | `$case-workflow` |\n| Claude Code | `.claude/skills/case-workflow/` | `/case-workflow` |\n| all | 以上兩個不同目錄 | pi／Codex 共用一份，避免 pi 重複名稱 |\n\n2026-09-05 查核官方來源：[pi skills](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/skills.md)、[Codex skills](https://learn.chatgpt.com/docs/build-skills)、[Claude Code skills](https://code.claude.com/docs/en/skills)。實際載入受版本、專案信任與設定影響；文件相容和實測分列於 [READINESS](READINESS.md)。\n\n安裝後在 project 開啟或重新載入AI 工具，確認技能清單有 case-workflow。沒有時核對啟動位置、信任／skill 設定與同名技能；也可明確請 agent 讀安裝位置的 SKILL.md。不需修改 AGENTS.md、CLAUDE.md 或全域設定。\n\n## Antigravity（agy）與其他AI 工具\n\n[Antigravity 官方技能文件](https://antigravity.google/docs/skills) 目前以 `.agents/skills` 為預設，保留 `.agent/skills` 相容。可用上面的 installer 搭配 `--host codex`，安裝到共用 `.agents/skills/case-workflow/`；不需要另一套任務格式。`--host agy`／`antigravity` 尚不是有效參數，`all` 仍只建立兩個不同目錄。\n\n在 Antigravity 的目標專案確認技能已被辨識，或明確要求讀取 `.agents/skills/case-workflow/SKILL.md`。本專案尚未執行 agy 真實 session；這是官方格式／路徑相容性判斷。使用舊版或非標準設定時先核對該版本的技能目錄，不覆蓋全域設定。移除共用技能目錄會影響所有使用該目錄的AI 工具。\n\n其他能讀檔、執行 Node 並寫入專案的 agent，可以由使用者指定讀取 SKILL.md 後使用相同本地工具；沒有這些能力的聊天介面不能直接操作 CLI。不同產品的自動技能發現及分工功能，不因支援 Markdown 就一律成立。\n\n## 更新與移除\n\n```text\nnode install.mjs --project \"<project>\" --host pi --update\nnode install.mjs --project \"<project>\" --host pi --uninstall\n```\n\n同版本為 unchanged。更新需所有檔案符合 `.case-install.json`，否則拒絕，不提供 force 覆蓋自訂內容。更新／移除把舊安裝移到 `.agents/case-workflow-backups/<id>/` 或 `.claude/case-workflow-backups/<id>/`，回傳完整位置。備份不在標準 skills 搜尋目錄內；還原前先移開現有安裝，不混合兩版。\n\npi／Codex 共用入口，移除共享目錄會同時影響兩者。all 操作若 I/O 中止可能只完成部分入口，核對目錄後重跑。安裝中斷若留下 `.case-workflow-install.lock`，確認安裝程序停止後再處理。本工具不宣稱抵禦惡意程序同時改檔。\n\n移除保留 `.case-agent` 任務，不改其他技能、agent 或模型設定。需要刪任務時，先備份並確認保存需求；工具不自動清空。\n\n## 跨 session／AI 工具\n\n在同一 project 使用相同 task ID 讀 context，再讀下一步必要來源即可。不同機器需另外同步專案與狀態，不能同時寫。handoff 不自動停止舊 agent；接手前確認原寫者已停止。\n\n## Pi 環境問題\n\npi 若因缺失模組而無法載入技能，是AI 工具安裝問題。使用正常的 pi 安裝或隔離環境驗證；CLI 仍可用 Node 直接運作。不要為套件清除既有設定、憑證或模型。人工／明確讀取技能的入口可用，但不能代稱該AI 工具的模型行為實測。\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "JVl194hqEShKmzAEuWwz8ZUzwnQ54t1S",
+              "name": "case_read"
+            }
+          ],
+          "contentSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "JVl194hqEShKmzAEuWwz8ZUzwnQ54t1S",
+          "contentSha256": "cdf53ebb9f249a657768b6c0fba5d44d6e82dda7344b08b4b0d654395b15a5c9",
+          "content": "CASE_READ {\"lines\":66,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"MAINTENANCE.md\",\"sourceSha256\":\"395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36\",\"resultSha256\":\"395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36\",\"range\":{\"startLine\":1,\"endLine\":66},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n# 維護關聯與語言原則\n\n目的：接手者先知道修改會影響哪裡，避免程式、技能、文件和翻譯各自演進。這是導航，不是新增審批流程；只處理本次真正受影響的項目。\n\n## 語言與主要定義\n\n首頁先回答「做什麼、給誰用、怎麼運作、為何有價值、證據與限制」，再提供安裝。以具體情境呈現設計，不用功能清單或測試數代替價值說明；相關技術敘述同步套件首頁與英文指南。\n\n公開文件直接稱「AI 工具」、具體產品名稱，或在指作業系統時寫「Windows／macOS／Linux」；不將英文 host 直譯為「宿主」。任務、接續、分工用一般語言說明，不要求讀者先學一套框架術語。既有 `--host` 旗標與 HOSTS.md 路徑維持相容，中文標題與說明不必跟著直譯。歷史研究與不可變證據保留原文，避免改寫紀錄。\n\n安裝與操作入口優先沿用各工具的官方機制或成熟社群慣例。採用自訂做法前，先列出現有方案及無法滿足的具體需求；沒有明確好處就不另造入口。研究結論與實際安裝驗證分開記錄，不能把範例指令當成已測可用。\n\n主要文件採臺灣慣用的正體中文（zh-TW）：使用「專案、檔案、資料夾、資訊、軟體、程式碼、設定、預設、建立、支援、品質、使用者、相依套件」等用語。保留 pi、Codex、Claude Code 等產品名稱及必要技術名稱；首次出現時可加中文說明。\n\n命令、旗標、JSON 欄位、格式識別碼及檔名是介面，不因翻譯而改名。中文文件沿用現有路徑，不為語系重新搬動整個專案。其他語言以 `GUIDE.en.md` 等清楚標記，從 README 互相導航；新增語言不複製一套程式或資料規格。\n\n目前英文指南對應 Kit README、HOSTS、V2、WORKFLOW、ARCHITECTURE、TEMPLATES 與 READINESS 中的使用說明，不是歷史研究的完整翻譯。技術內容必須一致，無需逐句直譯。翻譯若未同步，明確標記缺漏並連到最新中文來源，不讓過期說明冒充現況。\n\n發生衝突時：使用者已確認的目標以 [GOALS](GOALS.md) 為準；程式描述目前實際行為，文件描述應有用途，兩者不一致要確認並修正，不能直接認定任一方永遠正確。[READINESS](../workflow-kit/docs/READINESS.md) 是實測範圍的集中記錄，翻譯不得擴大宣稱。舊 M0 規格只管 M0。\n\n## 修改影響對照\n\n以下路徑除特別標示外，以 `workflow-kit/` 為起點。\n\n| 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |\n|---|---|---|\n| 目標、交付邊界：根目錄 `docs/GOALS.md` | 根 README、STATUS、MAP；Kit README、ARCHITECTURE、技能入口 | 確認是否改變使用承諾，不拿舊計畫當新需求 |\n| v2 契約、版本、遷移與狀態：`skills/case-workflow/scripts/core/`、`case-v2.mjs` | help、`references/v2-contracts.md`、SKILL、V2、ARCHITECTURE、READINESS、GUIDE.en | core-v2 與相關整合測試；來源過期、全域驗收、revision、預算與資料升級 |\n| pi 原生 session 與工具：`integrations/pi/` | `extension.mjs` 靜態 SDK 入口與 `extension-core.mjs` 注入介面、package 的 pi／peer metadata、HOSTS、V2、READINESS、GUIDE.en | runner／tools／SDK／extension 與 package 測試；原生載入和真實模型結果分開 |\n| 執行中發現／自查：`core/discoveries.mjs`、`state.mjs`、`store.mjs`、pi runner／SDK | `references/v2-contracts.md`、協作 reference、範本、V2、ARCHITECTURE、GUIDE.en；設計追蹤見 `docs/design/2026-09-06-discovery-and-repair.md` | discovery／SDK 真實狀態反例、完整 kit；本機模型探測另存，不取代或覆寫舊比較 |\n| v1 任務命令、欄位、狀態：`skills/case-workflow/scripts/case.mjs` | 程式 help、`references/state-and-resume.md`、SKILL、README、WORKFLOW、ARCHITECTURE、GUIDE.en | workflow 與 journey 測試；成功、失敗及接續行為 |\n| 安裝位置、更新、移除：`install.mjs` | help、HOSTS、兩份 README、GUIDE.en、ARCHITECTURE、封裝設定 | install 與 journey 測試；共用目錄、備份及既有檔案保留 |\n| 工作方法、分工、驗收：`skills/case-workflow/SKILL.md` 與 `references/` | `assets/task-notes.md`、WORKFLOW、TEMPLATES、GUIDE.en；涉及新命令時回查 CLI | 技能與情境核對；工具行為變更才增加對應測試 |\n| 範本：`skills/case-workflow/assets/task-notes.md` | TEMPLATES、協作 reference、WORKFLOW、英文範本段落 | 欄位與工具能力一致，不強制重複記錄 |\n| AI 工具支援與測試證據：HOSTS、READINESS | README、GUIDE.en、根 STATUS；改路徑時回查 installer | 官方來源與實際結果分開，未測不寫通過 |\n| 效益比較：`evaluation/value-comparison.mjs`、`value-fixtures.mjs` | 根 `docs/evaluation/` 的事前設計／結果、READINESS、STATUS、README、GUIDE.en；新增測試同步 package test 清單 | 評分器拒絕錯誤成果／來源變更、失敗不可漏記、接續不灌入答案；比較期間不改凍結程式 |\n| 檔案新增、移動或刪除 | 根 MAP、引用連結、兩份 README、`package.json` 的 files；必要時 CI 路徑 | 連結、封裝內容；技能安裝後的相對路徑仍可用 |\n| 支援環境／封裝：`package.json` | README、HOSTS、READINESS、根 CONTRIBUTING、`.github/workflows/workflow-kit.yml` | 執行受影響環境測試；設定不等於已實測 |\n| 使用文件的技術敘述 | GUIDE.en 的對應主題與其他語言版本 | 語意、命令、限制一致；純中文用字修正不必更動英文 |\n\n## 每次修改的實際做法\n\n先從 MAP 找入口，再以檔名、命令或術語搜尋引用，閱讀必要實作與測試；上表是起點，不取代實際搜尋。完成修改後核對受影響文件與翻譯，再執行相稱驗證。交付時簡述修改與證據即可，不另產生一份例行稽核報告。\n\nKit 變更跑 `npm test --prefix workflow-kit`（package 明列全部測試，避開 Windows／Node 20 萬用字元限制）；新增測試檔時同步清單。純文件小修核對來源、連結與命令。若交付壓縮套件，從最新內容重新打包，避免下載檔仍是舊版。只有觸及 M0 才跑 M0 完整套件。保留歷史記錄與原始證據，不為符合新文字而覆寫舊結果。\n\n新增模組、語言或改變責任邊界時更新本表與 MAP。沒有關聯的文件不必為了「同步」而改動；不新增排程或固定審閱輪數。\n\n## 保存知識，但不讓紀錄取代工作\n\n### 原始構想參照\n\n使用者指定長期保留的來源：[Local-Agent-Workspace／C.A.S.E._Framework](https://github.com/Chiakai-Chang/Local-Agent-Workspace/tree/main/C.A.S.E._Framework)。這是理解框架起心動念與演進的參考，不是必須照抄的現行規格。\n\n重要變更完成、階段交付或發現目標可能偏移時，對照原案的專案憲法、宏觀規劃、小憲法交辦、獨立核對、雙層回饋與可接續脈絡，判斷當前成果是否仍幫助本地模型把工作做好，而不是只增加記錄工具或流程。先讀[已整理的對照與修正建議](research/2026-09-05-layered-cooperation-direction.md)，必要時再回查原始相關章節；不為小修重讀所有歷史，不另建排程或固定報告。\n\nmain 連結用於回查來源演進；研究筆記另保留固定提交版本，避免把新內容混入舊結論。原案與目前使用者要求或實測證據不同時，保留脈絡並說明取捨，不盲目復刻舊檔名、規則或未驗證保證。只有因此改變決策，才留下簡短修正紀錄。\n\n### 決策與證據的保存\n\n主要目標始終是本地模型的實際工作品質，不是寫論文。重要設計決策記錄日期、使用者需求、採用理由、其他選擇與未知事項；研究記錄可追溯來源及適用限制，清楚區分假設、觀察與結論。從 MAP 按需導航，不把全部研究變成 agent 必讀材料。\n\n實驗保存使用版本、模型與設定、任務及驗收方法、原始輸出／工具結果的位置、成本、失敗與無效樣本；公開前移除密鑰與私人資料。不要求保存模型隱藏推理或所有聊天。沒有原始證據時明示限制，不補寫成已測事實。\n\n結論可滾動修正：新增修正理由與新證據，標示取代哪個判斷，不覆寫過去結果。只為有意義的決策、實驗或可重用教訓留紀錄，不為每次工具操作、例行復盤或未改變結論的討論新增文件。\n"
+        },
+        {
+          "role": "assistant",
+          "calls": [
+            {
+              "id": "Vczbibe8hBaJrZOnjeVYxtnWemvcyLqR",
+              "name": "case_write"
+            }
+          ],
+          "contentSha256": "bfbe24dfde862609d80202e35b0996b2014ef33f9cc3ac27e33514cfb953c23b"
+        },
+        {
+          "role": "tool",
+          "calls": [],
+          "toolCallId": "Vczbibe8hBaJrZOnjeVYxtnWemvcyLqR",
+          "contentSha256": "e24c09e9f2e1d089743c26dc02cc6ee4a584e3c7169d275299e0711a37917c34",
+          "content": "Wrote adoption-map.json"
+        }
+      ],
+      "paired": true,
+      "tools": [
+        {
+          "name": "case_read",
+          "description": "Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative file path"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_list",
+          "description": "List one directory, excluding agent settings and CASE state. No recursive dumping.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative directory, or ."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_write",
+          "description": "Write a complete UTF-8 file inside the packet writeScope. Cannot change agent settings or CASE records.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Declared relative deliverable path"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete file contents"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_result",
+          "description": "Submit the requested result after completing the work. Validation can reject missing artifacts, stale sources or failed approved checks: repair the actual files/check failures within scope, then resubmit in this same session. Only an ACCEPTED result finishes the session and prevents further tools. Does not authorize CASE actions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "blocked": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  },
+                  "changeRequest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "summary"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blocked"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "changeRequest"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        },
+        {
+          "name": "case_discover",
+          "description": "Immediately persist evidence of work needed for the original goal. Nonblocking reports allow this packet to continue. Blocking reports stop this session and hand the obstacle to the planner. Reporting does not authorize new work.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "nonblocking"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "summary",
+              "evidence",
+              "impact"
+            ],
+            "additionalProperties": false
+          },
+          "strict": false
+        }
+      ]
+    }
+  ],
+  "discoveries": [],
+  "status": "returned",
+  "limitations": [
+    "Worker only; no planner, reviewer or integrator. No overall quality comparison.",
+    "Preflight checks file existence and frozen sources, not oracle; oracle is graded after session.",
+    "New server snapshot; not a paired experiment with the previous build."
+  ],
+  "server": {
+    "modelId": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+    "buildInfo": "b11502-764051bfb",
+    "settings": {
+      "params": {
+        "seed": 4294967295,
+        "temperature": 1,
+        "dynatemp_range": 0,
+        "dynatemp_exponent": 1,
+        "top_k": 20,
+        "top_p": 0.949999988079071,
+        "min_p": 0.05000000074505806,
+        "top_n_sigma": -1,
+        "xtc_probability": 0,
+        "xtc_threshold": 0.10000000149011612,
+        "typical_p": 1,
+        "repeat_last_n": 64,
+        "repeat_penalty": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "dry_multiplier": 0,
+        "dry_base": 1.75,
+        "dry_allowed_length": 2,
+        "dry_penalty_last_n": 64,
+        "mirostat": 0,
+        "mirostat_tau": 5,
+        "mirostat_eta": 0.10000000149011612,
+        "adaptive_target": -1,
+        "adaptive_decay": 0.8999999761581421,
+        "max_tokens": -1,
+        "n_predict": -1,
+        "n_keep": 0,
+        "n_discard": 0,
+        "ignore_eos": false,
+        "stream": false,
+        "n_probs": 0,
+        "min_keep": 0,
+        "chat_format": "Content-only",
+        "reasoning_format": "none",
+        "reasoning_in_content": false,
+        "generation_prompt": "",
+        "samplers": [
+          "penalties",
+          "dry",
+          "top_n_sigma",
+          "top_k",
+          "typ_p",
+          "top_p",
+          "min_p",
+          "xtc",
+          "temperature"
+        ],
+        "speculative.types": "none",
+        "timings_per_token": false,
+        "post_sampling_probs": false,
+        "backend_sampling": false,
+        "lora": []
+      },
+      "n_ctx": 262144
+    }
+  },
+  "session": {
+    "sessionId": "01a08186-a55e-787a-9811-5cdeb17acecb",
+    "text": "{\"summary\":\"Created adoption-map.json with exactly four objects derived only from the frozen sources: install (from install.mjs: default host all; hosts all/claude/codex/pi; destinations .agents/skills/case-workflow, .claude/skills/case-workflow; marker .case-install.json; format case-workflow-install/1; backup roots .agents and .claude case-workflow-backups; rejectsEditedInstall=true; allowsUpdateAndUninstallTogether=false; actions unchanged/absent), package (from package.json: case-workflow-kit 2.0.0-preview.1, private, node >=20, both bins, pi skills/extensions, optional peer), support (from HOSTS.md: pi 0.84.2 with Node 22.19+; install/remove templates with <checkout>/workflow-kit; reference not copy; skill-only has no /case; agy via --host codex, no real agy session, agy/antigravity not accepted hosts, not on registry), maintenance (from MAINTENANCE.md: npm test --prefix workflow-kit; full M0 only when M0 touched; new tests require package list sync; installer primary install.mjs; pi primary integrations/pi/). Sources untouched, no commands executed, no installs or network; all arrays string-sorted and duplicate-free; paths use / with no trailing / except piPrimary.\"}",
+    "rawFinalText": "",
+    "resultTransport": "case_result",
+    "usage": {
+      "input": 18835,
+      "output": 3610,
+      "cacheRead": 91427,
+      "cacheWrite": 0,
+      "total": 113872
+    },
+    "observations": [
+      {
+        "toolName": "case_list",
+        "isError": false,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "HOSTS.md\ninstall.mjs\nMAINTENANCE.md\npackage.json\nrequirements.md"
+            }
+          ],
+          "details": {}
+        }
+      },
+      {
+        "toolName": "case_read",
+        "isError": false,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "CASE_READ {\"lines\":155,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"install.mjs\",\"sourceSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"resultSha256\":\"4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea\",\"range\":{\"startLine\":1,\"endLine\":155},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n#!/usr/bin/env node\nimport { mkdir, lstat, readdir, readFile, writeFile, rename, rm, rmdir } from 'node:fs/promises';\nimport { resolve, join, dirname, parse } from 'node:path';\nimport { fileURLToPath, pathToFileURL } from 'node:url';\nimport { createHash, randomUUID } from 'node:crypto';\n\nconst SOURCE = fileURLToPath(new URL('./skills/case-workflow/', import.meta.url));\nconst MARKER = '.case-install.json';\nconst FORMAT = 'case-workflow-install/1';\nconst hash = bytes => createHash('sha256').update(bytes).digest('hex');\nconst fail = message => { throw new Error(message); };\n\nasync function exists(path) {\n  try { return await lstat(path); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }\n}\n\nasync function safeDirectory(path, required = false) {\n  const absolute = resolve(path);\n  let current = parse(absolute).root;\n  for (const part of absolute.slice(current.length).split(/[\\\\/]/).filter(Boolean)) {\n    current = join(current, part);\n    const stat = await exists(current);\n    if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail(`Expected an ordinary directory: ${current}`);\n    if (!stat && required) fail(`Directory does not exist: ${current}`);\n  }\n}\n\nasync function fileMap(directory, prefix = '') {\n  const result = {};\n  for (const entry of await readdir(directory, { withFileTypes: true })) {\n    if (entry.name === MARKER && !prefix) continue;\n    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;\n    const path = join(directory, entry.name);\n    if (entry.isSymbolicLink()) fail(`Linked skill content is not supported: ${path}`);\n    if (entry.isDirectory()) Object.assign(result, await fileMap(path, relative));\n    else if (entry.isFile()) result[relative] = await readFile(path);\n    else fail(`Unsupported skill content: ${path}`);\n  }\n  return result;\n}\n\nfunction digestMap(files) {\n  return Object.fromEntries(Object.keys(files).sort().map(path => [path, hash(files[path])]));\n}\n\nasync function inspectInstalled(destination) {\n  if (!await exists(destination)) return null;\n  await safeDirectory(destination, true);\n  const marker = join(destination, MARKER);\n  const stat = await exists(marker);\n  if (!stat?.isFile() || stat.isSymbolicLink()) fail(`Foreign or incomplete installation: ${destination}`);\n  let metadata;\n  try { metadata = JSON.parse(await readFile(marker, 'utf8')); } catch { fail(`Invalid installation manifest: ${destination}`); }\n  if (metadata.format !== FORMAT || !metadata.files || typeof metadata.files !== 'object' || Array.isArray(metadata.files)) fail(`Unknown installation owner: ${destination}`);\n  const actual = digestMap(await fileMap(destination));\n  const expected = Object.fromEntries(Object.entries(metadata.files).sort(([a], [b]) => a.localeCompare(b, 'en')));\n  if (JSON.stringify(Object.keys(actual).sort().map(k => [k, actual[k]])) !== JSON.stringify(Object.keys(expected).sort().map(k => [k, expected[k]]))) {\n    fail(`Installation was edited; preserve or move your custom copy before retrying: ${destination}`);\n  }\n  return actual;\n}\n\nexport async function installSkill({ project, host = 'all', update = false, uninstall = false, source = SOURCE }) {\n  if (!['pi', 'codex', 'claude', 'all'].includes(host)) fail('host must be pi, codex, claude or all');\n  if (update && uninstall) fail('update and uninstall cannot be combined');\n  const root = resolve(project);\n  await safeDirectory(root, true);\n  await safeDirectory(source, true);\n  const files = await fileMap(source);\n  if (!files['SKILL.md'] || !files['scripts/case.mjs']) fail('Skill source is incomplete');\n  const expected = digestMap(files);\n  // Pi and Codex both discover .agents/skills. One copy avoids duplicate Pi names.\n  const locations = host === 'all' ? ['.agents', '.claude'] : [host === 'claude' ? '.claude' : '.agents'];\n  const targets = [];\n  for (const location of locations) {\n    const base = join(root, location);\n    const destination = join(base, 'skills', 'case-workflow');\n    await safeDirectory(destination);\n    await safeDirectory(join(base, 'case-workflow-backups'));\n    const old = await inspectInstalled(destination);\n    const same = old && JSON.stringify(old) === JSON.stringify(expected);\n    if (old && !same && !update && !uninstall) fail(`Different managed version exists; use --update: ${destination}`);\n    targets.push({ base, destination, old, same });\n  }\n  const results = [];\n  for (const target of targets) {\n    const { base, destination } = target;\n    if (uninstall && !target.old) { results.push({ destination, action: 'absent' }); continue; }\n    if (!uninstall && target.same) { results.push({ destination, action: 'unchanged' }); continue; }\n    await mkdir(base, { recursive: true });\n    const lockPath = join(base, '.case-workflow-install.lock');\n    let lock;\n    try {\n      // mkdir is an exclusive cooperative reservation; never remove someone else's lock.\n      await mkdir(lockPath);\n      lock = true;\n      await safeDirectory(destination);\n      const current = await inspectInstalled(destination);\n      if (JSON.stringify(current) !== JSON.stringify(target.old)) fail(`Installation changed during setup: ${destination}`);\n      const id = randomUUID();\n      let backup = null;\n      let stage = null;\n      try {\n        if (!uninstall) {\n          stage = join(base, `.case-workflow-stage-${id}`);\n          await mkdir(stage);\n          for (const [relative, bytes] of Object.entries(files)) {\n            const path = join(stage, relative);\n            await mkdir(dirname(path), { recursive: true });\n            await writeFile(path, bytes, { flag: 'wx' });\n          }\n          await writeFile(join(stage, MARKER), `${JSON.stringify({ format: FORMAT, files: expected }, null, 2)}\\n`, { flag: 'wx' });\n          await mkdir(dirname(destination), { recursive: true });\n        }\n        if (target.old) {\n          const backups = join(base, 'case-workflow-backups');\n          await mkdir(backups, { recursive: true });\n          backup = join(backups, id);\n          await rename(destination, backup);\n        }\n        if (stage) {\n          try { await rename(stage, destination); stage = null; }\n          catch (error) { if (backup) await rename(backup, destination); throw error; }\n        }\n        results.push({ destination, action: uninstall ? 'removed' : target.old ? 'updated' : 'installed', backup });\n      } finally {\n        if (stage) await rm(stage, { recursive: true, force: true });\n      }\n    } finally {\n      if (lock) await rmdir(lockPath);\n    }\n  }\n  return { ok: true, host, project: root, results, note: 'Shared .agents installation serves both Pi and Codex; task data is unchanged.' };\n}\n\nasync function main(args) {\n  if (args.includes('--help') || args.length === 0) {\n    console.log('C.A.S.E. project skill installer\\nnode install.mjs --project PATH --host pi|codex|claude|all [--update | --uninstall]\\nDefault host: all. Existing custom files are never overwritten. Update/removal retains a backup.\\nPi and Codex share .agents/skills/case-workflow; Claude uses .claude/skills/case-workflow.\\nNo global config, credentials, project instruction files, or task data are changed.');\n    return;\n  }\n  const options = {};\n  for (let i = 0; i < args.length; i++) {\n    const key = args[i];\n    if (!['--project', '--host', '--update', '--uninstall'].includes(key) || Object.hasOwn(options, key.slice(2))) fail(`Unknown or duplicate option: ${key}`);\n    options[key.slice(2)] = ['--update', '--uninstall'].includes(key) ? true : args[++i];\n    if (typeof options[key.slice(2)] === 'string' && (!options[key.slice(2)].trim() || options[key.slice(2)].startsWith('--'))) fail(`Missing value: ${key}`);\n  }\n  if (!options.project || (Object.hasOwn(options, 'host') && !options.host)) fail('--project PATH and valid option values are required');\n  console.log(JSON.stringify(await installSkill(options), null, 2));\n}\n\nif (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {\n  main(process.argv.slice(2)).catch(error => { console.error(JSON.stringify({ ok: false, code: 'CASE_INSTALL_ERROR', message: error.message })); process.exitCode = 1; });\n}\n"
+            }
+          ],
+          "details": {
+            "lines": 155,
+            "startLine": 1,
+            "truncated": false,
+            "receiptVersion": 1,
+            "path": "install.mjs",
+            "sourceSha256": "4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea",
+            "resultSha256": "4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea",
+            "range": {
+              "startLine": 1,
+              "endLine": 155
+            },
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null
+          }
+        }
+      },
+      {
+        "toolName": "case_read",
+        "isError": false,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "CASE_READ {\"lines\":15,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"package.json\",\"sourceSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"resultSha256\":\"20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa\",\"range\":{\"startLine\":1,\"endLine\":15},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n{\n  \"name\": \"case-workflow-kit\",\n  \"version\": \"2.0.0-preview.1\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"description\": \"Portable C.A.S.E. workflow skill and local task tools for coding agents\",\n  \"engines\": { \"node\": \">=20\" },\n  \"bin\": { \"case-workflow\": \"skills/case-workflow/scripts/case.mjs\", \"case-workflow-v2\": \"skills/case-workflow/scripts/case-v2.mjs\" },\n  \"files\": [\"skills\", \"integrations\", \"install.mjs\", \"README.md\", \"docs\"],\n  \"pi\": { \"skills\": [\"skills\"], \"extensions\": [\"integrations/pi/extension.mjs\"] },\n  \"peerDependencies\": { \"@earendil-works/pi-coding-agent\": \"*\" },\n  \"peerDependenciesMeta\": { \"@earendil-works/pi-coding-agent\": { \"optional\": true } },\n  \"scripts\": { \"test\": \"node --test tests/install.test.mjs tests/workflow.test.mjs tests/journey.test.mjs tests/core-v2.test.mjs tests/pi-runner.test.mjs tests/pi-tools.test.mjs tests/pi-sdk.test.mjs tests/pi-extension.test.mjs tests/package.test.mjs tests/feedback.test.mjs tests/context-policy.test.mjs tests/approved-checks.test.mjs tests/value-evaluation.test.mjs tests/discoveries.test.mjs tests/pi-discovery-sdk.test.mjs\" }\n}\n"
+            }
+          ],
+          "details": {
+            "lines": 15,
+            "startLine": 1,
+            "truncated": false,
+            "receiptVersion": 1,
+            "path": "package.json",
+            "sourceSha256": "20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa",
+            "resultSha256": "20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa",
+            "range": {
+              "startLine": 1,
+              "endLine": 15
+            },
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null
+          }
+        }
+      },
+      {
+        "toolName": "case_read",
+        "isError": false,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "CASE_READ {\"lines\":80,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"HOSTS.md\",\"sourceSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"resultSha256\":\"5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90\",\"range\":{\"startLine\":1,\"endLine\":80},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n# 安裝與維護\n\n## pi v2：原生本機套件安裝\n\n已在隔離專案以 pi 0.84.2 安裝本機 checkout，實際 loader 註冊 `case_workflow` 工具與 `/case` 指令，載入無錯誤。先取得包含 v2 的本機版本，在實際工作專案執行（換成自己的 checkout 絕對路徑）：\n\n```text\npi install -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"\n```\n\n這會在專案設定引用該目錄，不複製套件；保留 checkout 路徑。核心需 Node.js 20+，本次 pi 0.84.2 需 Node.js 22.19+。SDK 由 pi 提供，套件以 optional peer dependency 宣告；本地 CLI 不需 SDK。重啟／重新載入 pi 後使用 [v2 指南](V2.md)。只裝技能不會有 `/case`，不要同時疊裝同名 skill。\n\n更新本機 checkout 後重新載入 pi；移除使用 `pi remove -l \"D:/MyProject/C.A.S.E._Framework/workflow-kit\"`，不要改用下方 Node installer 管理 pi package。這是 pi 套件管理方式；移除與模型端到端實測狀態見 [READINESS](READINESS.md)。未刊登 registry 套件，也未驗證此 repository 根目錄的 Git 遠端安裝。\n\n## 可攜技能：使用既有技能安裝器\n\n下列 main URL 屬既有 v1 發行；本輪 `2.0.0-preview.1` 尚未合併或推送，請勿將該 URL 當作已提供新 extension 的版本。\n\n在實際工作專案執行（需要 Node.js 20+ 與 Git）：\n\n```text\nnpx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/workflow-kit/skills/case-workflow --copy\n```\n\n依提示選 AI 工具，保留專案範圍、不加 `--global`。這是 [Vercel Labs Skills](https://github.com/vercel-labs/skills) 的標準 GitHub 子路徑安裝方式。`--copy` 避免連結權限問題。它會依平台放置技能，位置可能與下面自製安裝器不同，例如 pi 使用 `.pi/skills`，並保存共用 `.agents/skills`；若 pi 提示同名技能，確認兩份來源一致，不再疊裝第三份。\n\n更新與移除使用 `npx skills update case-workflow`、`npx skills remove case-workflow`。安裝器版本與權限設定可能改變行為，執行前看提示；不要混用下方 Node 安裝器管理第三方安裝。第三方不保證我們自製安裝器的備份或修改檔案保護規則。\n\n本次以 skills 1.5.23 在隔離專案完成 GitHub 技能發現與四種工具目標的複製安裝；本機 npm exec 遇快取鎖錯誤，改以隔離安裝的同一 CLI 驗證成功。這不是全域 npm 修復，也不是完整模型任務實測。\n\n## 原生機制與目前限制\n\npi 的本機專案範圍安裝已按上節實測。暫不推薦對本 repo 根目錄直接 Git 安裝：它仍是 M0 研究套件，會帶入研究用相依套件。[pi 官方套件文件](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)\n\nCodex 也可使用其 `$skill-installer`，指定本技能 GitHub 資料夾。Claude Code 的 plugin marketplace 是另一種標準方式，但本 repo 尚未提供 marketplace，不能用不存在的 plugin 指令安裝。單一技能目前無需為此多建一套框架。\n\n## 進階／離線：本套件安裝器\n\n從 framework repository 執行 `node workflow-kit/install.mjs --project \"<實際專案目錄>\" --host pi`；從本套件目錄則使用 `node install.mjs ...`。project 必須已存在。安裝拒絕連結／junction 路徑與外來同名內容。\n\n| Host | 相對 project 的安裝位置 | 使用方式 |\n|---|---|---|\n| pi | `.agents/skills/case-workflow/` | `/skill:case-workflow` |\n| Codex | `.agents/skills/case-workflow/` | `$case-workflow` |\n| Claude Code | `.claude/skills/case-workflow/` | `/case-workflow` |\n| all | 以上兩個不同目錄 | pi／Codex 共用一份，避免 pi 重複名稱 |\n\n2026-09-05 查核官方來源：[pi skills](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/skills.md)、[Codex skills](https://learn.chatgpt.com/docs/build-skills)、[Claude Code skills](https://code.claude.com/docs/en/skills)。實際載入受版本、專案信任與設定影響；文件相容和實測分列於 [READINESS](READINESS.md)。\n\n安裝後在 project 開啟或重新載入AI 工具，確認技能清單有 case-workflow。沒有時核對啟動位置、信任／skill 設定與同名技能；也可明確請 agent 讀安裝位置的 SKILL.md。不需修改 AGENTS.md、CLAUDE.md 或全域設定。\n\n## Antigravity（agy）與其他AI 工具\n\n[Antigravity 官方技能文件](https://antigravity.google/docs/skills) 目前以 `.agents/skills` 為預設，保留 `.agent/skills` 相容。可用上面的 installer 搭配 `--host codex`，安裝到共用 `.agents/skills/case-workflow/`；不需要另一套任務格式。`--host agy`／`antigravity` 尚不是有效參數，`all` 仍只建立兩個不同目錄。\n\n在 Antigravity 的目標專案確認技能已被辨識，或明確要求讀取 `.agents/skills/case-workflow/SKILL.md`。本專案尚未執行 agy 真實 session；這是官方格式／路徑相容性判斷。使用舊版或非標準設定時先核對該版本的技能目錄，不覆蓋全域設定。移除共用技能目錄會影響所有使用該目錄的AI 工具。\n\n其他能讀檔、執行 Node 並寫入專案的 agent，可以由使用者指定讀取 SKILL.md 後使用相同本地工具；沒有這些能力的聊天介面不能直接操作 CLI。不同產品的自動技能發現及分工功能，不因支援 Markdown 就一律成立。\n\n## 更新與移除\n\n```text\nnode install.mjs --project \"<project>\" --host pi --update\nnode install.mjs --project \"<project>\" --host pi --uninstall\n```\n\n同版本為 unchanged。更新需所有檔案符合 `.case-install.json`，否則拒絕，不提供 force 覆蓋自訂內容。更新／移除把舊安裝移到 `.agents/case-workflow-backups/<id>/` 或 `.claude/case-workflow-backups/<id>/`，回傳完整位置。備份不在標準 skills 搜尋目錄內；還原前先移開現有安裝，不混合兩版。\n\npi／Codex 共用入口，移除共享目錄會同時影響兩者。all 操作若 I/O 中止可能只完成部分入口，核對目錄後重跑。安裝中斷若留下 `.case-workflow-install.lock`，確認安裝程序停止後再處理。本工具不宣稱抵禦惡意程序同時改檔。\n\n移除保留 `.case-agent` 任務，不改其他技能、agent 或模型設定。需要刪任務時，先備份並確認保存需求；工具不自動清空。\n\n## 跨 session／AI 工具\n\n在同一 project 使用相同 task ID 讀 context，再讀下一步必要來源即可。不同機器需另外同步專案與狀態，不能同時寫。handoff 不自動停止舊 agent；接手前確認原寫者已停止。\n\n## Pi 環境問題\n\npi 若因缺失模組而無法載入技能，是AI 工具安裝問題。使用正常的 pi 安裝或隔離環境驗證；CLI 仍可用 Node 直接運作。不要為套件清除既有設定、憑證或模型。人工／明確讀取技能的入口可用，但不能代稱該AI 工具的模型行為實測。\n"
+            }
+          ],
+          "details": {
+            "lines": 80,
+            "startLine": 1,
+            "truncated": false,
+            "receiptVersion": 1,
+            "path": "HOSTS.md",
+            "sourceSha256": "5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90",
+            "resultSha256": "5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90",
+            "range": {
+              "startLine": 1,
+              "endLine": 80
+            },
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null
+          }
+        }
+      },
+      {
+        "toolName": "case_read",
+        "isError": false,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "CASE_READ {\"lines\":66,\"startLine\":1,\"truncated\":false,\"receiptVersion\":1,\"path\":\"MAINTENANCE.md\",\"sourceSha256\":\"395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36\",\"resultSha256\":\"395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36\",\"range\":{\"startLine\":1,\"endLine\":66},\"eof\":true,\"wholeFile\":true,\"empty\":false,\"outOfRange\":false,\"nextStartLine\":null}\n# 維護關聯與語言原則\n\n目的：接手者先知道修改會影響哪裡，避免程式、技能、文件和翻譯各自演進。這是導航，不是新增審批流程；只處理本次真正受影響的項目。\n\n## 語言與主要定義\n\n首頁先回答「做什麼、給誰用、怎麼運作、為何有價值、證據與限制」，再提供安裝。以具體情境呈現設計，不用功能清單或測試數代替價值說明；相關技術敘述同步套件首頁與英文指南。\n\n公開文件直接稱「AI 工具」、具體產品名稱，或在指作業系統時寫「Windows／macOS／Linux」；不將英文 host 直譯為「宿主」。任務、接續、分工用一般語言說明，不要求讀者先學一套框架術語。既有 `--host` 旗標與 HOSTS.md 路徑維持相容，中文標題與說明不必跟著直譯。歷史研究與不可變證據保留原文，避免改寫紀錄。\n\n安裝與操作入口優先沿用各工具的官方機制或成熟社群慣例。採用自訂做法前，先列出現有方案及無法滿足的具體需求；沒有明確好處就不另造入口。研究結論與實際安裝驗證分開記錄，不能把範例指令當成已測可用。\n\n主要文件採臺灣慣用的正體中文（zh-TW）：使用「專案、檔案、資料夾、資訊、軟體、程式碼、設定、預設、建立、支援、品質、使用者、相依套件」等用語。保留 pi、Codex、Claude Code 等產品名稱及必要技術名稱；首次出現時可加中文說明。\n\n命令、旗標、JSON 欄位、格式識別碼及檔名是介面，不因翻譯而改名。中文文件沿用現有路徑，不為語系重新搬動整個專案。其他語言以 `GUIDE.en.md` 等清楚標記，從 README 互相導航；新增語言不複製一套程式或資料規格。\n\n目前英文指南對應 Kit README、HOSTS、V2、WORKFLOW、ARCHITECTURE、TEMPLATES 與 READINESS 中的使用說明，不是歷史研究的完整翻譯。技術內容必須一致，無需逐句直譯。翻譯若未同步，明確標記缺漏並連到最新中文來源，不讓過期說明冒充現況。\n\n發生衝突時：使用者已確認的目標以 [GOALS](GOALS.md) 為準；程式描述目前實際行為，文件描述應有用途，兩者不一致要確認並修正，不能直接認定任一方永遠正確。[READINESS](../workflow-kit/docs/READINESS.md) 是實測範圍的集中記錄，翻譯不得擴大宣稱。舊 M0 規格只管 M0。\n\n## 修改影響對照\n\n以下路徑除特別標示外，以 `workflow-kit/` 為起點。\n\n| 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |\n|---|---|---|\n| 目標、交付邊界：根目錄 `docs/GOALS.md` | 根 README、STATUS、MAP；Kit README、ARCHITECTURE、技能入口 | 確認是否改變使用承諾，不拿舊計畫當新需求 |\n| v2 契約、版本、遷移與狀態：`skills/case-workflow/scripts/core/`、`case-v2.mjs` | help、`references/v2-contracts.md`、SKILL、V2、ARCHITECTURE、READINESS、GUIDE.en | core-v2 與相關整合測試；來源過期、全域驗收、revision、預算與資料升級 |\n| pi 原生 session 與工具：`integrations/pi/` | `extension.mjs` 靜態 SDK 入口與 `extension-core.mjs` 注入介面、package 的 pi／peer metadata、HOSTS、V2、READINESS、GUIDE.en | runner／tools／SDK／extension 與 package 測試；原生載入和真實模型結果分開 |\n| 執行中發現／自查：`core/discoveries.mjs`、`state.mjs`、`store.mjs`、pi runner／SDK | `references/v2-contracts.md`、協作 reference、範本、V2、ARCHITECTURE、GUIDE.en；設計追蹤見 `docs/design/2026-09-06-discovery-and-repair.md` | discovery／SDK 真實狀態反例、完整 kit；本機模型探測另存，不取代或覆寫舊比較 |\n| v1 任務命令、欄位、狀態：`skills/case-workflow/scripts/case.mjs` | 程式 help、`references/state-and-resume.md`、SKILL、README、WORKFLOW、ARCHITECTURE、GUIDE.en | workflow 與 journey 測試；成功、失敗及接續行為 |\n| 安裝位置、更新、移除：`install.mjs` | help、HOSTS、兩份 README、GUIDE.en、ARCHITECTURE、封裝設定 | install 與 journey 測試；共用目錄、備份及既有檔案保留 |\n| 工作方法、分工、驗收：`skills/case-workflow/SKILL.md` 與 `references/` | `assets/task-notes.md`、WORKFLOW、TEMPLATES、GUIDE.en；涉及新命令時回查 CLI | 技能與情境核對；工具行為變更才增加對應測試 |\n| 範本：`skills/case-workflow/assets/task-notes.md` | TEMPLATES、協作 reference、WORKFLOW、英文範本段落 | 欄位與工具能力一致，不強制重複記錄 |\n| AI 工具支援與測試證據：HOSTS、READINESS | README、GUIDE.en、根 STATUS；改路徑時回查 installer | 官方來源與實際結果分開，未測不寫通過 |\n| 效益比較：`evaluation/value-comparison.mjs`、`value-fixtures.mjs` | 根 `docs/evaluation/` 的事前設計／結果、READINESS、STATUS、README、GUIDE.en；新增測試同步 package test 清單 | 評分器拒絕錯誤成果／來源變更、失敗不可漏記、接續不灌入答案；比較期間不改凍結程式 |\n| 檔案新增、移動或刪除 | 根 MAP、引用連結、兩份 README、`package.json` 的 files；必要時 CI 路徑 | 連結、封裝內容；技能安裝後的相對路徑仍可用 |\n| 支援環境／封裝：`package.json` | README、HOSTS、READINESS、根 CONTRIBUTING、`.github/workflows/workflow-kit.yml` | 執行受影響環境測試；設定不等於已實測 |\n| 使用文件的技術敘述 | GUIDE.en 的對應主題與其他語言版本 | 語意、命令、限制一致；純中文用字修正不必更動英文 |\n\n## 每次修改的實際做法\n\n先從 MAP 找入口，再以檔名、命令或術語搜尋引用，閱讀必要實作與測試；上表是起點，不取代實際搜尋。完成修改後核對受影響文件與翻譯，再執行相稱驗證。交付時簡述修改與證據即可，不另產生一份例行稽核報告。\n\nKit 變更跑 `npm test --prefix workflow-kit`（package 明列全部測試，避開 Windows／Node 20 萬用字元限制）；新增測試檔時同步清單。純文件小修核對來源、連結與命令。若交付壓縮套件，從最新內容重新打包，避免下載檔仍是舊版。只有觸及 M0 才跑 M0 完整套件。保留歷史記錄與原始證據，不為符合新文字而覆寫舊結果。\n\n新增模組、語言或改變責任邊界時更新本表與 MAP。沒有關聯的文件不必為了「同步」而改動；不新增排程或固定審閱輪數。\n\n## 保存知識，但不讓紀錄取代工作\n\n### 原始構想參照\n\n使用者指定長期保留的來源：[Local-Agent-Workspace／C.A.S.E._Framework](https://github.com/Chiakai-Chang/Local-Agent-Workspace/tree/main/C.A.S.E._Framework)。這是理解框架起心動念與演進的參考，不是必須照抄的現行規格。\n\n重要變更完成、階段交付或發現目標可能偏移時，對照原案的專案憲法、宏觀規劃、小憲法交辦、獨立核對、雙層回饋與可接續脈絡，判斷當前成果是否仍幫助本地模型把工作做好，而不是只增加記錄工具或流程。先讀[已整理的對照與修正建議](research/2026-09-05-layered-cooperation-direction.md)，必要時再回查原始相關章節；不為小修重讀所有歷史，不另建排程或固定報告。\n\nmain 連結用於回查來源演進；研究筆記另保留固定提交版本，避免把新內容混入舊結論。原案與目前使用者要求或實測證據不同時，保留脈絡並說明取捨，不盲目復刻舊檔名、規則或未驗證保證。只有因此改變決策，才留下簡短修正紀錄。\n\n### 決策與證據的保存\n\n主要目標始終是本地模型的實際工作品質，不是寫論文。重要設計決策記錄日期、使用者需求、採用理由、其他選擇與未知事項；研究記錄可追溯來源及適用限制，清楚區分假設、觀察與結論。從 MAP 按需導航，不把全部研究變成 agent 必讀材料。\n\n實驗保存使用版本、模型與設定、任務及驗收方法、原始輸出／工具結果的位置、成本、失敗與無效樣本；公開前移除密鑰與私人資料。不要求保存模型隱藏推理或所有聊天。沒有原始證據時明示限制，不補寫成已測事實。\n\n結論可滾動修正：新增修正理由與新證據，標示取代哪個判斷，不覆寫過去結果。只為有意義的決策、實驗或可重用教訓留紀錄，不為每次工具操作、例行復盤或未改變結論的討論新增文件。\n"
+            }
+          ],
+          "details": {
+            "lines": 66,
+            "startLine": 1,
+            "truncated": false,
+            "receiptVersion": 1,
+            "path": "MAINTENANCE.md",
+            "sourceSha256": "395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36",
+            "resultSha256": "395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36",
+            "range": {
+              "startLine": 1,
+              "endLine": 66
+            },
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null
+          }
+        }
+      },
+      {
+        "toolName": "case_write",
+        "isError": false,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Wrote adoption-map.json"
+            }
+          ],
+          "details": {
+            "path": "adoption-map.json",
+            "bytes": 1942,
+            "sourceSha256": "db872a6d5ee4ea930ad70c0093efe460107cd98490baf85e2595027135268431"
+          }
+        },
+        "writeRequest": {
+          "path": "adoption-map.json",
+          "writeScope": [
+            "adoption-map.json"
+          ]
+        }
+      },
+      {
+        "toolName": "case_result",
+        "isError": false,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Structured reply recorded. End this session without further tool calls."
+            }
+          ],
+          "details": {
+            "recorded": true
+          }
+        }
+      }
+    ],
+    "replyCorrections": [],
+    "model": {
+      "id": "C:\\models\\Qwen3.8\\orcarouter-F16\\Qwen3.8-27B-Uncensored-orcarouter-STRIX_LEAN.gguf",
+      "provider": "worker-replay",
+      "thinkingLevel": "medium"
+    },
+    "toolCalls": 7,
+    "cost": 0,
+    "statsError": null,
+    "trace": {
+      "traceVersion": 1,
+      "runId": "worker-replay",
+      "sessionId": "01a08186-a55e-787a-9811-5cdeb17acecb",
+      "role": "worker",
+      "traceComplete": true,
+      "events": [
+        {
+          "seq": 1,
+          "atMs": 3,
+          "kind": "request_start",
+          "requestId": "request-1",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 2,
+          "atMs": 45213,
+          "kind": "model_response",
+          "requestId": "request-1",
+          "providerRequestId": "unknown",
+          "stopReason": "toolUse",
+          "thinkingPresent": true
+        },
+        {
+          "seq": 3,
+          "atMs": 45213,
+          "kind": "tool_start",
+          "requestId": "request-1",
+          "providerRequestId": "unknown",
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "toolName": "case_list"
+        },
+        {
+          "seq": 4,
+          "atMs": 45215,
+          "kind": "tool_end",
+          "requestId": "request-1",
+          "providerRequestId": "unknown",
+          "toolName": "case_list",
+          "toolCallId": "glyhKe6ziFyGr8HlRc4fq9uWFlub09BU",
+          "pairing": "matched",
+          "isError": false,
+          "metadata": {}
+        },
+        {
+          "seq": 5,
+          "atMs": 45215,
+          "kind": "request_end",
+          "requestId": "request-1",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 6,
+          "atMs": 45215,
+          "kind": "request_start",
+          "requestId": "request-2",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 7,
+          "atMs": 47253,
+          "kind": "model_response",
+          "requestId": "request-2",
+          "providerRequestId": "unknown",
+          "stopReason": "toolUse",
+          "thinkingPresent": true
+        },
+        {
+          "seq": 8,
+          "atMs": 47254,
+          "kind": "tool_start",
+          "requestId": "request-2",
+          "providerRequestId": "unknown",
+          "toolCallId": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+          "toolName": "case_read",
+          "requestedRange": {
+            "startLine": 1,
+            "maxLines": 200
+          }
+        },
+        {
+          "seq": 9,
+          "atMs": 47259,
+          "kind": "tool_end",
+          "requestId": "request-2",
+          "providerRequestId": "unknown",
+          "toolName": "case_read",
+          "toolCallId": "OjDPkqb5FDPNJxQh8Sz9cCZsPTUvodFJ",
+          "pairing": "matched",
+          "isError": false,
+          "metadata": {
+            "path": "install.mjs",
+            "sourceSha256": "4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea",
+            "resultSha256": "4618c773ff6c9e8595e9f8f4a3fe4767cfb0028383121b96389e6d618d0c2bea",
+            "range": {
+              "startLine": 1,
+              "endLine": 155
+            },
+            "lines": 155,
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null,
+            "receiptVersion": 1
+          }
+        },
+        {
+          "seq": 10,
+          "atMs": 47259,
+          "kind": "request_end",
+          "requestId": "request-2",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 11,
+          "atMs": 47259,
+          "kind": "request_start",
+          "requestId": "request-3",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 12,
+          "atMs": 81306,
+          "kind": "model_response",
+          "requestId": "request-3",
+          "providerRequestId": "unknown",
+          "stopReason": "toolUse",
+          "thinkingPresent": true
+        },
+        {
+          "seq": 13,
+          "atMs": 81306,
+          "kind": "tool_start",
+          "requestId": "request-3",
+          "providerRequestId": "unknown",
+          "toolCallId": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+          "toolName": "case_read",
+          "requestedRange": {
+            "startLine": 1,
+            "maxLines": 200
+          }
+        },
+        {
+          "seq": 14,
+          "atMs": 81308,
+          "kind": "tool_end",
+          "requestId": "request-3",
+          "providerRequestId": "unknown",
+          "toolName": "case_read",
+          "toolCallId": "EHLUEPXFuZvcXPhLUaK4QGvSkRbnjoEG",
+          "pairing": "matched",
+          "isError": false,
+          "metadata": {
+            "path": "package.json",
+            "sourceSha256": "20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa",
+            "resultSha256": "20e7ab8db49eee84377ef92d97573288a31de59e042c24461958896af2e962aa",
+            "range": {
+              "startLine": 1,
+              "endLine": 15
+            },
+            "lines": 15,
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null,
+            "receiptVersion": 1
+          }
+        },
+        {
+          "seq": 15,
+          "atMs": 81309,
+          "kind": "request_end",
+          "requestId": "request-3",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 16,
+          "atMs": 81309,
+          "kind": "request_start",
+          "requestId": "request-4",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 17,
+          "atMs": 89184,
+          "kind": "model_response",
+          "requestId": "request-4",
+          "providerRequestId": "unknown",
+          "stopReason": "toolUse",
+          "thinkingPresent": true
+        },
+        {
+          "seq": 18,
+          "atMs": 89185,
+          "kind": "tool_start",
+          "requestId": "request-4",
+          "providerRequestId": "unknown",
+          "toolCallId": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+          "toolName": "case_read",
+          "requestedRange": {
+            "startLine": 1,
+            "maxLines": 200
+          }
+        },
+        {
+          "seq": 19,
+          "atMs": 89188,
+          "kind": "tool_end",
+          "requestId": "request-4",
+          "providerRequestId": "unknown",
+          "toolName": "case_read",
+          "toolCallId": "a5q2Rc2in4BHhFePiNVR3GGog1DyeMZ5",
+          "pairing": "matched",
+          "isError": false,
+          "metadata": {
+            "path": "HOSTS.md",
+            "sourceSha256": "5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90",
+            "resultSha256": "5ab9f8e8a12bcf8a53126e0350dd064d48ba44f87b316780e92d07af87a6ee90",
+            "range": {
+              "startLine": 1,
+              "endLine": 80
+            },
+            "lines": 80,
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null,
+            "receiptVersion": 1
+          }
+        },
+        {
+          "seq": 20,
+          "atMs": 89188,
+          "kind": "request_end",
+          "requestId": "request-4",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 21,
+          "atMs": 89188,
+          "kind": "request_start",
+          "requestId": "request-5",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 22,
+          "atMs": 111796,
+          "kind": "model_response",
+          "requestId": "request-5",
+          "providerRequestId": "unknown",
+          "stopReason": "toolUse",
+          "thinkingPresent": true
+        },
+        {
+          "seq": 23,
+          "atMs": 111796,
+          "kind": "tool_start",
+          "requestId": "request-5",
+          "providerRequestId": "unknown",
+          "toolCallId": "JVl194hqEShKmzAEuWwz8ZUzwnQ54t1S",
+          "toolName": "case_read",
+          "requestedRange": {
+            "startLine": 1,
+            "maxLines": 200
+          }
+        },
+        {
+          "seq": 24,
+          "atMs": 111800,
+          "kind": "tool_end",
+          "requestId": "request-5",
+          "providerRequestId": "unknown",
+          "toolName": "case_read",
+          "toolCallId": "JVl194hqEShKmzAEuWwz8ZUzwnQ54t1S",
+          "pairing": "matched",
+          "isError": false,
+          "metadata": {
+            "path": "MAINTENANCE.md",
+            "sourceSha256": "395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36",
+            "resultSha256": "395f90124bd8b89c8370acc45fe5ca3a6c22cf4e1b9b7163d293c6ee691b9b36",
+            "range": {
+              "startLine": 1,
+              "endLine": 66
+            },
+            "lines": 66,
+            "eof": true,
+            "wholeFile": true,
+            "empty": false,
+            "outOfRange": false,
+            "nextStartLine": null,
+            "receiptVersion": 1
+          }
+        },
+        {
+          "seq": 25,
+          "atMs": 111800,
+          "kind": "request_end",
+          "requestId": "request-5",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 26,
+          "atMs": 111800,
+          "kind": "request_start",
+          "requestId": "request-6",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 27,
+          "atMs": 171134,
+          "kind": "model_response",
+          "requestId": "request-6",
+          "providerRequestId": "unknown",
+          "stopReason": "toolUse",
+          "thinkingPresent": true
+        },
+        {
+          "seq": 28,
+          "atMs": 171134,
+          "kind": "tool_start",
+          "requestId": "request-6",
+          "providerRequestId": "unknown",
+          "toolCallId": "Vczbibe8hBaJrZOnjeVYxtnWemvcyLqR",
+          "toolName": "case_write"
+        },
+        {
+          "seq": 29,
+          "atMs": 171138,
+          "kind": "tool_end",
+          "requestId": "request-6",
+          "providerRequestId": "unknown",
+          "toolName": "case_write",
+          "toolCallId": "Vczbibe8hBaJrZOnjeVYxtnWemvcyLqR",
+          "pairing": "matched",
+          "isError": false,
+          "metadata": {
+            "path": "adoption-map.json",
+            "bytes": 1942,
+            "sourceSha256": "db872a6d5ee4ea930ad70c0093efe460107cd98490baf85e2595027135268431"
+          }
+        },
+        {
+          "seq": 30,
+          "atMs": 171138,
+          "kind": "request_end",
+          "requestId": "request-6",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 31,
+          "atMs": 171138,
+          "kind": "request_start",
+          "requestId": "request-7",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 32,
+          "atMs": 209654,
+          "kind": "model_response",
+          "requestId": "request-7",
+          "providerRequestId": "unknown",
+          "stopReason": "toolUse",
+          "thinkingPresent": true
+        },
+        {
+          "seq": 33,
+          "atMs": 209654,
+          "kind": "tool_start",
+          "requestId": "request-7",
+          "providerRequestId": "unknown",
+          "toolCallId": "lgIE9OKRt1L8KAwLU3ZZ8AmUZ4BrTLva",
+          "toolName": "case_result",
+          "resultKind": "summary"
+        },
+        {
+          "seq": 34,
+          "atMs": 209659,
+          "kind": "tool_end",
+          "requestId": "request-7",
+          "providerRequestId": "unknown",
+          "toolName": "case_result",
+          "toolCallId": "lgIE9OKRt1L8KAwLU3ZZ8AmUZ4BrTLva",
+          "pairing": "matched",
+          "isError": false,
+          "metadata": {
+            "recorded": true,
+            "replayed": false,
+            "kind": "summary"
+          }
+        },
+        {
+          "seq": 35,
+          "atMs": 209659,
+          "kind": "request_end",
+          "requestId": "request-7",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 36,
+          "atMs": 209659,
+          "kind": "request_start",
+          "requestId": "request-8",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 37,
+          "atMs": 209659,
+          "kind": "model_response",
+          "requestId": "request-8",
+          "providerRequestId": "unknown",
+          "stopReason": "error",
+          "thinkingPresent": false
+        },
+        {
+          "seq": 38,
+          "atMs": 209659,
+          "kind": "request_end",
+          "requestId": "request-8",
+          "providerRequestId": "unknown"
+        },
+        {
+          "seq": 39,
+          "atMs": 209662,
+          "kind": "trace_summary",
+          "requestId": "request-8",
+          "providerRequestId": "unknown",
+          "traceComplete": true,
+          "droppedEvents": 0,
+          "pendingTools": 0
+        }
+      ],
+      "overflow": {
+        "droppedEvents": 0,
+        "oversizedEvents": 0
+      },
+      "incomplete": {
+        "pendingTools": 0,
+        "pendingRequests": 0,
+        "pendingCompactions": 0,
+        "missingRequestStarts": 0,
+        "missingCompactionStarts": 0,
+        "missingStarts": 0,
+        "duplicateStarts": 0,
+        "untrackedTools": false,
+        "tools": []
+      },
+      "endReason": "completed",
+      "systemPromptSha256": "eadfeee40a1c0fcb1aedf5ed197e000063c030bd00b8672c537344731072d7ad",
+      "loadedPolicySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "policyComplete": true,
+      "durability": "session-return-only",
+      "contextRetention": "unknown"
+    }
+  },
+  "elapsedMs": 210787.4765,
+  "grade": {
+    "artifactPassed": false,
+    "sourcesPreserved": true,
+    "integrity": {
+      "install.mjs": true,
+      "package.json": true,
+      "HOSTS.md": true,
+      "MAINTENANCE.md": true,
+      "requirements.md": true
+    },
+    "extraPaths": [],
+    "actual": {
+      "install": {
+        "source": "install.mjs",
+        "defaultHost": "all",
+        "acceptedHosts": [
+          "all",
+          "claude",
+          "codex",
+          "pi"
+        ],
+        "destinations": {
+          "pi": [
+            ".agents/skills/case-workflow"
+          ],
+          "codex": [
+            ".agents/skills/case-workflow"
+          ],
+          "claude": [
+            ".claude/skills/case-workflow"
+          ],
+          "all": [
+            ".agents/skills/case-workflow",
+            ".claude/skills/case-workflow"
+          ]
+        },
+        "marker": ".case-install.json",
+        "format": "case-workflow-install/1",
+        "backupRoots": [
+          ".agents/case-workflow-backups",
+          ".claude/case-workflow-backups"
+        ],
+        "rejectsEditedInstall": true,
+        "allowsUpdateAndUninstallTogether": false,
+        "unchangedAction": "unchanged",
+        "uninstallAbsentAction": "absent"
+      },
+      "package": {
+        "source": "package.json",
+        "name": "case-workflow-kit",
+        "version": "2.0.0-preview.1",
+        "private": true,
+        "node": ">=20",
+        "bins": {
+          "case-workflow": "skills/case-workflow/scripts/case.mjs",
+          "case-workflow-v2": "skills/case-workflow/scripts/case-v2.mjs"
+        },
+        "piSkills": [
+          "skills"
+        ],
+        "piExtensions": [
+          "integrations/pi/extension.mjs"
+        ],
+        "optionalPeers": [
+          "@earendil-works/pi-coding-agent"
+        ]
+      },
+      "support": {
+        "source": "HOSTS.md",
+        "nativePiVersionTested": "0.84.2",
+        "nativePiRequiredNode": "22.19+",
+        "nativePiInstallTemplate": "pi install -l \"<checkout>/workflow-kit\"",
+        "nativePiRemoveTemplate": "pi remove -l \"<checkout>/workflow-kit\"",
+        "nativePiCopiesPackage": false,
+        "portableSkillProvidesCaseCommand": false,
+        "antigravityInstallerHost": "codex",
+        "antigravitySessionTested": false,
+        "antigravityDedicatedHostAccepted": false,
+        "registryPublished": false
+      },
+      "maintenance": {
+        "source": "MAINTENANCE.md",
+        "kitTestCommand": "npm test --prefix workflow-kit",
+        "fullM0RequiredForKitOnly": false,
+        "newTestRequiresPackageListUpdate": true,
+        "installerPrimary": "install.mjs",
+        "piPrimary": "integrations/pi/"
+      }
+    },
+    "artifactError": null
+  }
+}

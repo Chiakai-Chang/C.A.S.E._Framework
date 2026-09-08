@@ -1,5 +1,7 @@
 # C.A.S.E. Workflow Kit: English user guide
 
+September 8 follow-up: a scripted-provider test through the real SDK verified worker schemas, tool-call pairing, and same-session file repair. A separate real worker-only replay produced a file in about 211 seconds but omitted one required field, so artifact acceptance still failed. It included no reviewer or integrator and is not a full-workflow comparison. The next diagnostic targets explicit structural checks and repair, not another planner adjustment.
+
 C.A.S.E. helps an agent keep the goal, constraints, evidence, and next action available across long tasks and session changes. Use it for work that benefits from saved state; answer a simple question or fix a small typo directly.
 
 The kit combines an Agent Skill with a local, dependency-free Node.js core. The v2 preview also includes a pi extension that uses pi's SDK for fresh sessions. It does not run a model server or grant additional permissions. You do not need the repository's older M0 research implementation.
