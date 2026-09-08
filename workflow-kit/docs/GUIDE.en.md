@@ -1,5 +1,7 @@
 # C.A.S.E. Workflow Kit: English user guide
 
+Latest September 9 result: both fixed worker-repair arms passed the complete artifact oracle. Thinking off took about 132 seconds versus 458 seconds with thinking enabled. Off is a candidate for this local model's well-specified repairs, not a global recommendation or proof of full-workflow reliability. The product already accepts the selected thinking setting; no default or global configuration changed. See [results and limits](../../docs/evaluation/2026-09-09-repair-thinking-report.md).
+
 September 9 follow-up: the existing reviewer detected the missing field and returned it for repair, but the worker made no write before the continuation timed out at about 601 seconds. Integration was not reached. This used a synthetic submitted-state recovery, not native resumption of the previous worker-only session. Execution settings need a controlled repair comparison before adding more validators; no product behavior changed. See the [repair report](../../docs/evaluation/2026-09-09-review-repair-report.md).
 
 September 8 follow-up: a scripted-provider test through the real SDK verified worker schemas, tool-call pairing, and same-session file repair. A separate real worker-only replay produced a file in about 211 seconds but omitted one required field, so artifact acceptance still failed. It included no reviewer or integrator and is not a full-workflow comparison. The next diagnostic targets explicit structural checks and repair, not another planner adjustment.
