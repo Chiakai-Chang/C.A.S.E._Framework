@@ -9,6 +9,30 @@ const toolsModule = await import('../integrations/pi/scoped-tools.mjs').catch(e 
     throw e;
 });
 
+test('planner inventory provides bounded metadata without reading bodies or nested files', async t => {
+    const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-plan-index-')));
+    t.after(() => fs.rmSync(project, {recursive:true,force:true}));
+    fs.writeFileSync(path.join(project,'data.txt'),'秘密');
+    fs.mkdirSync(path.join(project,'nested'));
+    fs.writeFileSync(path.join(project,'nested','hidden.txt'),'do not crawl');
+    fs.mkdirSync(path.join(project,'.pi'));
+    const read = t.mock.method(fs,'readFileSync',()=>{throw new Error('Inventory must not read bodies');});
+    const list=toolsModule.createScopedTools({project,role:'planner'}).find(t=>t.name==='case_list');
+    const result=await list.execute('index',{path:'.'});
+    assert.deepEqual(JSON.parse(result.content[0].text),{path:'.',complete:true,recursive:false,entries:[
+        {name:'data.txt',kind:'file',bytes:6},{name:'nested',kind:'directory',bytes:null}
+    ]});
+    assert.equal(read.mock.callCount(),0);
+});
+
+test('planner inventory refuses oversized metadata instead of silently losing entries', async t => {
+    const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-plan-limit-')));
+    t.after(() => fs.rmSync(project, {recursive:true,force:true}));
+    for(let i=0;i<200;i++)fs.writeFileSync(path.join(project,`${i}-${'x'.repeat(120)}`),'');
+    const list=toolsModule.createScopedTools({project,role:'planner'}).find(t=>t.name==='case_list');
+    await assert.rejects(list.execute('index',{path:'.'}),{code:'MATERIAL_INDEX_TOO_LARGE'});
+});
+
 test('scoped tools exclude protected settings at every depth and preserve ordinary instructions for reading', async t => {
     const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-protected-tools-')));
     t.after(() => fs.rmSync(project, { recursive: true, force: true }));

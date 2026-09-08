@@ -4,6 +4,8 @@
 
 ## v2 共用核心與整合
 
+交辦的責任分界：pi 規劃者可透過 `case_list` 取得有界單層檔名／類型／byte 大小，不自動掃描正文；以目標、限制與必要相依形成工作包，查證所得的候選答案不能取代使用者標準。共用 context 明示 `requiredMaterials` 已附全文、`materialIndex` 尚須取用。這是資訊與工作方法調整，不是強制模型遵從或提升品質的保證；需要查證才能規劃時仍可讀取。
+
 `core/io.mjs` 定義共用材料路徑保護，核心組裝／雜湊與 pi 讀寫／列目錄均套用，避免 inline 材料繞過工具的設定目錄限制。一般指引檔仍可引用；不是秘密掃描或 OS sandbox。
 
 [v2 指南](V2.md) 說明新流程；以下 v1 詞彙與操作仍供舊任務使用。v2 的 `scripts/core/index.mjs` 匯出 `createStore(project)`，提供 init、migrate、create、get、list、dispatch、context 及 run artifacts 保存；`case-v2.mjs` 和 pi extension 共用狀態規則。v1 `case.mjs` 保留，兩種格式不混寫。

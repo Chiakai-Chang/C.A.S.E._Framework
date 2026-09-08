@@ -72,12 +72,23 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
       return content(page.header + page.body, page.details);
     },
   }, {
-    name: 'case_list', label: 'List project material', description: 'List one directory, excluding agent settings and CASE state. No recursive dumping.',
+    name: 'case_list', label: 'List project material', description: role === 'planner'
+      ? 'Get a shallow material index (names, file/directory kinds, byte sizes), without loading file bodies. Use it to locate inputs and choose inline/indexed delivery. It does not establish relevance, source facts or permission. Protected settings and links are excluded; complete means this visible directory only. At most 300 entries and 24000 UTF-16 units; narrow the directory if oversized.'
+      : 'List one directory, excluding agent settings and CASE state. No recursive dumping.',
     parameters: schema({ path: string('Relative directory, or .') }),
     async execute(_id, args) {
       const entries = fs.readdirSync(resolve(args.path), { withFileTypes: true })
         .filter(e => !isProtectedMaterialPart(e.name) && !e.isSymbolicLink());
       if (entries.length > 300) fail('Directory has more than 300 entries; use a narrower material index');
+      if (role === 'planner') {
+        const index = {path:path.relative(root,resolve(args.path)).split(path.sep).join('/') || '.',complete:true,recursive:false,
+          entries:entries.sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0).map(e=>({name:e.name,
+            kind:e.isFile()?'file':e.isDirectory()?'directory':'other',
+            bytes:e.isFile()?fs.statSync(resolve(path.posix.join(args.path.replaceAll('\\','/'),e.name))).size:null}))};
+        const text=JSON.stringify(index);
+        if(text.length>24000)readError('MATERIAL_INDEX_TOO_LARGE','Material index exceeds 24000 UTF-16 units; use a narrower directory or report the material organization limitation. No partial index was returned.');
+        return content(text);
+      }
       return content(entries.map(e => e.name + (e.isDirectory() ? '/' : '')).join('\n'));
     },
   }];

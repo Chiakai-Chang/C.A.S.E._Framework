@@ -74,7 +74,9 @@ Use existing relative input paths, no invented files. Every global acceptance cr
 For long source material, use inputs with delivery:"indexed" and read it in bounded parts with read tools. For inline material omit delivery or set delivery:"inline". Only "inline" and "indexed" are valid delivery values.
 If necessary source material is missing and a valid plan cannot be made, return instead {"blocked":{"reason":"the specific missing material and why it is necessary"}}. Do not invent inputs or submit empty deliverables to represent a blocker.
 Use the fewest useful packets. No cycles, no absolute paths, no executable plans. Do not do the work yet.
-Inspect project materials with read tools if needed. You cannot change the user's goal or authority.`;
+Plan from the goal, constraints, acceptance and material index first. Use case_list for names and sizes when locations or delivery choices are unclear; it does not prove source facts. Read source bodies only to resolve a concrete planning uncertainty (such as dependencies, feasibility or missing input), not to fill the final answer before handing off.
+Your deliverable is an executable assignment, not the task solution. Checks state how to verify the user's requirements against authoritative sources; do not turn your own newly inferred answers into acceptance requirements. Preserve exact values explicitly required by the user. If source investigation is itself substantial necessary work, assign it as an evidenced discovery packet with declared dependents instead of solving it inside planning. A packet is ready when its purpose, inputs, scope, dependencies and acceptance are actionable; unknown answer values are for execution, not automatically a planning blocker.
+Reuse known valid plan and material references when handling feedback; inspect only what is needed for that decision. You cannot change the user's goal or authority.`;
 
 export async function runCase({ store, caseId, runSession, signal, maxContextChars = 48000, onProgress = () => {}, executeChecks = async () => [] }) {
   let state = store.get(caseId);

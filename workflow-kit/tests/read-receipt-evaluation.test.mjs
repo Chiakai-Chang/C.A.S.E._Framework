@@ -6,6 +6,21 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {specs,grade,decision,oldReadResult,holdoutOracle,digest} from '../evaluation/read-receipt-spec.mjs';
 import {runBatch,audit,retain,probeRoundtrip,freeze,runFrozen,verifyFrozen} from '../evaluation/read-receipt-comparison.mjs';
+import {compare} from '../evaluation/planning-comparison.mjs';
+import {configuration} from '../evaluation/read-receipt-comparison.mjs';
+
+test('planning comparison rejects changed baseline code before importing it',async t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'case-planning-integrity-'));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const entry=path.join(dir,'baseline.mjs'),manifestPath=path.join(dir,'manifest.json'),output=path.join(dir,'evidence.json');
+  fs.writeFileSync(entry,'export const unchanged=true;');
+  const manifest={format:'case-read-receipt/1',configuration,specs:{},specSha256:digest('{}'),codeHashes:{[entry]:digest(fs.readFileSync(entry))},
+    experiment:{kind:'planning-handoff/1',baselineEntry:entry}};
+  fs.writeFileSync(manifestPath,JSON.stringify(manifest));
+  fs.writeFileSync(entry,'throw new Error("Changed baseline executed");');
+  await assert.rejects(compare({manifestPath,output}),/Frozen code changed/);
+  assert.equal(fs.existsSync(output),false);
+});
 
 const result=(passed=true)=>({artifactPassed:passed,workflowCompleted:passed,traceComplete:true,constraints:{integrity:'verified'}});
 test('fixed decision covers all four outcomes and evidence insufficiency',()=>{
