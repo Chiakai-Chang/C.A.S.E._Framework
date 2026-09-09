@@ -83,12 +83,24 @@ test('scoped discovery reader returns only the explicitly provided bounded recor
   const f=await fixture(t,async ({tool})=>{
     const read=await tool('case_discovery_read',{id:'known',start:0,maxChars:20});assert.equal(read.details.text,'authoritative chunk');
     await assert.rejects(tool('case_discovery_read',{id:'other'}),{code:'DISCOVERY_ACCESS_DENIED'});
-    await tool('case_result',{result:{summary:'done'}});
+    await tool('case_result',{result:{decisions:[]}});
   });
   await f.run({role:'planner',prompt:'work',onStart(){},readDiscovery:async args=>{
     if(args.id!=='known')throw Object.assign(new Error('not in this context'),{code:'DISCOVERY_ACCESS_DENIED'});
     return {id:'known',text:'authoritative chunk',start:0,nextStart:19,totalChars:19,complete:true};
   }});
+});
+
+test('planner rejects mixed result then accepts discovery amendment in the same session',async t=>{
+  const accepted={decisions:[],packets:[{id:'p'}],rerunPacketIds:[],reason:'resolve discovery'};
+  const f=await fixture(t,async ({tool})=>{
+    await assert.rejects(tool('case_result',{result:{blocked:{reason:'no-write-scope'},packets:[],results:[]}}),{code:'INVALID_REPLY'});
+    assert.equal(f.aborts(),0);
+    await tool('case_result',{result:accepted});
+  });
+  const reply=await f.run({role:'planner',prompt:'resolve discoveries',onStart(){}});
+  assert.deepEqual(JSON.parse(reply.text),accepted);
+  assert.equal(f.aborts(),1);
 });
 test('failed stop after accepted result preserves the accepted evidence and reports uncertain shutdown',async t=>{
   const f=await fixture(t,async ({tool})=>{await tool('case_result',{result:{summary:'done'}});},{abortFailure:true});

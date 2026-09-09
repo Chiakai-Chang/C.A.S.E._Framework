@@ -8,6 +8,31 @@ const runner = await import('../integrations/pi/runner.mjs').catch(error => {
         return {};
     throw error;
 });
+
+for (const reply of [
+    {blocked:{reason:'no-write-scope'},packets:[],decisions:[],results:[],summary:'not done'},
+    {blocked:{reason:'missing source',summary:'nested extra'}},
+    {packets:[],results:[]},
+    {decisions:[],summary:'extra'},
+    {packets:[{id:'p',purpose:'write output',constraintIds:[],inputs:[],dependsOn:[],writeScope:['out'],deliverables:[{path:'out'}],checks:[{id:'k',text:'correct',criterionIds:['a']}],unknowns:[]}],decisions:[]},
+]) test('planner mixed reply is rejected without accepting a blocker: '+JSON.stringify(reply), async t => {
+    const {createStore}=await import('../skills/case-workflow/scripts/core/index.mjs');
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-plan-shape-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    const store=createStore(project);store.init();
+    const state=store.create({goal:'write output',constraints:[],acceptance:[{id:'a',text:'correct'}],budget:{maxAttempts:3,maxDurationMs:60000}});
+    await assert.rejects(runner.runCase({store,caseId:state.id,runSession:async request=>{
+        // SDK preflight must reject before accepting; custom runners are also checked on return.
+        assert.equal(request.role,'planner','malformed plan must never start a worker');
+        assert.throws(()=>request.validateResult(reply),{code:'INVALID_REPLY'});
+        await request.onStart('mixed-plan');
+        return {sessionId:'mixed-plan',text:JSON.stringify(reply),usage:{input:2,output:3}};
+    }}),{code:'INVALID_REPLY'});
+    assert.deepEqual(store.get(state.id),state);
+    const run=store.listRuns(state.id)[0];
+    assert.equal(run.error.code,'INVALID_REPLY');
+    assert.equal(run.sessions[0].text,JSON.stringify(reply));
+});
 for (const reason of ['缺少必要的 prices.json，無法計算價格。', '   ']) test(`planner blocked reply preserves a concrete reason and never starts workers: ${JSON.stringify(reason)}`, async t => {
     const { createStore } = await import('../skills/case-workflow/scripts/core/index.mjs');
     const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-planner-blocked-')));

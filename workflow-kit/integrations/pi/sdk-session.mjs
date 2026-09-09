@@ -1,7 +1,7 @@
 import { createScopedTools } from './scoped-tools.mjs';
 import { jsonValue, fingerprint } from '../../skills/case-workflow/scripts/core/io.mjs';
 import { checksForRole } from './approved-checks.mjs';
-import { parseReply, validateWorkerReply } from './runner.mjs';
+import { parseReply, validateWorkerReply, validatePlannerReply } from './runner.mjs';
 import { createSessionTrace } from './session-trace.mjs';
 
 const fail = (code, message) => Object.assign(new Error(message), { code });
@@ -18,7 +18,10 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
   if (!modelRuntime) throw fail('CONFIG_REQUIRED', 'Supply the selected pi ModelRuntime explicitly');
   return async ({ role, prompt, runId, writeScope = [], criterionIds = [], validateResult:validateProvidedResult, onDiscovery, readDiscovery, onStart, signal }) => {
     if (signal?.aborted) throw fail('CANCELLED', 'Session cancelled');
-    const validateResult = role === 'worker' ? async reply => {validateWorkerReply(reply);await validateProvidedResult?.(reply);} : validateProvidedResult;
+    const validateResult = ['worker','planner'].includes(role) ? async reply => {
+      (role==='worker'?validateWorkerReply:validatePlannerReply)(reply);
+      await validateProvidedResult?.(reply);
+    } : validateProvidedResult;
     const settingsManager = sdk.SettingsManager.inMemory({ compaction: { enabled: true }, retry: { enabled: false } });
     let resultText, completionFailure, blockingDiscovery, validatedFinalText, trace, validating = false, activeTools = 0;
     const requireOpen = () => {
@@ -39,15 +42,15 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
       },
     }));
     const resultSchema = role === 'planner' ? {
-      type:'object', additionalProperties:true, properties:{
-        blocked:{type:'object',properties:{reason:{type:'string',minLength:1}},required:['reason']},
+      type:'object', additionalProperties:false, properties:{
+        blocked:{type:'object',additionalProperties:false,properties:{reason:{type:'string',minLength:1}},required:['reason']},
         packets:{type:'array',minItems:1,items:{type:'object',additionalProperties:true,properties:{
           inputs:{type:'array',items:{type:'object',properties:{path:{type:'string'},required:{type:'boolean'},
             delivery:{type:'string',enum:['inline','indexed'],description:'Omit for inline; default is not a valid value.'}},required:['path','required'],additionalProperties:true}}
         }}},
         reason:{type:'string'},rerunPacketIds:{type:'array',items:{type:'string'}}
         ,decisions:{type:'array',items:{type:'object',additionalProperties:true}}
-      },anyOf:[{required:['packets']},{required:['blocked']},{required:['decisions']}]
+      },oneOf:[{required:['blocked'],not:{anyOf:[{required:['packets']},{required:['decisions']},{required:['reason']},{required:['rerunPacketIds']}]}},{not:{required:['blocked']},anyOf:[{required:['packets']},{required:['decisions']}]}]
     } : role === 'worker' ? {
       type:'object',additionalProperties:false,
       properties:{summary:{type:'string',minLength:1},

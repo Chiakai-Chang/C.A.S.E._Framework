@@ -1,5 +1,7 @@
 # 功能覆蓋與驗證範圍
 
+9/10：[混合規劃回覆修正](../../docs/design/2026-09-10-review-dispute-boundary.md)已完成，265/265 工程測試通過。錯誤工具回覆可在同 session 修正；自訂 runner 不可繞過回傳檢查。未新增模型實測，不代表誤判與整案結案問題已解決。
+
 9/9 最新[修復後核對](../../docs/evaluation/2026-09-09-repaired-review-report.md)：非思考設定下 reviewer 通過，integrator 卻誤判來源，planner 回報錯誤障礙，約 409 秒停止而未結案。成果與來源均保持正確；混合 planner 回覆及異議處置仍待修。前次[修復設定對照](../../docs/evaluation/2026-09-09-repair-thinking-report.md)兩組修好，不等於整體流程可靠。產品預設未改；下列為前批證據。
 
 9/9 [修復旅程](../../docs/evaluation/2026-09-09-review-repair-report.md)：由真實缺欄成果重建待核對起點，原 reviewer 找出問題並退回；worker 未寫入即逾時，未到 integration。這不是原 session 自然接續或整案成功率比較。工程回歸仍為 259/259；產品指引／模型設定未改。

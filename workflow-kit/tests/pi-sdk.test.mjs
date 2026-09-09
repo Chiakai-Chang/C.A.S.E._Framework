@@ -68,9 +68,12 @@ for(const mode of ['still-prose','turn-limit','cancelled'])test(`reply correctio
       assert.equal(failure.code,'CANCELLED');assert.deepEqual(failure.sessionEvidence.replyCorrections,[]);return true;
     });
     else {
-      const reply=await run(request);
-      assert.equal(reply.replyCorrections.length,mode==='still-prose'?1:0);
-      assert.equal(reply.resultTransport,'final-text');
+      await assert.rejects(run(request),failure=>{
+        assert.equal(failure.code,'INVALID_REPLY');
+        assert.equal(failure.sessionEvidence.replyCorrections.length,mode==='still-prose'?1:0);
+        assert.equal(failure.sessionEvidence.resultTransport,'final-text');
+        return true;
+      });
     }
     assert.equal(prompts,mode==='still-prose'?2:1);
 });
@@ -223,7 +226,7 @@ for(const role of ['worker','reviewer','planner','integrator'])test(`capability 
         await write.execute('write',{path:caps.writeScope[0],content:'written through declared scope'});
         assert.equal(fs.readFileSync(path.join(project,'output'),'utf8'),'written through declared scope');
       }else assert.equal(write,undefined);
-      return {session:{sessionId:'capabilities',subscribe:()=>()=>{},prompt:async()=>{},getLastAssistantText:()=>role==='worker'?'{"summary":"written"}':'{"passed":true}',getSessionStats:()=>({}),dispose(){},abort:async()=>{}}};
+      return {session:{sessionId:'capabilities',subscribe:()=>()=>{},prompt:async()=>{},getLastAssistantText:()=>role==='worker'?'{"summary":"written"}':role==='planner'?'{"blocked":{"reason":"required input missing"}}':'{"passed":true}',getSessionStats:()=>({}),dispose(){},abort:async()=>{}}};
     }};
     const run=await adapter.createPiSessionRunner({project,agentDir:project,model:{id:'local',provider:'local'},modelRuntime:{},sdk,
       checks:{exact:{command:process.execPath,args:['-e','process.stdout.write("checked")'],criterionIds:['a']},whole:{command:process.execPath,args:['-e','throw Error("not built yet")']},unrelated:{command:process.execPath,args:[],criterionIds:['b']}}});

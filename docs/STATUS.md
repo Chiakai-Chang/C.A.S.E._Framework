@@ -1,5 +1,7 @@
 # 目前狀態
 
+9/10：[規劃回覆界線](design/2026-09-10-review-dispute-boundary.md)已修正，SDK 與自訂 runner 均拒絕混合角色回覆，265/265 測試通過。未重跑模型；錯誤但格式合法的審查意見／受阻判斷仍可能發生，不改成果的異議流程尚待實作。
+
 9/9 最新：[修復後核對](evaluation/2026-09-09-repaired-review-report.md)約 409 秒，reviewer 通過，但 integrator 提出與來源矛盾的缺陷，planner 隨後錯誤受阻；成果仍正確，未結案。下一步處理既有角色的異議查證與回覆界線，不新增角色或反覆重抽。前次[修復設定對照](evaluation/2026-09-09-repair-thinking-report.md)的 off／medium 都修好，不代表所有角色可靠；以下保留較早結果。
 
 9/9 接續：[既有核對與修復實測](evaluation/2026-09-09-review-repair-report.md)正確發現漏欄並退回，但 worker 未寫入，約 601 秒取消，未到整體驗收。下一步先分離修復執行設定的影響，暫緩新增檢查器；不推定 reviewer 失效或品質目標完成。

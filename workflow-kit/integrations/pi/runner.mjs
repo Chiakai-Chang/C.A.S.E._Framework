@@ -15,6 +15,22 @@ export function parseReply(text) {
   } catch { throw error('INVALID_REPLY', 'Reply must be one complete JSON object without surrounding prose'); }
 }
 
+export function validatePlannerReply(reply) {
+  const keys = reply && typeof reply === 'object' && !Array.isArray(reply) ? Object.keys(reply) : [];
+  const invalid = () => { throw error('INVALID_REPLY', 'Planner reply must be a plan (packets, optional reason/rerunPacketIds), discovery decisions (optional plan amendment), or exactly {"blocked":{"reason":"specific missing external material or authority"}}. Do not mix blocked, results, summary or other role fields. A read-only planner can still assign authorized workers.'); };
+  if (!keys.length) invalid();
+  if (Object.hasOwn(reply,'blocked')) {
+    const value=reply.blocked;
+    if (keys.length!==1 || !value || typeof value!=='object' || Array.isArray(value) || Object.keys(value).length!==1 || typeof value.reason!=='string' || !value.reason.trim()) invalid();
+  } else {
+    if (keys.some(k=>!['packets','decisions','reason','rerunPacketIds'].includes(k)) || !keys.some(k=>k==='packets'||k==='decisions')) invalid();
+    if (Object.hasOwn(reply,'packets') && !Array.isArray(reply.packets) || Object.hasOwn(reply,'decisions') && !Array.isArray(reply.decisions)) invalid();
+    if (Object.hasOwn(reply,'reason') && (typeof reply.reason!=='string'||!reply.reason.trim())) invalid();
+    if (Object.hasOwn(reply,'rerunPacketIds') && (!Array.isArray(reply.rerunPacketIds)||reply.rerunPacketIds.some(id=>typeof id!=='string'||!id.trim()))) invalid();
+  }
+  return reply;
+}
+
 export function validateWorkerReply(reply) {
   const keys = reply && typeof reply === 'object' && !Array.isArray(reply) ? Object.keys(reply) : [];
   const guidance = 'Worker reply must be exactly {"summary":"completed work"}, {"blocked":{"reason":"obstacle"}}, or {"changeRequest":{"reason":"necessary change"}}. Use case_discover for newly discovered work; unknown or mixed fields are rejected rather than discarded.';
@@ -63,6 +79,13 @@ export async function callSession(runSession, { onStart, ...input }) {
   if (!started || reply?.sessionId !== started) rejectReply('SESSION_MISMATCH', 'Session identity changed or was not reported');
   if (input.signal?.aborted) rejectReply('CANCELLED', 'Operation cancelled');
   if (typeof reply.text !== 'string' || !reply.text.trim()) rejectReply('EMPTY_REPLY', 'Model returned no final text');
+  if (input.role==='planner') {
+    try {
+      const decision=validatePlannerReply(parseReply(reply.text));
+      await input.validateResult?.(decision);
+    }
+    catch (failure) { rejectReply(failure.code,failure.message); }
+  }
   return reply;
 }
 
@@ -209,6 +232,8 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     return {results,failed:results.some(r=>r.error || r.exitCode !== 0)};
   };
   const validatePlanReply = type => reply => {
+    validatePlannerReply(reply);
+    if (Object.hasOwn(reply,'decisions')) throw error('INVALID_REPLY','This request requires a plan or blocker, not discovery decisions');
     if (Object.hasOwn(reply,'blocked')) {
       if (typeof reply.blocked?.reason !== 'string' || !reply.blocked.reason.trim()) throw error('INVALID_REPLY','Blocked reply requires a non-empty reason');
       return;
