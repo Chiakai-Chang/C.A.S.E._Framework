@@ -89,7 +89,7 @@ npx skills add https://github.com/Chiakai-Chang/C.A.S.E._Framework/tree/main/wor
 - **效益仍需區分：** 先前固定版六次比較中，簡單流程三案成功，CASE 兩案成功、一案失敗，成功案成本也較高。這些歷史結果沒有被後續修復覆寫；不能因此宣稱全面提升品質或省 tokens。[比較方法與結果](docs/evaluation/case-value-validation-report.md)
 - **真實任務比較：** 將本專案四份來源整理成可核對的採用資訊，一般 pi 與 CASE 都未完成合格產物，分別耗時約 81 秒與 596 秒。這次未顯示 CASE 優勢。[完整比較](docs/evaluation/2026-09-06-real-task-report.md)
 - **最新修正實測（9/8）：** 讀取回條未帶來整案成功；後續交辦對照中，基準規劃約 521 秒、新組約 49 秒，但執行者仍未產出，兩組皆逾時。中間步驟改善不代表品質目標已達成，目前不適合放心無人監督處理任何工作。[交辦調整結果與下一步](docs/evaluation/2026-09-08-planning-handoff-report.md) · [前批回條實測](docs/evaluation/2026-09-06-read-receipt-report.md)
-- **接續診斷（9/9）：** 獨立核對能找到漏欄。後續固定修復對照中，思考關閉／開啟都修好，分別約 132／458 秒；本機明確修復可優先驗證非思考設定，但不外推所有任務或宣稱完整流程已通過。[結果與限制](docs/evaluation/2026-09-09-repair-thinking-report.md)
+- **接續診斷（9/9）：** 模型已修好漏欄，獨立核對也通過；但整體驗收提出與來源矛盾的指控，規劃者隨後錯誤受阻。成果仍正確，流程未結案；目前改善重點是查證審查異議，不是再加角色。[結果與限制](docs/evaluation/2026-09-09-repaired-review-report.md)
 - **不保證零失敗：** 模型可能漏報問題或在預算內無法修復。CASE 保存可追查的失敗，拒絕明確不合格的結案，不保證發現一切錯誤。
 
 資料存在專案的 `.case-agent/`，不覆寫既有 AGENTS.md／CLAUDE.md。**本地儲存不等於資料一定不出機器**：模型服務由你選擇。pi 的限定工具不是作業系統沙箱，核准檢查仍以你的使用者權限執行。更新／移除技能不刪任務；舊 v1 資料需要[顯式遷移](workflow-kit/docs/V2.md#v1-升級)。

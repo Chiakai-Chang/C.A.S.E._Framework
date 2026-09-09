@@ -4,6 +4,7 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
+| 修復後為何仍無法結案 | [核對分歧與復盤](docs/evaluation/2026-09-09-repaired-review-report.md) | reviewer 通過，integrator 誤判、planner 錯誤受阻；成果仍正確，異議處置待修 |
 | 選擇明確修復的執行設定 | [思考開關對照](docs/evaluation/2026-09-09-repair-thinking-report.md) | off／medium 均修好；單次 132／458 秒，不外推所有任務 |
 | 接續驗證既有核對與修復 | [9/9 修復旅程](docs/evaluation/2026-09-09-review-repair-report.md) | reviewer 找出缺欄，worker 未寫入即逾時；不等於整案完成 |
 | 改善漏驗、修復與驗收負擔 | [復盤與建議](docs/research/2026-09-08-acceptance-improvement-review.md)、[一手來源](docs/research/2026-09-08-acceptance-feedback-sources.md) | 先驗既有 reviewer／repair，再比較結構檢查；研究方案非已實作能力 |

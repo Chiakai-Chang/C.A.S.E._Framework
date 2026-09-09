@@ -10,12 +10,14 @@ import {createPiSessionRunner} from '../integrations/pi/sdk-session.mjs';
 import {runCase} from '../integrations/pi/runner.mjs';
 import {grade,digest} from './read-receipt-spec.mjs';
 
-const [mode,sdkPath,output]=process.argv.slice(2);
+const [mode,sdkPath,output,variant]=process.argv.slice(2);
+assert.ok(variant===undefined||variant==='repaired-off','unknown diagnostic variant');
 assert.ok(['prepare','run'].includes(mode)&&sdkPath&&output,'prepare|run SDK NEW_EVIDENCE');
 const repo=fileURLToPath(new URL('../../',import.meta.url));
 const priorPath=path.join(repo,'docs/evaluation/2026-09-08-worker-replay-evidence.json');
 const planningPath=path.join(repo,'docs/evaluation/2026-09-08-planning-handoff-evidence.json');
 const manifestPath=path.join(repo,'docs/evaluation/2026-09-08-planning-handoff-manifest.json');
+const repairPath=path.join(repo,'docs/evaluation/2026-09-09-repair-thinking-evidence.json');
 const hashFile=f=>digest(fs.readFileSync(f));
 let report;
 if(mode==='prepare'){
@@ -24,8 +26,12 @@ if(mode==='prepare'){
   const planning=JSON.parse(fs.readFileSync(planningPath)).results.find(r=>r.id==='B');
   const manifest=JSON.parse(fs.readFileSync(manifestPath));
   const spec=manifest.specs.main;
-  const artifactPath=path.join(prior.project,spec.output),artifact=fs.readFileSync(artifactPath);
-  const receipt=prior.session.observations.find(o=>o.toolName==='case_write'&&!o.isError).result.details;
+  const repaired=variant==='repaired-off';
+  const repair=repaired?JSON.parse(fs.readFileSync(repairPath)):null;
+  const arm=repair?.results.find(r=>r.mode==='off');
+  if(repaired)assert.equal(arm.grade.artifactPassed,true);
+  const artifactPath=path.join(repaired?repair.slots.off.project:prior.project,spec.output),artifact=fs.readFileSync(artifactPath);
+  const receipt=(repaired?arm.session:prior.session).observations.filter(o=>o.toolName==='case_write'&&!o.isError).at(-1).result.details;
   assert.equal(digest(artifact),receipt.sourceSha256,'original artifact drift');
   const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-review-repair-')));
   const project=path.join(root,'project'),agentDir=path.join(root,'config');fs.mkdirSync(project);fs.mkdirSync(agentDir);
@@ -43,17 +49,23 @@ if(mode==='prepare'){
   const collect=dir=>{for(const entry of fs.readdirSync(dir,{withFileTypes:true})){const f=path.join(dir,entry.name);assert.ok(!entry.isSymbolicLink());if(entry.isDirectory())collect(f);else if(entry.name.endsWith('.mjs'))codeHashes[f]=hashFile(f);}};
   collect(path.join(repo,'workflow-kit/integrations/pi'));collect(path.join(repo,'workflow-kit/skills/case-workflow/scripts/core'));
   for(const f of [fileURLToPath(import.meta.url),priorPath,planningPath,manifestPath,path.resolve(sdkPath)])codeHashes[f]=hashFile(f);
+  for(const name of ['read-receipt-spec.mjs','real-task-spec.mjs']){const f=path.join(repo,'workflow-kit/evaluation',name);codeHashes[f]=hashFile(f);}
+  if(repaired)codeHashes[repairPath]=hashFile(repairPath);
   report={kind:'synthetic-review-repair/1',status:'prepared',project,agentDir,caseId:state.id,spec,
     codeHashes,sdkPath:path.resolve(sdkPath),initialArtifactSha256:digest(artifact),transitions,initialState:state,
     priorWorkerElapsedMs:prior.elapsedMs,priorWorkerUsage:prior.session.usage,
-    configuration:{thinkingLevel:'medium',contextWindow:32768,maxTokens:4096,maxTurns:16,continuationBudgetMs:600000},
+    variant:variant??'original',priorRepair:repaired?{elapsedMs:arm.elapsedMs,usage:arm.session.usage}:null,
+    configuration:{thinkingLevel:repaired?'off':'medium',contextWindow:32768,maxTokens:4096,maxTurns:16,continuationBudgetMs:600000},
     limitations:['Synthetic submitted state; not native resumption of worker-only history.','One continuation diagnostic, no causal comparison.','600-second continuation budget is additional to recorded prior worker cost; not original whole-task budget.','No oracle is supplied to sessions.','GGUF and complete SDK dependency tree not byte-frozen.'],sessions:[]};
-  assert.equal(grade(project,spec).artifactPassed,false,'fixture must retain known failure');
+  assert.equal(grade(project,spec).artifactPassed,repaired,'fixture must match selected evidence');
   fs.writeFileSync(output,JSON.stringify(report,null,2),{flag:'wx'});
   console.log(JSON.stringify({status:report.status,caseId:state.id,initialArtifactSha256:report.initialArtifactSha256}));
 }else{
   report=JSON.parse(fs.readFileSync(output));assert.equal(report.status,'prepared');assert.equal(path.resolve(sdkPath),report.sdkPath);
   for(const [f,hash] of Object.entries(report.codeHashes))assert.equal(hashFile(f),hash,`changed ${f}`);
+  assert.equal(hashFile(path.join(report.project,report.spec.output)),report.initialArtifactSha256);
+  for(const [name,body] of Object.entries({...report.spec.sources,'requirements.md':report.spec.goal}))assert.equal(fs.readFileSync(path.join(report.project,name),'utf8'),body);
+  assert.deepEqual(createStore(report.project).get(report.caseId),report.initialState);
   fs.writeFileSync(path.join(report.agentDir,'generation.claim'),'one continuation',{flag:'wx'});
   const save=()=>fs.writeFileSync(output,JSON.stringify(report,null,2));
   const store=createStore(report.project),start=performance.now();report.status='running';save();
@@ -66,7 +78,16 @@ if(mode==='prepare'){
     runtime.registerProvider('review-repair',{baseUrl:'http://127.0.0.1:8080/v1',api:'openai-completions',apiKey:'local',models:[{
       id:report.server.id,name:report.server.id,reasoning:true,input:['text'],contextWindow:32768,maxTokens:4096,
       compat:{supportsDeveloperRole:false,supportsReasoningEffort:false,thinkingFormat:'qwen-chat-template',maxTokensField:'max_tokens'},cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});
-    const run=await createPiSessionRunner({project:report.project,agentDir:report.agentDir,sdk,model:runtime.getModel('review-repair',report.server.id),modelRuntime:runtime,thinkingLevel:'medium',maxTurns:16});
+    report.requests=[];
+    const wrapped={...sdk,async createAgentSession(options){
+      const created=await sdk.createAgentSession(options),previousPayload=created.session.agent.onPayload;
+      created.session.agent.onPayload=async(payload,model)=>{
+        const transformed=await previousPayload?.(payload,model),p=transformed??payload;
+        assert.equal(p.chat_template_kwargs?.enable_thinking,report.configuration.thinkingLevel!=='off');
+        report.requests.push({role:report.sessions.at(-1)?.role,kwargs:p.chat_template_kwargs,maxTokens:p.max_tokens});save();return transformed;
+      };return created;
+    }};
+    const run=await createPiSessionRunner({project:report.project,agentDir:report.agentDir,sdk:wrapped,model:runtime.getModel('review-repair',report.server.id),modelRuntime:runtime,thinkingLevel:report.configuration.thinkingLevel,maxTurns:16});
     await runCase({store,caseId:report.caseId,signal:AbortSignal.timeout(600000),runSession:async request=>{
       const entry={role:request.role,prompt:request.prompt,startedAt:new Date().toISOString()};report.sessions.push(entry);save();console.log(`Started ${request.role}`);
       try{const result=await run(request);Object.assign(entry,result);return result;}
