@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { packetDefinition, attemptCount } from '../../skills/case-workflow/scripts/core/amendments.mjs';
 import { packetDiscoveryBlocked, unresolvedDiscoveries, discoveryIndex, discoveryReadNotice } from '../../skills/case-workflow/scripts/core/discoveries.mjs';
 import { validateDisputeShape } from '../../skills/case-workflow/scripts/core/review-dispute.mjs';
+import { jsonValue, evidence } from '../../skills/case-workflow/scripts/core/io.mjs';
 
 function error(code, message) { return Object.assign(new Error(message), { code }); }
 
@@ -32,6 +33,15 @@ export function validatePlannerReply(reply) {
     if (Object.hasOwn(reply,'reason') && (typeof reply.reason!=='string'||!reply.reason.trim())) invalid();
     if (Object.hasOwn(reply,'rerunPacketIds') && (!Array.isArray(reply.rerunPacketIds)||reply.rerunPacketIds.some(id=>typeof id!=='string'||!id.trim()))) invalid();
   }
+  return reply;
+}
+
+export function validateReviewerReply(reply) {
+  const invalid = () => { throw error('INVALID_REPLY', 'Reviewer reply must be exactly {"passed":true|false,"findings":["specific issues"],"evidence":"actual observations and limits"}. Do not wrap the reply in result; only case_result tool arguments use {"result": reply}. Correct the report in this session, not the artifact.'); };
+  try { jsonValue(reply); } catch { invalid(); }
+  if (!reply || Array.isArray(reply) || typeof reply !== 'object' || Object.keys(reply).length !== 3 ||
+      Object.keys(reply).some(k=>!['passed','findings','evidence'].includes(k)) ||
+      typeof reply.passed !== 'boolean' || !Array.isArray(reply.findings) || !evidence(reply.evidence)) invalid();
   return reply;
 }
 
@@ -83,9 +93,9 @@ export async function callSession(runSession, { onStart, ...input }) {
   if (!started || reply?.sessionId !== started) rejectReply('SESSION_MISMATCH', 'Session identity changed or was not reported');
   if (input.signal?.aborted) rejectReply('CANCELLED', 'Operation cancelled');
   if (typeof reply.text !== 'string' || !reply.text.trim()) rejectReply('EMPTY_REPLY', 'Model returned no final text');
-  if (input.role==='planner') {
+  if (input.role==='planner' || input.role==='reviewer') {
     try {
-      const decision=validatePlannerReply(parseReply(reply.text));
+      const decision=(input.role==='planner'?validatePlannerReply:validateReviewerReply)(parseReply(reply.text));
       await input.validateResult?.(decision);
     }
     catch (failure) { rejectReply(failure.code,failure.message); }

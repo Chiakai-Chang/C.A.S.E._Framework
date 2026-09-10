@@ -197,7 +197,7 @@ test('SDK trace records allowlisted thrown codes when pi end events contain only
         listener({type:'tool_execution_end',toolName:'case_read',toolCallId:'rejected',isError:true,result:{content:[{type:'text',text:error.message}]}});
       }
       listener({type:'turn_end'});
-    },getLastAssistantText:()=>'{"passed":true}',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+    },getLastAssistantText:()=>'{"passed":true,"findings":[],"evidence":"observed"}',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
   const run=await createPiSessionRunner({project:process.cwd(),agentDir:process.cwd(),model:{id:'local',provider:'local'},modelRuntime:{},sdk});
   const reply=await run({role:'reviewer',prompt:'verify',onStart(){}});
   assert.equal(reply.trace.events.find(e=>e.kind==='tool_end').metadata.errorCode,'UNSAFE_TOOL_PATH');

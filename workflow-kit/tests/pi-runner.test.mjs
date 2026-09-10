@@ -9,6 +9,23 @@ const runner = await import('../integrations/pi/runner.mjs').catch(error => {
     throw error;
 });
 
+test('reviewer format preserves negative verdicts and structured evidence without accepting malformed data',()=>{
+    const good={passed:false,findings:['wrong total'],evidence:{path:'out',observed:2}};
+    assert.equal(runner.validateReviewerReply(good),good);
+    for(const bad of [null,[],{passed:true}, {...good,passed:'false'}, {...good,evidence:''}, {...good,evidence:undefined}, {...good,result:{}}, {...good,findings:null}])
+      assert.throws(()=>runner.validateReviewerReply(bad),{code:'INVALID_REPLY'});
+});
+
+test('custom reviewer transport rejects wrapped replies before state dispatch and retains evidence',async()=>{
+    const raw=JSON.stringify({result:{passed:true,findings:[],evidence:'observed'}});
+    await assert.rejects(runner.callSession(async ({onStart})=>{
+      await onStart('review-shape');return {sessionId:'review-shape',text:raw};
+    },{role:'reviewer'}),failure=>{
+      assert.equal(failure.code,'INVALID_REPLY');
+      assert.equal(failure.sessionEvidence.text,raw);return true;
+    });
+});
+
 test('pi worker receives default source indexes while explicit inline materials remain attached',async t=>{
     const {createStore}=await import('../skills/case-workflow/scripts/core/index.mjs');
     const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-worker-index-')));

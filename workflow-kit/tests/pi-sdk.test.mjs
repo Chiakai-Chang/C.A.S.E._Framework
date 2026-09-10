@@ -9,6 +9,26 @@ const adapter = await import('../integrations/pi/sdk-session.mjs').catch(e => {
     throw e;
 });
 
+for (const transport of ['final-text','tool']) test(`reviewer corrects a wrapped reply in the same session: ${transport}`,async t=>{
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-review-shape-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    const good={passed:true,findings:[],evidence:'Read actual output'};
+    let prompts=0,finalText='';
+    const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+      async createAgentSession(options){return {session:{sessionId:'review-shape',subscribe(){return ()=>{};},
+        async prompt(){prompts++;const tool=options.customTools.find(t=>t.name==='case_result');
+          if(transport==='tool'){
+            await assert.rejects(tool.execute('bad',{result:{result:good}}),{code:'INVALID_REPLY'});
+            await tool.execute('good',{result:good});
+          }else finalText=JSON.stringify(prompts===1?{result:good}:good);
+        },getLastAssistantText:()=>finalText,getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+    const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+    const result=await run({role:'reviewer',prompt:'Verify output',onStart(){}});
+    assert.deepEqual(JSON.parse(result.text),good);
+    assert.equal(prompts,transport==='tool'?1:2);
+    assert.equal(result.replyCorrections.length,transport==='tool'?0:1);
+});
+
 test('read-only planning receives planning guidance at both system and result-tool boundaries',async t=>{
     const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-role-guidance-')));
     t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
@@ -173,7 +193,7 @@ test('SDK adapter produces fresh bounded sessions and captures tool evidence', a
                     async prompt() {
                         listener({ type: 'tool_execution_end', toolName: 'case_read', result: { content: [{ type: 'text', text: 'observed' }] } });
                     },
-                    getLastAssistantText: () => options.tools.includes('case_write') ? '{"summary":"written"}' : '{"passed":true}',
+                    getLastAssistantText: () => options.tools.includes('case_write') ? '{"summary":"written"}' : '{"passed":true,"findings":[],"evidence":"observed"}',
                     getSessionStats: () => ({ tokens: { input: 12, output: 8 }, toolCalls: 1, cost: 0 }),
                     abort: async () => {
                     }, dispose() {
@@ -287,7 +307,7 @@ for(const role of ['worker','reviewer','planner','integrator'])test(`capability 
         await write.execute('write',{path:caps.writeScope[0],content:'written through declared scope'});
         assert.equal(fs.readFileSync(path.join(project,'output'),'utf8'),'written through declared scope');
       }else assert.equal(write,undefined);
-      return {session:{sessionId:'capabilities',subscribe:()=>()=>{},prompt:async()=>{},getLastAssistantText:()=>role==='worker'?'{"summary":"written"}':role==='planner'?'{"blocked":{"reason":"required input missing"}}':'{"passed":true}',getSessionStats:()=>({}),dispose(){},abort:async()=>{}}};
+      return {session:{sessionId:'capabilities',subscribe:()=>()=>{},prompt:async()=>{},getLastAssistantText:()=>role==='worker'?'{"summary":"written"}':role==='planner'?'{"blocked":{"reason":"required input missing"}}':'{"passed":true,"findings":[],"evidence":"observed"}',getSessionStats:()=>({}),dispose(){},abort:async()=>{}}};
     }};
     const run=await adapter.createPiSessionRunner({project,agentDir:project,model:{id:'local',provider:'local'},modelRuntime:{},sdk,
       checks:{exact:{command:process.execPath,args:['-e','process.stdout.write("checked")'],criterionIds:['a']},whole:{command:process.execPath,args:['-e','throw Error("not built yet")']},unrelated:{command:process.execPath,args:[],criterionIds:['b']}}});
