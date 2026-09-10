@@ -9,6 +9,51 @@ const adapter = await import('../integrations/pi/sdk-session.mjs').catch(e => {
     throw e;
 });
 
+for(const mode of ['accepted','limit','cancelled'])test(`terminal ${mode} prevents post-stop compaction work`,async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-stop-compaction-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  let listener,enabled=true,active=true,extraModelWork=0;
+  const controller=new AbortController();
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(options){return {session:{sessionId:'stop-compaction',subscribe(fn){listener=fn;return ()=>{};},
+      setAutoCompactionEnabled(value){enabled=value;},abortCompaction(){active=false;},
+      async prompt(){
+        assert.equal(enabled,true,'normal execution retains compaction');
+        if(mode==='accepted')await options.customTools.find(t=>t.name==='case_result').execute('done',{result:{summary:'done'}});
+        if(mode==='limit'){listener({type:'turn_start'});listener({type:'turn_start'});}
+        if(mode==='cancelled')controller.abort();
+        if(enabled||active)extraModelWork++;
+      },getLastAssistantText:()=>'',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{},maxTurns:1});
+  const promise=run({role:'worker',prompt:'work',onStart(){},signal:controller.signal});
+  if(mode==='accepted')assert.equal(JSON.parse((await promise).text).summary,'done');
+  else await assert.rejects(promise,{code:mode==='limit'?'BUDGET_EXCEEDED':'CANCELLED'});
+  assert.equal(extraModelWork,0,'terminal sessions must not start or continue compaction');
+});
+
+for(const cancelled of [true,false])test(`compaction controller created after start notification respects cancellation: ${cancelled}`,async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-stop-race-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  const controller=new AbortController();
+  let listener,compactionController,compactionAborted;
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(){return {session:{sessionId:'stop-race',subscribe(fn){listener=fn;return ()=>{};},
+      setAutoCompactionEnabled(){},abortCompaction(){compactionController?.abort();},abort:async()=>{},
+      async prompt(){
+        // pi 0.84.2 awaits auth before announcing compaction, then creates its controller.
+        await Promise.resolve();
+        if(cancelled)controller.abort();
+        listener({type:'compaction_start',reason:'threshold'});
+        compactionController=new AbortController();
+        await Promise.resolve();
+        compactionAborted=compactionController.signal.aborted;
+      },getLastAssistantText:()=>'{"summary":"done"}',getSessionStats:()=>({}),dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  const promise=run({role:'worker',prompt:'work',onStart(){},signal:controller.signal});
+  if(cancelled)await assert.rejects(promise,{code:'CANCELLED'});else await promise;
+  assert.equal(compactionAborted,cancelled,'late controller must be cancelled only for a terminal session');
+});
+
 test('final-text pass triggers same-session acquisition repair while a negative review remains reportable',async t=>{
     const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-review-final-read-')));
     t.after(()=>fs.rmSync(project,{recursive:true,force:true}));fs.writeFileSync(path.join(project,'out'),'');

@@ -2,6 +2,20 @@ import test from 'node:test';
 import {createHash} from 'node:crypto';
 import {createScopedTools as scopedSearchTools} from '../integrations/pi/scoped-tools.mjs';
 
+test('missing read paths explain single-file arguments without silently redirecting reads',async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-read-argument-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  fs.writeFileSync(path.join(project,'source.txt'),'source');
+  const read=scopedSearchTools({project,role:'reviewer'}).find(t=>t.name==='case_read');
+  for(const name of ['["source.txt"]','"source.txt"','missing.txt'])
+    await assert.rejects(read.execute('bad',{path:name}),e=>{
+      assert.equal(e.code,'ENOENT');assert.match(e.message,/one file/);assert.match(e.message,/case_list/);
+      assert.ok(!e.message.includes(project));return true;
+    });
+  assert.equal((await read.execute('good',{path:'source.txt'})).details.path,'source.txt');
+  assert.equal(fs.readFileSync(path.join(project,'source.txt'),'utf8'),'source');
+});
+
 test('literal search uses existing read boundaries without giving a planner writes',async t=>{
   const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-search-scope-')));
   t.after(()=>fs.rmSync(project,{recursive:true,force:true}));

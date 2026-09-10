@@ -187,7 +187,13 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     trace = createSessionTrace({runId,sessionId:session.sessionId,role,project,agentDir,approvedCheckIds:Object.keys(scopedChecks)});
     trace.recordPolicy(resourceLoader,session);
     let abortPromise, abortFailure;
+    let terminal = false;
     const abort = () => {
+      terminal = true;
+      // pi abort() stops generation/retry, but does not cancel or disable
+      // compaction. A terminal session must not spend another model request.
+      try { session.setAutoCompactionEnabled?.(false); } catch(failure) { abortFailure ??= failure; }
+      try { session.abortCompaction?.(); } catch(failure) { abortFailure ??= failure; }
       abortPromise ??= Promise.resolve().then(() => session.abort()).catch(failure => { abortFailure = failure; });
     };
     signal?.addEventListener('abort', abort, { once: true });
@@ -199,6 +205,10 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     let budgetExceeded = false;
     const unsubscribe = session.subscribe(event => {
       trace.observe(event);
+      // pi 0.84.2 emits start before creating the compaction controller.
+      // Cancellation may have happened during its preceding auth await.
+      // Defer once so abortCompaction can see that newly created controller.
+      if (event.type === 'compaction_start' && terminal) queueMicrotask(abort);
       if (event.type === 'message_end' && event.message?.role === 'assistant') lastStopReason = event.message.stopReason;
       if (event.type === 'turn_start' && ++turns > maxTurns) { budgetExceeded = true; abort(); }
       if (event.type === 'tool_execution_start' && ['case_write','case_edit'].includes(event.toolName)) {

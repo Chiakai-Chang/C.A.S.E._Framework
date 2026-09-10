@@ -36,7 +36,12 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
     parameters: schema({ path: string('Relative file path'), startLine: { type: 'integer', minimum: 1 }, maxLines: { type: 'integer', minimum: 1, maximum: 200 } }),
     async execute(_id, args) {
       const file = resolve(args.path);
-      const stat = fs.statSync(file);
+      let stat;
+      try { stat = fs.statSync(file); }
+      catch(error) {
+        if(error.code!=='ENOENT')throw error;
+        readError('ENOENT',`File not found: ${JSON.stringify(args.path)}. case_read accepts one file per call, for example {"path":"source.txt"}; do not put a JSON list or extra quote characters inside path. Use case_list to confirm actual names, then retry the exact intended file. No alternative file was read.`);
+      }
       if (!stat.isFile() || stat.size > 1024 * 1024) fail('Expected a regular file of at most 1 MiB; pre-process larger data');
       const start = args.startLine ?? 1;
       const count = args.maxLines ?? 200;

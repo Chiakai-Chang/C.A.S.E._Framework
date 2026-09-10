@@ -24,6 +24,7 @@
 
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
+| 終止收尾：SDK session abort；讀檔缺失回饋：scoped-tools | pi-sdk／pi-tools、V2、英文指南、READINESS／STATUS | 接受／取消／超額停用及取消壓縮、晚建立 controller 的競態，正常壓縮保留；缺檔不自動改路徑，真實模型效果另列，不保證零額外計費 |
 | 核對回覆格式：pi runner 的 validateReviewerReply、sdk-session | pi-runner／pi-sdk／pi-trace 測試、V2、英文指南、READINESS／STATUS | 工具與最後文字同 session 修正、自訂 transport 拒收、原始回覆保存；格式不代替事實查核 |
 | 核對材料取得：pi runner verificationPaths、SDK session 讀取紀錄 | pi-sdk／pi-runner 測試、V2、ARCHITECTURE、英文指南、READINESS／STATUS | 零讀取、範圍外、來源過期拒收，空檔與路徑別名、最後文字修正、原提示預算；不宣稱語意正確 |
 | 局部返修：`integrations/pi/scoped-tools.mjs` 的 case_edit | SDK 寫入觀察、session-trace、pi-tools／trace 測試、read-receipt evaluator 路徑稽核、V2、英文與技能參照 | 唯一文字／來源版本／UTF-8／範圍、拒絕不改檔；實際模型修復另記且不延長舊案預算 |
