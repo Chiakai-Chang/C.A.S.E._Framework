@@ -9,15 +9,17 @@ import {createStore} from '../skills/case-workflow/scripts/core/index.mjs';
 import {createPiSessionRunner} from '../integrations/pi/sdk-session.mjs';
 import {runCase} from '../integrations/pi/runner.mjs';
 import {grade,digest} from './read-receipt-spec.mjs';
+import {replayFirstVerdict} from './review-dispute-replay.mjs';
 
 const [mode,sdkPath,output,variant]=process.argv.slice(2);
-assert.ok(variant===undefined||variant==='repaired-off','unknown diagnostic variant');
+assert.ok(variant===undefined||['repaired-off','dispute-off'].includes(variant),'unknown diagnostic variant');
 assert.ok(['prepare','run'].includes(mode)&&sdkPath&&output,'prepare|run SDK NEW_EVIDENCE');
 const repo=fileURLToPath(new URL('../../',import.meta.url));
 const priorPath=path.join(repo,'docs/evaluation/2026-09-08-worker-replay-evidence.json');
 const planningPath=path.join(repo,'docs/evaluation/2026-09-08-planning-handoff-evidence.json');
 const manifestPath=path.join(repo,'docs/evaluation/2026-09-08-planning-handoff-manifest.json');
 const repairPath=path.join(repo,'docs/evaluation/2026-09-09-repair-thinking-evidence.json');
+const verdictPath=path.join(repo,'docs/evaluation/2026-09-09-repaired-review-evidence.json');
 const hashFile=f=>digest(fs.readFileSync(f));
 let report;
 if(mode==='prepare'){
@@ -26,7 +28,7 @@ if(mode==='prepare'){
   const planning=JSON.parse(fs.readFileSync(planningPath)).results.find(r=>r.id==='B');
   const manifest=JSON.parse(fs.readFileSync(manifestPath));
   const spec=manifest.specs.main;
-  const repaired=variant==='repaired-off';
+  const repaired=['repaired-off','dispute-off'].includes(variant);
   const repair=repaired?JSON.parse(fs.readFileSync(repairPath)):null;
   const arm=repair?.results.find(r=>r.mode==='off');
   if(repaired)assert.equal(arm.grade.artifactPassed,true);
@@ -51,6 +53,8 @@ if(mode==='prepare'){
   for(const f of [fileURLToPath(import.meta.url),priorPath,planningPath,manifestPath,path.resolve(sdkPath)])codeHashes[f]=hashFile(f);
   for(const name of ['read-receipt-spec.mjs','real-task-spec.mjs']){const f=path.join(repo,'workflow-kit/evaluation',name);codeHashes[f]=hashFile(f);}
   if(repaired)codeHashes[repairPath]=hashFile(repairPath);
+  codeHashes[fileURLToPath(new URL('./review-dispute-replay.mjs',import.meta.url))]=hashFile(fileURLToPath(new URL('./review-dispute-replay.mjs',import.meta.url)));
+  if(variant==='dispute-off')codeHashes[verdictPath]=hashFile(verdictPath);
   report={kind:'synthetic-review-repair/1',status:'prepared',project,agentDir,caseId:state.id,spec,
     codeHashes,sdkPath:path.resolve(sdkPath),initialArtifactSha256:digest(artifact),transitions,initialState:state,
     priorWorkerElapsedMs:prior.elapsedMs,priorWorkerUsage:prior.session.usage,
@@ -58,6 +62,13 @@ if(mode==='prepare'){
     configuration:{thinkingLevel:repaired?'off':'medium',contextWindow:32768,maxTokens:4096,maxTurns:16,continuationBudgetMs:600000},
     limitations:['Synthetic submitted state; not native resumption of worker-only history.','One continuation diagnostic, no causal comparison.','600-second continuation budget is additional to recorded prior worker cost; not original whole-task budget.','No oracle is supplied to sessions.','GGUF and complete SDK dependency tree not byte-frozen.'],sessions:[]};
   assert.equal(grade(project,spec).artifactPassed,repaired,'fixture must match selected evidence');
+  if(variant==='dispute-off'){
+    const historical=JSON.parse(fs.readFileSync(verdictPath));
+    assert.equal(historical.initialArtifactSha256,report.initialArtifactSha256);
+    assert.deepEqual(historical.spec,report.spec);
+    report.historicalVerdict=JSON.parse(historical.sessions.find(s=>s.role==='integrator').text);
+    report.limitations.push('First integrator reply is a labelled historical denial, not a live model result. Reviewer, planner and subsequent integrator use the live model.');
+  }
   fs.writeFileSync(output,JSON.stringify(report,null,2),{flag:'wx'});
   console.log(JSON.stringify({status:report.status,caseId:state.id,initialArtifactSha256:report.initialArtifactSha256}));
 }else{
@@ -87,7 +98,10 @@ if(mode==='prepare'){
         report.requests.push({role:report.sessions.at(-1)?.role,kwargs:p.chat_template_kwargs,maxTokens:p.max_tokens});save();return transformed;
       };return created;
     }};
-    const run=await createPiSessionRunner({project:report.project,agentDir:report.agentDir,sdk:wrapped,model:runtime.getModel('review-repair',report.server.id),modelRuntime:runtime,thinkingLevel:report.configuration.thinkingLevel,maxTurns:16});
+    const liveRun=await createPiSessionRunner({project:report.project,agentDir:report.agentDir,sdk:wrapped,model:runtime.getModel('review-repair',report.server.id),modelRuntime:runtime,thinkingLevel:report.configuration.thinkingLevel,maxTurns:16});
+    const run=report.variant==='dispute-off'?replayFirstVerdict(liveRun,report.historicalVerdict,result=>{
+      report.replayedVerdict={...result,source:verdictPath};save();
+    }):liveRun;
     await runCase({store,caseId:report.caseId,signal:AbortSignal.timeout(600000),runSession:async request=>{
       const entry={role:request.role,prompt:request.prompt,startedAt:new Date().toISOString()};report.sessions.push(entry);save();console.log(`Started ${request.role}`);
       try{const result=await run(request);Object.assign(entry,result);return result;}
@@ -97,5 +111,10 @@ if(mode==='prepare'){
   }catch(e){report.status='failed';report.error={code:e.code??e.name,message:e.message};}
   report.elapsedMs=performance.now()-start;report.grade=grade(report.project,report.spec);report.finalState=store.get(report.caseId);report.runs=store.listRuns(report.caseId);
   report.codeUnchanged=Object.entries(report.codeHashes).every(([f,h])=>hashFile(f)===h);save();
+  if(report.variant==='dispute-off'){
+    const disputes=report.runs.flatMap(r=>r.reviewDisputes??[]);
+    report.disputeGrade={replayed:!!report.replayedVerdict,accepted:disputes.some(d=>d.status==='accepted'),artifactUnchanged:hashFile(path.join(report.project,report.spec.output))===report.initialArtifactSha256,noWorker:!report.sessions.some(s=>s.role==='worker')};
+    report.disputeGrade.passed=report.status==='completed'&&report.grade.artifactPassed&&report.grade.sourcesPreserved&&report.codeUnchanged&&Object.values(report.disputeGrade).every(v=>v===true);save();
+  }
   console.log(JSON.stringify({status:report.status,artifactPassed:report.grade.artifactPassed,roles:report.sessions.map(s=>s.role),elapsedMs:report.elapsedMs,error:report.error}));
 }

@@ -38,7 +38,7 @@ function codeInventory(sdkPath){
   }};
   collect(path.join(kit,'integrations/pi'));collect(path.join(kit,'skills/case-workflow/scripts/core'));
   collect(path.join(kit,'tests'));result[path.join(kit,'package.json')]=hashFile(path.join(kit,'package.json'));
-  for(const name of ['read-receipt-comparison.mjs','read-receipt-spec.mjs','real-task-spec.mjs']){const p=path.join(kit,'evaluation',name);result[p]=hashFile(p);}
+  for(const name of ['read-receipt-comparison.mjs','read-receipt-spec.mjs','real-task-spec.mjs','single-journey.mjs']){const p=path.join(kit,'evaluation',name);result[p]=hashFile(p);}
   // Freeze the selected SDK installation, including nested runtime dependencies.
   const sdkRoot=path.dirname(path.dirname(sdkPath));
   if(!fs.existsSync(path.join(sdkRoot,'package.json')))throw new Error('--sdk must select a package dist/index.js');
@@ -63,7 +63,9 @@ async function serverSnapshot(){
   return {modelId,buildInfo:props.build_info??null,defaultGenerationSettings:props.default_generation_settings??null};
 }
 
-export async function freeze({sdkPath,output,sdk:providedSdk,inspectServer=serverSnapshot,inventory=codeInventory}){
+export async function freeze({sdkPath,output,thinkingLevel='medium',sdk:providedSdk,inspectServer=serverSnapshot,inventory=codeInventory}){
+  if(!['off','medium'].includes(thinkingLevel))throw new Error('thinkingLevel must be off or medium');
+  const selectedConfiguration={...configuration,thinkingLevel};
   sdkPath=path.resolve(sdkPath);output=path.resolve(output);
   if(fs.existsSync(output))throw new Error('Manifest must be a new file');
   const sdk=providedSdk??await import(pathToFileURL(sdkPath).href),frozenSpecs=specs();
@@ -79,7 +81,7 @@ export async function freeze({sdkPath,output,sdk:providedSdk,inspectServer=serve
   // Inputs are small enough that the receipt must not reduce available source text.
   for(const spec of Object.values(frozenSpecs))for(const [f,text] of Object.entries(spec.sources))
     if(text.length+2048>24000)throw new Error(`Source needs a different frozen fixture: ${f}`);
-  const manifest={format:'case-read-receipt/1',id:randomUUID(),createdAt:new Date().toISOString(),sdkPath,batchRoot,configuration,
+  const manifest={format:'case-read-receipt/1',id:randomUUID(),createdAt:new Date().toISOString(),sdkPath,batchRoot,configuration:selectedConfiguration,configurationSha256:digest(JSON.stringify(selectedConfiguration)),
     server:await inspectServer(),specs:frozenSpecs,slots,codeHashes:inventory(sdkPath),
     specSha256:digest(JSON.stringify(frozenSpecs)),order:['probe','A','B','holdout-if-new-only'],
     unknowns:{seed:'not requested; support unknown',cache:'not reset; warm-cache and order effects unknown',hardwareCost:'unknown',preparationCost:'unknown'},
@@ -88,7 +90,10 @@ export async function freeze({sdkPath,output,sdk:providedSdk,inspectServer=serve
 }
 
 export function verifyFrozen(manifest){
-  if(manifest.format!=='case-read-receipt/1'||!Object.keys(manifest.codeHashes??{}).length||JSON.stringify(manifest.configuration)!==JSON.stringify(configuration)||digest(JSON.stringify(manifest.specs))!==manifest.specSha256)
+  const selected=manifest.configuration,level=selected?.thinkingLevel;
+  const validConfiguration=['off','medium'].includes(level)&&JSON.stringify(selected)===JSON.stringify({...configuration,thinkingLevel:level})&&
+    (manifest.configurationSha256?manifest.configurationSha256===digest(JSON.stringify(selected)):level==='medium');
+  if(manifest.format!=='case-read-receipt/1'||!Object.keys(manifest.codeHashes??{}).length||!validConfiguration||digest(JSON.stringify(manifest.specs))!==manifest.specSha256)
     throw new Error('Invalid or changed manifest');
   for(const [file,hash] of Object.entries(manifest.codeHashes))if(hashFile(file)!==hash)throw new Error(`Frozen code changed: ${file}`);
 }
@@ -117,9 +122,9 @@ export function audit(record,spec){
   let paths=record.toolPolicyViolation?'violated':'verified';
   for(const event of record.toolAudit??[]){
     if(event.kind!=='start')continue;
-    if(['case_read','case_write','case_list'].includes(event.toolName)){
+    if(['case_read','case_search','case_write','case_list'].includes(event.toolName)){
       if(typeof event.path!=='string'&&paths!=='violated')paths='unknown';
-      else if(event.toolName==='case_read'&&!allowedRead.has(event.path)||event.toolName==='case_write'&&event.path!==spec.output||event.toolName==='case_list'&&event.path!=='.')paths='violated';
+      else if(['case_read','case_search'].includes(event.toolName)&&!allowedRead.has(event.path)||event.toolName==='case_write'&&event.path!==spec.output||event.toolName==='case_list'&&event.path!=='.')paths='violated';
     }else if(!['case_result','case_discover','case_discovery_read'].includes(event.toolName))paths='violated';
   }
   const g=record.grade;
@@ -169,7 +174,7 @@ export async function executeArm({manifest,id,sdk,onUpdate=()=>{}}){
       }
       options={...options,customTools:options.customTools.map(tool=>({...tool,async execute(callId,args,...rest){
         const p=typeof args?.path==='string'?args.path.replaceAll('\\','/').replace(/^(\.\/)+/,''):null;
-        const permitted=tool.name==='case_read'?[...Object.keys(spec.sources),'requirements.md',spec.output].includes(p):tool.name==='case_write'?p===spec.output:tool.name==='case_list'?p==='.':['case_result','case_discover','case_discovery_read'].includes(tool.name);
+        const permitted=['case_read','case_search'].includes(tool.name)?[...Object.keys(spec.sources),'requirements.md',spec.output].includes(p):tool.name==='case_write'?p===spec.output:tool.name==='case_list'?p==='.':['case_result','case_discover','case_discovery_read'].includes(tool.name);
         if(!permitted)record.toolPolicyViolation=true;
         retain(record,'toolAudit',{kind:'start',toolCallId:callId,toolName:tool.name,path:p});save();
         try{const result=await tool.execute(callId,args,...rest);retain(record,'toolAudit',{kind:'end',toolCallId:callId,toolName:tool.name,isError:result.isError===true});
@@ -191,7 +196,7 @@ export async function executeArm({manifest,id,sdk,onUpdate=()=>{}}){
           sampling:{seed:p.seed??null,temperature:p.temperature??null,topP:p.top_p??null}});save();return transformed;
       };return created;
     }};
-    const run=await createPiSessionRunner({project:slot.project,agentDir:slot.agentDir,sdk:wrapped,model:runtime.getModel('case-read-receipt-local',manifest.server.modelId),modelRuntime:runtime,maxTurns:16,thinkingLevel:'medium'});
+    const run=await createPiSessionRunner({project:slot.project,agentDir:slot.agentDir,sdk:wrapped,model:runtime.getModel('case-read-receipt-local',manifest.server.modelId),modelRuntime:runtime,maxTurns:16,thinkingLevel:manifest.configuration.thinkingLevel});
     const traced=async request=>{
       const entry={role:request.role,prompt:request.prompt,writeScope:request.writeScope??[],startedAt:new Date().toISOString()};record.sessions.push(entry);save();
       try{const reply=await run(request);Object.assign(entry,reply);return reply;}

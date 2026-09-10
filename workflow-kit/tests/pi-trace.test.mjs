@@ -12,6 +12,20 @@ const create = options => {
   assert.equal(typeof traceModule.createSessionTrace, 'function', 'bounded trace must be implemented');
   return traceModule.createSessionTrace({runId:'run',sessionId:'session',role:'worker',project:process.cwd(),agentDir:path.join(process.cwd(),'private-config'),approvedCheckIds:['approved'],...options});
 };
+
+test('search trace retains source identity and pagination but not query or matching text',()=>{
+  const trace=create();trace.observe({type:'turn_start'});
+  trace.observe({type:'tool_execution_start',toolName:'case_search',toolCallId:'search',args:{path:'source.txt',query:'SECRET query'}});
+  trace.observe({type:'tool_execution_end',toolName:'case_search',toolCallId:'search',isError:false,result:{details:{path:'source.txt',sourceSha256:sha('source'),startLine:1,matches:[{line:2,text:'SECRET source'}],truncated:false,nextStartLine:null}}});
+  trace.observe({type:'turn_end'});
+  const record=trace.finish('completed'),end=record.events.find(e=>e.kind==='tool_end');
+  assert.equal(end.toolName,'case_search');
+  assert.equal(end.metadata.sourceSha256,sha('source'));
+  assert.equal(end.metadata.matchCount,1);
+  assert.equal(end.metadata.nextStartLine,null);
+  assert.equal(JSON.stringify(record).includes('SECRET'),false);
+  assert.equal(record.traceComplete,true);
+});
 test('trace pairs parallel tools by identity and retains only approved result metadata', () => {
   const trace=create();
   trace.observe({type:'turn_start'});

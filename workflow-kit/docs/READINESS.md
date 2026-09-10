@@ -1,58 +1,49 @@
 # 功能覆蓋與驗證範圍
 
-9/10：[混合規劃回覆修正](../../docs/design/2026-09-10-review-dispute-boundary.md)已完成，265/265 工程測試通過。錯誤工具回覆可在同 session 修正；自訂 runner 不可繞過回傳檢查。未新增模型實測，不代表誤判與整案結案問題已解決。
+更新：2026-09-10。此頁區分工程行為、模型結果及交付狀態；測試數不代替模型效果。套件仍為 **2.0.0-preview.1**，本次工作分支尚未合併／推送。
 
-9/9 最新[修復後核對](../../docs/evaluation/2026-09-09-repaired-review-report.md)：非思考設定下 reviewer 通過，integrator 卻誤判來源，planner 回報錯誤障礙，約 409 秒停止而未結案。成果與來源均保持正確；混合 planner 回覆及異議處置仍待修。前次[修復設定對照](../../docs/evaluation/2026-09-09-repair-thinking-report.md)兩組修好，不等於整體流程可靠。產品預設未改；下列為前批證據。
+## 目前結論
 
-9/9 [修復旅程](../../docs/evaluation/2026-09-09-review-repair-report.md)：由真實缺欄成果重建待核對起點，原 reviewer 找出問題並退回；worker 未寫入即逾時，未到 integration。這不是原 session 自然接續或整案成功率比較。工程回歸仍為 259/259；產品指引／模型設定未改。
+| 面向 | 已知結果與限制 |
+|---|---|
+| 工程回歸 | 完整 kit **304 項：302 通過、2 項 Windows 符號連結權限跳過**；不代表所有 AI 工具或模型已驗收 |
+| 已完成的介面修正 | 角色系統／工具指引一致化；`case_search` 提供指定單檔的有界字面搜尋、完整匹配行、來源 SHA256 與續頁，沒有增加權限 |
+| 最新正常任務 | **601.856 秒**達 600 秒上限後以 `CANCELLED` 結束，只經 planner → worker；沒有產物，未進入 reviewer／integrator |
+| context 壓縮 | worker 確實觸發 overflow 壓縮，100.361 秒完成且未中止；後續 request 的 `maxTokens` 由 1955 → 1 → 4096，確認輸出額度恢復，不代表必要語意完整保留 |
+| 來源與工具範圍 | 來源完整性及最終寫入範圍核對通過；錯誤相對路徑請求仍被測試標為工具範圍違規，不能宣稱全部範圍檢查通過 |
+| 成本 | **234,469 SDK 累計 tokens**（含 cache）；不是峰值 context，也不代表全部成本。取消期間的未回報用量不能算零 |
+| 審查異議 | 工程已實作引用與版本檢查、一次重核及中斷保護；先前受控模型診斷未通過，最新正常任務沒有走到異議分支 |
+| 未解缺口 | 壓縮恢復已確認，執行者仍反覆查讀、未產出。預覽功能不等於核心品質目標驗收成功，不原樣重跑或以發布掩蓋 |
+| 使用建議 | 短工作直接完成；需要版本化交辦、接續或獨立核對時再用完整流程。不建議無人監督執行重要工作 |
 
-日期：2026-09-06。這份表核對完整交付，不以 M0 測試數或未執行的模型比較代稱產品效果。
+最新結果收錄於 [搜尋、角色與壓縮復盤](../../docs/evaluation/2026-09-10-search-and-role-report.md)，[壓縮旅程原始證據](../../docs/evaluation/2026-09-10-normal-compaction-evidence.json)及 [manifest](../../docs/evaluation/2026-09-10-normal-compaction-manifest.json) 保留受測版本與失敗。worker 的壓縮事件從 270,543 ms 到 370,904 ms，`aborted=false`；確認機制運作不能替代成果驗收。
 
-## v2 預覽的新增範圍
+較早 332.123 秒的搜尋／角色修正旅程也未產出，屬不同受測版本，保留在下方索引而不覆寫。受控異議重播、一般核對、正常任務及壓縮旅程的起點與涵蓋階段不同，不合併成一次成功或可靠度統計。產品預算、權限與驗收不因失敗放寬。
 
-9/8 接續診斷：真實 SDK 的受控回覆測試確認 worker schema、工具配對及同 session 缺檔修復接線正常。另一次真實 worker-only 重播約 211 秒寫出檔案，但漏一個必要欄位，仍未通過；沒有 reviewer／integrator，不能當成完整流程成功或失敗的比較。下一步驗證可機械檢查的需求及具體修復；原始證據與限制見下列同一份報告。
+## 證據索引：依問題查閱，不串成一次成功
 
-最新[交辦分界比較](../../docs/evaluation/2026-09-08-planning-handoff-report.md)：完整工程回歸 **259/259**。同讀取回條下，新組規劃 49.461 秒、基準 521.345 秒，但兩組皆無產物且逾時。新組 worker 出現輸出上限、回傳規劃形狀、缺檔拒收及重新讀取已附來源，沒有寫入。短 probe 成功，不抵銷完整任務失敗。保留有界索引與交辦分界，不宣稱完成率改善；下一步聚焦執行者邊界，不繼續疊加規劃控制器。以下為前批／歷史結果。
+| 問題／日期 | 報告 | 可支持的結論 |
+|---|---|---|
+| 9/10 壓縮恢復後正常任務 | [最新復盤](../../docs/evaluation/2026-09-10-search-and-role-report.md)、[證據](../../docs/evaluation/2026-09-10-normal-compaction-evidence.json) | 壓縮完成且輸出額度恢復，601.856 秒取消仍未產出 |
+| 9/10 搜尋及角色修正後正常任務 | [旅程報告](../../docs/evaluation/2026-09-10-search-and-role-report.md)、[證據](../../docs/evaluation/2026-09-10-normal-search-evidence.json)、[manifest](../../docs/evaluation/2026-09-10-normal-search-manifest.json) | 332.123 秒未產出、未進核對；累計 435,405 SDK tokens（含 cache），非峰值 context |
+| 9/10 錯誤否決能否自動反證 | [受控異議](../../docs/evaluation/2026-09-10-controlled-dispute-report.md) | 未形成有效異議；成果保留，角色指示存在可修正的不一致 |
+| 9/10 修復成果能否一般核對 | [一般核對與目標復盤](../../docs/evaluation/2026-09-10-dispute-review-report.md) | 約 220 秒完成指定核對，沒有異議分支 |
+| 9/9 為何成果正確卻不結案 | [修復後核對](../../docs/evaluation/2026-09-09-repaired-review-report.md) | reviewer 通過，integrator 誤判、planner 錯誤受阻 |
+| 9/9 明確修復是否能寫入 | [修復設定對照](../../docs/evaluation/2026-09-09-repair-thinking-report.md)、[前次逾時](../../docs/evaluation/2026-09-09-review-repair-report.md) | off／medium 的指定修復均成功；前次沒有寫入，不能外推整案可靠度 |
+| 9/8 交辦及讀取資訊 | [交辦分界](../../docs/evaluation/2026-09-08-planning-handoff-report.md)、[讀取回條](../../docs/evaluation/2026-09-06-read-receipt-report.md) | 工程接線與局部改善不等於完整任務成功；失敗與成本保留 |
+| 先前完整生命週期 | [發現／修復驗收](../../docs/evaluation/case-discovery-repair-report.md) | 指定案例完成即時回報、補包、原 session 修復與獨立整合，非普遍可靠度 |
+| 固定版效益 | [三類比較](../../docs/evaluation/case-value-validation-report.md)、[真實專案比較](../../docs/evaluation/2026-09-06-real-task-report.md) | 未觀察到 CASE 品質或成本優勢；不推薦一律分工 |
+| 先前公開交付 | [發布核對](../../docs/evaluation/2026-09-06-preview-release-checks.md) | 當時安裝與跨平台 CI；不涵蓋本次未交付分支 |
 
-2026-09-08 工作分支新增模型可見讀取回條、有界 session 診斷及保存失敗保護，Windows／Node 24.19 完整回歸 **256/256 通過**。新舊格式模型對照與原始證據集中於[讀取回條驗證](../../docs/evaluation/2026-09-06-read-receipt-report.md)；工程通過不代表模型品質改善，也不代替此分支的跨平台 CI。以下 220 項及模型比較屬先前版本。
+完整研究與設計導航見 [MAP](../../MAP.md)。報告中的當時測試數、下一步與未實作描述保留歷史意義；現況以上方摘要為準。
 
-本批三次模型生成已結束：短探測通過；同版 CASE 的舊格式組產物正確但未完成驗收，新格式組沒有產物，兩組都逾時。約束／軌跡完整，沒有追加抽樣或觸發 holdout。結論是介面缺口已修正，較完整任務效益未證明；下一個候選是改善規劃與詳細查證的責任分界，不自動增加控制器。
-
-發布收尾回歸 **220/220 通過**：補齊工作包／工具共用受保護路徑，以及真實任務評分對額外檔案／需求檔改寫的拒絕。以下模型比較在此保護修正前凍結執行，未在途中修改程式，也不宣稱測過修正版的模型效益。最新安裝與合併核對見[發布紀錄](../../docs/evaluation/2026-09-06-preview-release-checks.md)。
-
-最新[真實專案資訊整理比較](../../docs/evaluation/2026-09-06-real-task-report.md)：原生 pi 81.181 秒／62,396 SDK tokens，CASE 596.062 秒／87,964；兩組均無合格產物，沒有觀察到 CASE 優勢。兩臂固定相同來源與受測程式，不介入或追加成功樣本；這與下方指定故障注入的成功是不同證據，不能互相抵銷。
-
-### 本次完整生命週期修復
-
-工程回歸 **169/169 通過**。即時發現、原子處置／補包、同 session 自查修復、獨立工作續行、等待不重問、有界索引／唯讀取證、接受後程式交棒及拒絕未知回報欄位已實作。獨立審閱重現的過期等待與 context 超量已修正；局部複核沒有新增重要問題。技能四情境與分頁操作核對、UTF-8 技能驗證均完成。
-
-本次模型結果見[驗收與復盤](../../docs/evaluation/case-discovery-repair-report.md)及[證據](../../docs/evaluation/case-discovery-repair-evidence.json)：缺檔注入後同 session 修復已有整案成功；新佇列探測的成功、失敗及逾時依各次結果分列，不能只看產物正確就省略整合。以下保留先前版本觀察，不是本次最新版的測試計數或可靠度。
-
-最新同版實測：discovery 04 完成即時回報、採納補包、兩產物及獨立整合，415.643 秒；self-repair 03 完成缺檔拒收、同 session 修復及獨立整合，63.821 秒。兩案 16 份核心／pi 程式雜湊一致；封裝 dry-run 33 檔通過。其餘未通過探測完整保留，不混算成功率。
-
-### 先前版本的效益與開發觀察
-
-最新效益驗收：同模型固定版、三種情境各一對已完成。[結果](../../docs/evaluation/case-value-validation-report.md)為直接執行／摘要接續三案通過，CASE 兩案通過、一案因報表未實際寫入而失敗；成功案也較慢。因此不推薦完整分工作為預設；六筆結果不是普遍成功率估計。125 項工程回歸通過，不抵銷真實模型失敗。
+## v2 功能與較早驗證
 
 [v2 指南](V2.md) 為新入口。共用核心已提供版本化契約、來源／產物 SHA256、相依工作包、不同 session 核對、全域整合、預算及顯式 v1 遷移；pi runner 使用新 session 依序規劃、執行、核對與整合。核心與 runner 的行為測試不等於模型效果驗收。
 
 pi 0.84.2 的 `pi install -l <本機checkout>/workflow-kit` 已在隔離專案成功，實際 SDK loader 從該專案設定找到 extension，註冊 `case_workflow` 及 `/case`，errors 為空。原生 create/run 也已在真實本地模型完成：124.914 秒，四個角色 session，產物逐 byte 符合且來源未改。原生 remove 成功後，專案套件清單不再登錄 CASE，卷宗、產物與來源套件 SHA256 前後一致；證據在 repository 的 `docs/evaluation/case-v2-native-evidence.json`。核心需 Node 20+，該 pi 版本需 Node 22.19+；其他工具目前只有技能／核心入口，未建立其自動 session 整合。
 
-真實本地模型 CSV 的單 context／分離流程已有 smoke 成功，但重複配對也觀察到分離流程的 integrator 回覆了不合法驗收 ID，核心拒絕結案。開發期五組配對及失敗已保存在 repository 的 `docs/evaluation/case-v2-local-report.md` 與原始紀錄，不能將修正前後混成固定版本統計。格式指引修正後一組，單 context 23.538 秒／SDK total tokens 6069，分離 115.405 秒／21198，兩者獨立產物核對通過；這個簡單工作未顯示分離的品質收益。不能宣稱普遍提升品質、節省成本或完成所有設計驗收。一般 extension 沒有任意 shell 或預設可執行測試清單，工具讀取核對與真正執行測試應分列。
-
-當時比較版本的工程回歸 125/125 通過，涵蓋核心、舊 Kit、回饋接續、專案共識、實際檢查、計畫預檢、有界結構化回報補正、SDK、原生入口及封裝；不代替遠端矩陣或模型效果研究。目前標準命令為 `npm test --prefix workflow-kit`，最新結果見上節。
-
-額外三個 holdout 各執行一次：跨檔案資料彙整通過（88.360 秒）、缺必要價格檔安全停止且未捏造產物（46.084 秒）、保留已核對上游的接續通過（62.378 秒）。原始紀錄在 repository 的 `docs/evaluation/case-v2-holdout-evidence.json`；上游是確定性測試準備，不是模型先前成果或殺程序恢復。缺料案原始回覆雖指出缺檔，卻形成空產物包，得到不清楚的 INVALID_ARGUMENT；後續補上 `{blocked:{reason}}` 出口，以非空原因回報 BLOCKED 且不派 worker。該修正由回歸測試核對，不改寫原始模型結果。這些有限探測不代表長 context、跨模型及設計全部效益驗收通過。
-
-本輪新增回饋流程的四次本機模型探測皆未完成任務：先後遇到純文字格式失敗、能力誤認、重複讀取直到時間預算用完。第 4 次已確認送出前工具清單含寫入工具，仍無產物。詳見[本輪報告](../../docs/evaluation/case-feedback-report.md)與[失敗證據](../../docs/evaluation/case-feedback-development-evidence.json)。不能用先前較簡單案例的成功抵銷這項可靠度缺口，目前仍是預覽。
-
-接續修復（2026-09-06）：pi 全域安裝缺檔已修復；CASE 的工具提示、SDK 模型 compat、blocked 分類、delivery 格式與檢查階段分配已修正。第 5–8 次仍未完成，第 9 次開啟思考後兩份產物精確值核對通過，但時間到期、整案未完成。見[最新修復報告](../../docs/evaluation/case-core-repair-report.md)，不以產物正確省略剩餘驗收，也不將開發期不同設定混為成功率。
-
-第 10 次開啟思考並給十分鐘整案上限，328.253 秒後因 report worker 超過 12 回合失敗；反覆越範圍寫入被拒絕，report 未建立。仍未證明新回饋流程可可靠完成；並非只差使用者實測。
-
-後續第 11–13 次仍失敗，分別為只讀不寫、規劃漏驗收及文字回報未被接受。補上計畫預檢與原 session 一次補正後，**第 14 次完整通過**（489.696 秒／122831 SDK 累計 tokens）：模型補計畫、完成 normalized 與 report、不同 session 核對、整案 completed；另外精確值檢查 exit 0、來源 SHA256 未改。完整失敗及成本見[接續證據](../../docs/evaluation/case-core-repair-followup-evidence.json)。單次成功不代表普遍可靠；沒有放寬權限、繞過驗收、重置預算或改模型服務。
-
-第 15 次同版同設定確認亦完整通過：469.135 秒／105633 SDK 累計 tokens，七個獨立 session、精確值檢查 exit 0、來源不變，未觸發補問。第 14–15 次連續成功，但不足以估計普遍成功率；本次驗證設定是 medium，並未將它寫成通用預設或改使用者全域 pi 設定。
+較早 v2 開發期的 CSV、缺料、接續與回饋探測，包含成功、格式錯誤、反覆讀取、缺產物與逾時。它們使用不同修正版本，不應混算成功率。完整紀錄見 [初期模型驗證](../../docs/evaluation/case-v2-local-report.md)、[holdout 原始證據](../../docs/evaluation/case-v2-holdout-evidence.json)、[回饋探測](../../docs/evaluation/case-feedback-report.md)、[核心修復](../../docs/evaluation/case-core-repair-report.md)及[接續證據](../../docs/evaluation/case-core-repair-followup-evidence.json)。這些歷史結果不替代上方目前狀態。
 
 ## v1 已交付能力與歷史驗證
 

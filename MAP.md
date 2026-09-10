@@ -4,13 +4,17 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
-| 拒絕混合規劃回覆、處理錯誤審查 | [介面修正與異議設計](docs/design/2026-09-10-review-dispute-boundary.md) | 混合回覆已拒收，265 項測試通過；不改成果的異議處置尚未實作 |
-| 修復後為何仍無法結案 | [核對分歧與復盤](docs/evaluation/2026-09-09-repaired-review-report.md) | reviewer 通過，integrator 誤判、planner 錯誤受阻；成果仍正確，異議處置待修 |
+| 查看最新角色／搜尋／壓縮與正常任務 | [實測與裁定](docs/evaluation/2026-09-10-search-and-role-report.md) | 壓縮完成且輸出額度恢復，約 602 秒取消仍未產出；前次約 332 秒失敗另存，不混算 |
+| 查看 9/10 受控異議失敗 | [受控診斷與裁定](docs/evaluation/2026-09-10-controlled-dispute-report.md) | 約 422 秒未通過；成果保留，planner 格式／來源判斷失敗；當時角色指引缺口的依據，不取代後續正常任務結果 |
+| 核對 9/10 已保存成果與目標關聯 | [結果與復盤](docs/evaluation/2026-09-10-dispute-review-report.md) | 一般核對通過、異議未觸發；工程與封裝結果、成本及限制分開 |
+| 中斷後如何接續與收斂交付 | [接續計畫](docs/superpowers/plans/2026-09-10-recovery-and-delivery.md) | 先保存證據、分開收尾與權限問題，再補異議診斷、正常旅程及使用文件 |
+| 拒絕混合規劃回覆、處理錯誤審查 | [介面修正與異議設計](docs/design/2026-09-10-review-dispute-boundary.md) | 異議資料、權限、一次重核與中斷接續設計；目前工程及模型結果見 READINESS，不以設計代替驗證 |
+| 修復後為何仍無法結案 | [核對分歧與復盤](docs/evaluation/2026-09-09-repaired-review-report.md) | reviewer 通過，integrator 誤判、planner 錯誤受阻；當時成果仍正確但未結案；後續異議實作與診斷見 READINESS |
 | 選擇明確修復的執行設定 | [思考開關對照](docs/evaluation/2026-09-09-repair-thinking-report.md) | off／medium 均修好；單次 132／458 秒，不外推所有任務 |
 | 接續驗證既有核對與修復 | [9/9 修復旅程](docs/evaluation/2026-09-09-review-repair-report.md) | reviewer 找出缺欄，worker 未寫入即逾時；不等於整案完成 |
 | 改善漏驗、修復與驗收負擔 | [復盤與建議](docs/research/2026-09-08-acceptance-improvement-review.md)、[一手來源](docs/research/2026-09-08-acceptance-feedback-sources.md) | 先驗既有 reviewer／repair，再比較結構檢查；研究方案非已實作能力 |
 | 規劃是否提前解題、執行是否重讀或漏驗 | [交辦分界修正與實測](docs/evaluation/2026-09-08-planning-handoff-report.md) | 材料概況、交辦分界、SDK 接線及單獨 worker 重播；保留失敗與驗收限制 |
-| 解決最新反覆操作與未產出 | [驗證與復盤](docs/evaluation/2026-09-06-read-receipt-report.md)、[執行計畫](docs/design/2026-09-06-read-receipt-implementation.md)、[修正設計](docs/design/2026-09-06-stalled-execution-resolution.md)、[審閱裁定](docs/design/2026-09-06-stalled-execution-review.md)、[一手來源](docs/research/2026-09-06-stalled-execution-sources.md) | 讀取語意、context／trace 邊界與有限對照；工程修正與模型效果分開，不宣稱唯一根因 |
+| 回查讀取回條與未產出診斷 | [驗證與復盤](docs/evaluation/2026-09-06-read-receipt-report.md)、[執行計畫](docs/design/2026-09-06-read-receipt-implementation.md)、[修正設計](docs/design/2026-09-06-stalled-execution-resolution.md)、[審閱裁定](docs/design/2026-09-06-stalled-execution-review.md)、[一手來源](docs/research/2026-09-06-stalled-execution-sources.md) | 讀取語意、context／trace 邊界與有限對照；工程修正與模型效果分開，不宣稱唯一根因 |
 | 查看預覽版交付與升級 | [版本紀錄](CHANGELOG.md)、[採用與發布核對](docs/evaluation/2026-09-06-preview-release-checks.md)、[本輪交付計畫](docs/design/2026-09-06-preview-release-plan.md) | 安裝、獨立審閱、Git 交付與授權界線 |
 | 比較真實專案資訊整理 | [結果與復盤](docs/evaluation/2026-09-06-real-task-report.md)、[事前設計](docs/evaluation/2026-09-06-real-task-plan.md)、[原始證據](docs/evaluation/2026-09-06-real-task-evidence.json) | 相同凍結來源，一般 pi 原生工具與 CASE 兩組均失敗；沒有顯示品質優勢，不追加抽樣美化結果 |
 | 採用 pi v2 工作流程 | [v2 指南](workflow-kit/docs/V2.md)、[安裝](workflow-kit/docs/HOSTS.md)、[套件](workflow-kit/README.md) | 2.0.0-preview.1 核心與原生 runner 已實作；Git 交付見 STATUS，實測另列 |

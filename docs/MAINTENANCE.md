@@ -24,6 +24,10 @@
 
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
+| 有限 context：`integrations/pi/sdk-session.mjs` 的壓縮配置與截斷分類 | pi-sdk 測試、V2、ARCHITECTURE、英文指南、READINESS；離線診斷 `evaluation/compaction-budget-probe.mjs` | SDK 恢復／取消／結果優先、真實 payload 額度、壓縮成功與任務成功分開，未測成本標未知 |
+| 精確定位：`integrations/pi/material-search.mjs`、`scoped-tools.mjs` | SDK 可用工具、session-trace、V2、ARCHITECTURE、技能契約參照、英文指南、evaluation 的工具路徑檢查 | 字面／分頁／容量／來源版本、原有路徑權限、trace 不記查詢正文、新增測試納入 package |
+| 異議受控診斷：`evaluation/review-repair-replay.mjs`、`review-dispute-replay.mjs` | `tests/review-dispute-evaluation.test.mjs`、package 測試清單、根 `docs/evaluation/` 證據與報告、READINESS／STATUS／README／英文指南 | 歷史否決只重播一次且標 synthetic；真實模型結果、成本、失敗與評分分開，測試期間凍結程式 |
+| 審查異議：`core/review-dispute.mjs`、store 唯讀介面、pi runner／SDK | `references/v2-contracts.md`、V2、ARCHITECTURE、READINESS、GUIDE.en、README／STATUS | 逐字引用／來源版本、拒絕繞過檢查、一次重核額度、中斷及明確恢復；模型效果另存 |
 | 目標、交付邊界：根目錄 `docs/GOALS.md` | 根 README、STATUS、MAP；Kit README、ARCHITECTURE、技能入口 | 確認是否改變使用承諾，不拿舊計畫當新需求 |
 | v2 契約、版本、遷移與狀態：`skills/case-workflow/scripts/core/`、`case-v2.mjs` | help、`references/v2-contracts.md`、SKILL、V2、ARCHITECTURE、READINESS、GUIDE.en | core-v2 與相關整合測試；來源過期、全域驗收、revision、預算與資料升級 |
 | pi 原生 session 與工具：`integrations/pi/` | `extension.mjs` 靜態 SDK 入口與 `extension-core.mjs` 注入介面、package 的 pi／peer metadata、HOSTS、V2、READINESS、GUIDE.en | runner／tools／SDK／extension 與 package 測試；原生載入和真實模型結果分開 |

@@ -1,12 +1,12 @@
 # 目前狀態
 
-9/10：[規劃回覆界線](design/2026-09-10-review-dispute-boundary.md)已修正，SDK 與自訂 runner 均拒絕混合角色回覆，265/265 測試通過。未重跑模型；錯誤但格式合法的審查意見／受阻判斷仍可能發生，不改成果的異議流程尚待實作。
+更新：2026-09-10。產品版本 **2.0.0-preview.1**。可使用的範圍是可攜技能、版本化工作紀錄及 pi 自動協作；它仍是預覽版，不是已證實普遍提高模型品質的方案。
 
-9/9 最新：[修復後核對](evaluation/2026-09-09-repaired-review-report.md)約 409 秒，reviewer 通過，但 integrator 提出與來源矛盾的缺陷，planner 隨後錯誤受阻；成果仍正確，未結案。下一步處理既有角色的異議查證與回覆界線，不新增角色或反覆重抽。前次[修復設定對照](evaluation/2026-09-09-repair-thinking-report.md)的 off／medium 都修好，不代表所有角色可靠；以下保留較早結果。
+本次工作分支已實作審查異議、中斷接續保護、角色指引一致性及 `case_search` 有界字面搜尋，並確認 context 壓縮後輸出額度恢復。**本批保留工作分支，未合併／推送**。完整工程回歸 **302 通過、2 項 Windows 符號連結權限跳過**。最新正常任務約 601.856 秒達時間上限取消，仍只經規劃與執行，沒有產物、未進核對及整合。
 
-9/9 接續：[既有核對與修復實測](evaluation/2026-09-09-review-repair-report.md)正確發現漏欄並退回，但 worker 未寫入，約 601 秒取消，未到整體驗收。下一步先分離修復執行設定的影響，暫緩新增檢查器；不推定 reviewer 失效或品質目標完成。
+壓縮恢復已確認，但反覆查讀、未產出的停滯仍未解決；這不是已驗收成功的核心品質目標。保留失敗及未知成本，不原樣重跑、不增加預算換取成功，也不以合併主分支或發布掩蓋缺口。下一步需針對未產出停滯提出可由證據區分的修正，而非繼續等待壓縮是否發生或重複角色文字微調。
 
-更新：2026-09-08。產品版本 **2.0.0-preview.1**。這是流程已實作、指定本機案例已驗證的預覽版，不是普遍提升模型品質的已證實方案。
+[最新實測與裁定](evaluation/2026-09-10-search-and-role-report.md) · [集中驗證範圍](../workflow-kit/docs/READINESS.md) · [接續計畫](superpowers/plans/2026-09-10-recovery-and-delivery.md)
 
 [開始使用](../README.md#開始使用) · [v2 操作](../workflow-kit/docs/V2.md) · [驗證範圍](../workflow-kit/docs/READINESS.md) · [版本紀錄](../CHANGELOG.md)
 
@@ -28,21 +28,17 @@
 
 [先前固定版六次比較](evaluation/case-value-validation-report.md)：一般流程三案成功，CASE 兩案成功、一案失敗，成功案成本也較高。它不是最新版可靠度估計，但仍是有效歷史證據；後續修復不能把它改成有品質優勢。
 
-因此採用原則仍是：短工作直接完成；需要版本化交辦、接續或獨立核對時明確選用完整流程。[本輪真實專案來源比較](evaluation/2026-09-06-real-task-report.md)兩組都未完成：一般 pi 81.181 秒，CASE 596.062 秒，沒有顯示品質或成本優勢。程式與安裝可用不等於能可靠無人監督完成任務。
+因此採用原則仍是：短工作直接完成；需要版本化交辦、接續或獨立核對時明確選用完整流程。[先前真實專案來源比較](evaluation/2026-09-06-real-task-report.md)兩組都未完成：一般 pi 81.181 秒，CASE 596.062 秒，沒有顯示品質或成本優勢。程式與安裝可用不等於能可靠無人監督完成任務。
 
 ## Git 交付與發布
 
-本輪已合併並推送至 GitHub main，主要交付提交為 `b14ded1`，測試路徑修正為 `8c6d6c0`。新版 README 的 GitHub Skills 入口已實際下載並成功初始化 v2，包含最新 discovery 與材料保護。修正後 Windows／macOS／Ubuntu × Node 20／24 六組 [CI 全數通過](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011479357)；首次失敗與修正依據保留於[採用核對](evaluation/2026-09-06-preview-release-checks.md)。
+**先前預覽版**已合併並推送至 GitHub main；這不包含上方尚未交付的工作分支。主要交付提交為 `b14ded1`，測試路徑修正為 `8c6d6c0`。新版 README 的 GitHub Skills 入口已實際下載並成功初始化 v2，包含當時的 discovery 與材料保護。修正後 Windows／macOS／Ubuntu × Node 20／24 六組 [CI 全數通過](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011479357)；首次失敗與修正依據保留於[採用核對](evaluation/2026-09-06-preview-release-checks.md)。
 
 公開授權尚未選定，npm package 保持 private，未發布 registry。Git 推送、套件刊登與開源授權是不同事項，不代替使用者選擇授權。
 
 ## 仍未證明或未提供
 
-目前接續：[規劃／執行交辦分界及 worker 診斷](evaluation/2026-09-08-planning-handoff-report.md)已保存，完整工程回歸 259/259。先前固定對照兩組皆未產出；使用者完成模型研究後，另一次 worker-only 重播約 211 秒寫出檔案，但缺一個必要欄位，仍不合格。受控 SDK 測試確認角色 schema、工具配對及拒收後寫檔接線正常。下一步聚焦可機械核對的需求如何成為可信檢查及實際修復，不把此診斷當作整案完成率改善。仍未合併或推送。
-
-接續修正已在 `fix/read-receipt-diagnostics` 實作：模型可見讀取回條、有界診斷、保存失敗時停止派工並保留錯誤。本機完整回歸 256/256 通過，獨立程式審閱未發現阻斷問題；新舊格式的有限模型對照另見[驗證與復盤](evaluation/2026-09-06-read-receipt-report.md)。此分支尚未合併／推送，不把先前 main 的 CI 當成本批跨平台驗證。階段預算及停滯控制仍是候選，不是已提供功能。
-
-前批讀取回條比較：短探測成功，完整 CASE 新舊格式兩組皆逾時；舊格式產物正確但未完成驗收，新格式未產出。沒有品質改善證據，未觸發額外 holdout；其後責任分界比較結果見上，不覆寫舊觀察。
+較早的交辦分界、讀取回條、修復設定與核對結果，集中由 [READINESS](../workflow-kit/docs/READINESS.md) 導航。歷史成功與失敗均保留，不把不同版本、重建起點的診斷串成一次完整任務成功；先前 main 的 CI 也不代表本批跨平台驗證。
 
 - 普遍提升模型品質、省 tokens、長 context 優勢或跨模型可靠度。
 - Codex／Claude Code／Antigravity 原生自動協作與真實跨工具交接旅程。

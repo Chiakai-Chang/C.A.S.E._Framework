@@ -92,6 +92,17 @@ test('diagnostic retention is bounded and loss limits evidence, not known violat
   assert.ok(record.diagnostics.bytes<=2*1024*1024);
   assert.ok(record.toolAudit.length<40);
 });
+
+test('search audit permits only declared readable paths and keeps unknown tools denied',()=>{
+  const spec=specs().holdout;
+  const record=toolAudit=>({grade:{artifactPassed:true,sourcesPreserved:true,extraPaths:[]},sessions:[{trace:{traceVersion:1,traceComplete:true,policyComplete:true}}],toolAudit});
+  const search=p=>[{kind:'start',toolName:'case_search',path:p}];
+  assert.equal(audit(record(search('contracts.mjs')),spec).constraints.toolPaths,'verified');
+  for(const p of ['../outside','unlisted.txt','.case-agent/state.json'])
+    assert.equal(audit(record(search(p)),spec).constraints.toolPaths,'violated');
+  assert.equal(audit(record(search(null)),spec).constraints.toolPaths,'unknown');
+  assert.equal(audit(record([{kind:'start',toolName:'case_shell',path:'contracts.mjs'}]),spec).constraints.toolPaths,'violated');
+});
 test('probe requires successful read/write/read-back order, not only correct output',()=>{
   const pair=(id,toolName,path,isError=false)=>[{kind:'start',toolCallId:id,toolName,path},{kind:'end',toolCallId:id,toolName,isError}];
   const read=pair('r','case_read','sample.json'),write=pair('w','case_write','copied.json'),check=pair('c','case_read','copied.json');

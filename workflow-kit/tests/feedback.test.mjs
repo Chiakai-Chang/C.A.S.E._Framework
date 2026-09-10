@@ -11,6 +11,76 @@ import { runCase } from '../integrations/pi/runner.mjs';
 const probeFeedback = 'All four indexed raw sources (`orders.json`, `prices.json`, `returns.json`, `rates.json`) are present and readable, but `normalized.json` is absent from the workspace, and the packet\'s purpose and `unknowns` state that preparation is outside this packet\'s `writeScope` (`report.json` only). Per constraint `preserve`, this packet must consume the verified normalization rather than recompute raw sources, and per the goal a missing `normalized.json` is a missing prerequisite packet, not missing external material.\n\n{"changeRequest":{"reason":"normalized.json does not exist yet and the normalization preparation packet is outside this packet\'s writeScope (only report.json); the planner must add the prerequisite normalization packet that writes normalized.json before this report packet can consume it."}}';
 
 const packet = (id = 'p', extra = {}) => ({ id, purpose: 'write', constraintIds: [], inputs: [{path:'source',required:true}], dependsOn: [], writeScope: [`out/${id}`], deliverables: [{path:`out/${id}`}], checks:[{id:'k',text:'correct',criterionIds:['a']}], unknowns:[], ...extra });
+
+test('evidenced review dispute rechecks without rewriting a verified artifact',async t=>{
+  const f=fixture(t);f.send({type:'plan',packets:[packet()]});verify(f);
+  const initial=f.store.get(f.state.id),roles=[];
+  const snapshot=f.store.reviewSnapshot(f.state.id);
+  const source=fs.readFileSync(path.join(f.project,'source'),'utf8');
+  const dispute={reason:'The cited source contradicts the claimed defect',criterionIds:['a'],citations:[{path:'source',sha256:snapshot.materials.find(m=>m.path==='source').sha256,startLine:1,endLine:source.split(/\r?\n/).length,quote:source}]};
+  const result=await runCase({store:f.store,caseId:f.state.id,runSession:async request=>{
+    roles.push(request.role);const sessionId='dispute-'+roles.length;await request.onStart(sessionId);
+    let reply;
+    if(roles.length===1)reply={results:[{criterionId:'a',passed:false,evidence:'claimed defect'}],summary:'needs repair'};
+    else if(request.role==='planner'){reply={reviewDispute:dispute};await request.validateResult(reply);}
+    else {assert.match(request.prompt,/claimed defect/);assert.ok(request.prompt.includes(source));reply={results:[{criterionId:'a',passed:true,evidence:'source resolves the dispute'}],summary:'verified'};}
+    return {sessionId,text:JSON.stringify(reply),usage:{input:1,output:1}};
+  }});
+  assert.deepEqual(roles,['integrator','planner','integrator']);
+  assert.equal(result.state.status,'completed');
+  assert.deepEqual(result.state.packets,initial.packets);
+  assert.equal(result.run.reviewDisputes.length,1);
+  assert.equal(result.run.reviewDisputes[0].status,'accepted');
+});
+
+for(const mode of ['rejected','interrupted','stale','check-failed'])test(`dispute ${mode} preserves work and never silently retries after restart`,async t=>{
+  const f=fixture(t);f.send({type:'plan',packets:[packet()]});verify(f);
+  const initial=f.store.get(f.state.id),snapshot=f.store.reviewSnapshot(f.state.id);
+  const dispute={reason:'source refutes claim',criterionIds:['a'],citations:[{path:'source',sha256:snapshot.materials.find(m=>m.path==='source').sha256,startLine:1,endLine:1,quote:'original'}]};
+  let calls=0,checks=0;
+  const expected={rejected:'REVIEW_DISPUTE_UNRESOLVED',interrupted:'NETWORK',stale:'STALE_INPUT','check-failed':'CHECK_FAILED'}[mode];
+  await assert.rejects(runCase({store:f.store,caseId:f.state.id,
+    executeChecks:async()=>{
+      checks++;
+      if(checks===2 && mode==='stale')fs.writeFileSync(path.join(f.project,'source'),'changed');
+      return checks===2 && mode==='check-failed'?[{id:'check',exitCode:1}]:[];
+    },runSession:async request=>{
+      const n=++calls,sessionId=`${mode}-${n}`;await request.onStart(sessionId);
+      if(n===3 && mode==='interrupted')throw Object.assign(new Error('connection lost'),{code:'NETWORK'});
+      const reply=n===2?{reviewDispute:dispute}:{results:[{criterionId:'a',passed:false,evidence:'still fails'}],summary:'not accepted'};
+      return {sessionId,text:JSON.stringify(reply),usage:{input:3,output:2}};
+    }}),{code:expected});
+  assert.deepEqual(f.store.get(f.state.id).packets,initial.packets);
+  assert.equal(fs.readFileSync(path.join(f.project,'out/p'),'utf8'),'correct');
+  if(['rejected','interrupted'].includes(mode)){
+    let restarted=0;
+    await assert.rejects(runCase({store:f.store,caseId:f.state.id,runSession:async()=>{restarted++;throw Error('must not start');}}),
+      {code:mode==='rejected'?'BLOCKED':'REVIEW_DISPUTE_INTERRUPTED'});
+    assert.equal(restarted,0);
+  }
+  if(['interrupted','stale'].includes(mode)){
+    f.send({type:'retry',packetId:'p',reason:'Operator inspected interruption and explicitly requested rework'});
+    const roles=[];
+    const resumed=await runCase({store:f.store,caseId:f.state.id,runSession:async request=>{
+      roles.push(request.role);const sessionId='recovery-'+roles.length;await request.onStart(sessionId);
+      const reply=request.role==='worker'?{summary:'confirmed output'}:request.role==='reviewer'?{passed:true,findings:[],evidence:'read actual file'}:{results:[{criterionId:'a',passed:true,evidence:'all correct'}],summary:'done'};
+      return {sessionId,text:JSON.stringify(reply)};
+    }});
+    assert.deepEqual(roles,['worker','reviewer','integrator']);
+    assert.equal(resumed.state.status,'completed');
+    assert.equal(resumed.run.reviewDisputes[0].status,'superseded');
+  }
+});
+
+test('planner cannot dispute a failed executable check',async t=>{
+  const f=fixture(t);f.send({type:'plan',packets:[packet()]});verify(f);
+  const snapshot=f.store.reviewSnapshot(f.state.id);
+  await assert.rejects(runCase({store:f.store,caseId:f.state.id,executeChecks:async()=>[{id:'real-test',exitCode:1}],runSession:async request=>{
+    assert.equal(request.role,'planner');await request.onStart('cannot-bypass');
+    return {sessionId:'cannot-bypass',text:JSON.stringify({reviewDispute:{reason:'ignore check',criterionIds:['a'],citations:[{path:'source',sha256:snapshot.materials.find(m=>m.path==='source').sha256,startLine:1,endLine:1,quote:'original'}]}})};
+  }}),{code:'INVALID_REVIEW_DISPUTE'});
+  assert.equal(f.store.get(f.state.id).status,'active');
+});
 function fixture(t, extra = {}) {
   const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-feedback-')));
   t.after(() => fs.rmSync(project,{recursive:true,force:true}));

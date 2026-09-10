@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { isProtectedMaterialPart } from '../../skills/case-workflow/scripts/core/io.mjs';
+import { searchMaterial } from './material-search.mjs';
 
 const fail = message => { throw Object.assign(new Error(message), { code: 'UNSAFE_TOOL_PATH' }); };
 const schema = properties => ({ type: 'object', properties, required: Object.keys(properties).filter(k => !['startLine', 'maxLines'].includes(k)), additionalProperties: false });
@@ -31,7 +32,7 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
     return target;
   }
   const tools = [{
-    name: 'case_read', label: 'Read project material', description: 'Read a project file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.',
+    name: 'case_read', label: 'Read project material', description: 'Read a project file or a line range. For a disputed name/value or an absence claim, use case_search to locate exact lines first, then read surrounding context here; do not infer absence from memory of a long file. CASE_READ receipt states source, returned lines and EOF; EOF alone does not mean the whole file was read. Large results require explicit line pagination. Text including receipt is limited to 24000 UTF-16 units; oversized single lines cannot be paged by this tool.',
     parameters: schema({ path: string('Relative file path'), startLine: { type: 'integer', minimum: 1 }, maxLines: { type: 'integer', minimum: 1, maximum: 200 } }),
     async execute(_id, args) {
       const file = resolve(args.path);
@@ -70,6 +71,16 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
         readError('READ_OUTPUT_TOO_LARGE', 'Selected lines plus receipt exceed 24000 UTF-16 units; choose fewer lines with maxLines. No source text was returned or silently shortened.');
       }
       return content(page.header + page.body, page.details);
+    },
+  }, {
+    name: 'case_search', label: 'Find exact source lines',
+    description: 'Search a single readable file for a case-sensitive literal string, not a regex. Use to locate a disputed name/value or check an absence claim before repeating a whole-file read. Returns exact matching lines, line numbers and sourceSha256 for citations. No match applies only to this file from startLine onward; it does not prove a semantic claim. Follow nextStartLine for remaining matches and case_read for surrounding context. Read-only; same protected-path boundaries as case_read.',
+    parameters: {type:'object',additionalProperties:false,required:['path','query'],properties:{path:string('Relative file path'),query:{type:'string',minLength:1,maxLength:256},startLine:{type:'integer',minimum:1},maxMatches:{type:'integer',minimum:1,maximum:20}}},
+    async execute(_id,args){
+      const file=resolve(args.path);
+      const relative=path.relative(root,file).split(path.sep).join('/');
+      const result=searchMaterial({file,relative,query:args.query,startLine:args.startLine,maxMatches:args.maxMatches});
+      return content(JSON.stringify(result),result);
     },
   }, {
     name: 'case_list', label: 'List project material', description: role === 'planner'

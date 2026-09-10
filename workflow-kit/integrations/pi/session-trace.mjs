@@ -8,7 +8,7 @@ const identity = value => typeof value === 'string' && value.length > 0 && Buffe
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) ? value : 'unknown';
 const integer = value => Number.isSafeInteger(value) && value >= 0 ? value : 'unknown';
 const boolean = value => typeof value === 'boolean' ? value : 'unknown';
-const toolNames = new Set(['case_read','case_list','case_write','case_check','case_result','case_discover','case_discovery_read']);
+const toolNames = new Set(['case_read','case_search','case_list','case_write','case_check','case_result','case_discover','case_discovery_read']);
 const errorCodes = new Set(['CANCELLED','UNSAFE_TOOL_PATH','LINE_TOO_LONG','READ_OUTPUT_TOO_LARGE','READ_RECEIPT_TOO_LARGE','INVALID_ARGUMENT','INVALID_RESULT','INVALID_REPLY','RESULT_BUSY','RESULT_ALREADY_RECORDED','DISCOVERY_BLOCKED','CHECK_NOT_APPROVED','CHECK_FAILED','INVALID_CHECK_CONFIG','ENOENT','EACCES','EPERM','EISDIR','ENOSPC','REVISION_CONFLICT','MISSING_INPUT','STALE_INPUT','MISSING_DELIVERABLE']);
 const within = (directory, file) => {
   const relative=path.relative(directory,file);
@@ -42,6 +42,7 @@ export function createSessionTrace({runId,sessionId,role,project,agentDir,approv
     const details=event.result?.details;
     if(event.isError === true) return {errorCode:call?.errorCode??(errorCodes.has(details?.code)?details.code:'unknown')};
     if(event.isError !== false)return {status:'unknown'};
+    if(name==='case_search')return {path:approvedPath(details?.path),sourceSha256:digest(details?.sourceSha256),startLine:integer(details?.startLine),matchCount:Array.isArray(details?.matches)?integer(details.matches.length):'unknown',truncated:boolean(details?.truncated),nextStartLine:details?.nextStartLine===null?null:integer(details?.nextStartLine)};
     if(name==='case_read')return {
       path:approvedPath(details?.path),sourceSha256:digest(details?.sourceSha256),resultSha256:digest(details?.resultSha256),
       range:details?.range===null?null:details?.range && Number.isSafeInteger(details.range.startLine) && details.range.startLine>0 && Number.isSafeInteger(details.range.endLine) && details.range.endLine>=details.range.startLine?{startLine:details.range.startLine,endLine:details.range.endLine}:'unknown',

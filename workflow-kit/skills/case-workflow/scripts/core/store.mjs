@@ -7,6 +7,7 @@ import { contract } from './contracts.mjs';
 import { transition } from './state.mjs';
 import { context as buildContext } from './context.mjs';
 import { preparePolicy, assertProjectAligned, inheritProject } from './project-policy.mjs';
+import { reviewSnapshot, validateReviewDispute } from './review-dispute.mjs';
 const FORMAT = 'case-workflow/2';
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 export function createStore(directory) {
@@ -92,6 +93,16 @@ export function createStore(directory) {
             });
         },
         get: read,
+        reviewSnapshot(id) {
+            const state = read(id);
+            assertProjectAligned(project, owned().projectPolicy, state.contract.project);
+            return reviewSnapshot(project, state);
+        },
+        validateReviewDispute(id, snapshot, dispute) {
+            const state = read(id);
+            assertProjectAligned(project, owned().projectPolicy, state.contract.project);
+            return validateReviewDispute(project, state, snapshot, dispute);
+        },
         readDiscovery(id, discoveryId, {start=0,maxChars=6000,expectedRevision} = {}) {
             const state=read(id);
             assertProjectAligned(project,owned().projectPolicy,state.contract.project);

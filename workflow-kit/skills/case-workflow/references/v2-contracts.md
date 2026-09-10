@@ -4,6 +4,16 @@
 
 ## 建立與執行
 
+### 單檔精確定位
+
+pi 工作 session 提供 `case_search`：`{"path":"source.txt","query":"要核對的名稱","startLine":1,"maxMatches":20}`。查詢為大小寫敏感的單行字面文字，不是正規表示式；至多 256 UTF-16 單位，檔案至多 1 MiB，每頁 1–20 個匹配，完整回傳至多 24,000 UTF-16 單位。沿用 case_read 的受保護路徑與連結限制。
+
+先用它定位爭議事實，再讀相關周邊；不要只憑長檔案的記憶宣稱內容不存在。結果的 `matches` 各含 `line` 與完整 `text`，`sourceSha256` 對應讀到的檔案版本。若 `truncated=true`，以 `nextStartLine` 接續；`noMatches` 只表示此檔案從 startLine 後沒有字面匹配。匹配本身不是語意裁定。不可因工具找不到而捏造外部事實，仍依既有缺口回報處理。
+
+若需提出 reviewDispute，單行引用可用該匹配的 line 作為 startLine／endLine、text 作為 quote、sourceSha256 作為 sha256；仍須覆蓋要求的驗收 ID 並由核心核對版本。多行引文用 case_read 取得完整範圍，不手動拼湊省略內容。過長單行拒收而非截斷，需材料準備時走既有回饋流程。
+
+### 交辦契約
+
 agent 從使用者要求整理契約，不要求使用者填表。短工作直接完成；持續記錄可用 v1；需契約／工作包則用 v2。pi 的工具呼叫範例：
 
 ```json
@@ -101,7 +111,19 @@ worker 提交前，runner 先用核心提交規則核對 summary、必要來源�
 - 來源或產物雜湊變更要核對並重驗。`retry` action 帶 `packetId,reason`；重跑已驗證包會使下游失效。pi 工具也有 retry 操作。
 - `revise` action 帶新 `contract,reason`；契約修訂保守使全部包與整合失效，須 `plan` 重新對齊，不能用 retry 偷渡舊契約。舊包留在 packetHistory，累計預算不重置。
 - 發現 running attempt 時，先確認原程序已停止及部分產物／外部副作用。需要時透過核心 `block`（packetId、reason）保存障礙，再明確 retry；不直接重跑外部副作用。失敗 run 的原始回報保留於 artifacts。
-- 同包最多初次加兩次局部修正；重複缺陷、計畫缺口、全域驗收失敗可回 planner。自動重規劃最多兩次，跨 run 累計並受原總時間／attempt／session 預算限制；無實質改動停止。整合 false 必須實際補做，不反覆詢問驗收者直到改口。未知用量保留 unknown／null，不寫成零。
+- 同包最多初次加兩次局部修正；重複缺陷、計畫缺口、全域驗收失敗可回 planner。自動重規劃最多兩次，跨 run 累計並受原總時間／attempt／session 預算限制。真缺陷須補做；若來源反證整合者的指控，pi planner 可在該次回饋要求中提交下述反證，保留成果，不能只因不喜歡結論反覆要求改口。未知用量保留 unknown／null，不寫成零。
+
+### pi 的審查異議
+
+只在 integrator 的語意否決後使用，不能推翻失敗的已核准檢查。planner 先查爭議來源，再擇一：真缺陷改計畫、缺外部資料／權限回報受阻、來源反證則提交 `reviewDispute`；自身唯讀不是不能交辦的理由。
+
+```json
+{"reviewDispute":{"reason":"來源如何推翻原指控","criterionIds":["失敗的驗收 ID"],"citations":[{"path":"source.txt","sha256":"填入讀取回條的 SHA-256","startLine":1,"endLine":2,"quote":"所選範圍的完整原文，以換行連接"}]}}
+```
+
+不得混入其他角色欄位；criterionIds 恰含此次全部失敗 ID。引用僅限已核對工作包的 inputs／deliverables，最多 16 處，每處原文最多 4,000 字元、引用檔案最多 1 MiB。行號從 1 開始，CRLF 以 LF 比對；不可猜雜湊、摘改引文或引用未交辦的私密檔案。
+
+程式只驗證引用與版本，不替語意背書；既有 integrator 仍須核對全部目標及限制。每個快照版本／條件最多一次重新核對，沿用原重規劃／時間／session 預算，跨接續保留。再次否決保留為未解爭議，不重做正確成果來迎合否決。已啟動而中斷的重核不自動重播；先檢視 run 證據，再依實際需要明確 retry／amend_plan／revise，新的卷宗 revision 會使舊待核對申請失效但保留紀錄與成本。此流程由 pi runner 提供，其他工具不能自行寫 run JSON 仿冒裁定。
 
 ## v1 遷移與保存
 

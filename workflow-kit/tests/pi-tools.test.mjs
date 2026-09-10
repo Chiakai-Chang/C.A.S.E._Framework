@@ -1,4 +1,19 @@
 import test from 'node:test';
+import {createScopedTools as scopedSearchTools} from '../integrations/pi/scoped-tools.mjs';
+
+test('literal search uses existing read boundaries without giving a planner writes',async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-search-scope-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  fs.writeFileSync(path.join(project,'source.txt'),'first\nconst VALUE = 7;\nlast');
+  const tools=scopedSearchTools({project,role:'planner'}),search=tools.find(t=>t.name==='case_search');
+  assert.ok(search,'read-only roles need exact source lookup');
+  assert.ok(!tools.some(t=>t.name==='case_write'));
+  const result=await search.execute('lookup',{path:'source.txt',query:'VALUE'});
+  assert.deepEqual(result.details.matches,[{line:2,text:'const VALUE = 7;'}]);
+  assert.match(result.content[0].text,/const VALUE = 7/);
+  for(const target of ['../private','.git/config','.pi/settings.json','C:/private'])
+    await assert.rejects(search.execute('outside',{path:target,query:'secret'}),{code:'UNSAFE_TOOL_PATH'});
+});
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -98,7 +113,7 @@ test('review tools can inspect actual files but have no write or arbitrary shell
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
     fs.writeFileSync(path.join(dir, 'source.txt'), 'grounded material');
     const tools = toolsModule.createScopedTools({ project: dir, role: 'reviewer' });
-    assert.deepEqual(tools.map(x => x.name).sort(), ['case_list', 'case_read']);
+    assert.deepEqual(tools.map(x => x.name).sort(), ['case_list', 'case_read', 'case_search']);
     const result = await tools.find(x => x.name === 'case_read').execute('1', { path: 'source.txt' });
     assert.equal(result.content[0].text.split('\n').slice(1).join('\n'), 'grounded material');
 });

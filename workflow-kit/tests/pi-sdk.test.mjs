@@ -8,6 +8,67 @@ const adapter = await import('../integrations/pi/sdk-session.mjs').catch(e => {
         return {};
     throw e;
 });
+
+test('read-only planning receives planning guidance at both system and result-tool boundaries',async t=>{
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-role-guidance-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    const observed=[];
+    const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{
+      constructor(options){this.options=options;} async reload(){}
+    },async createAgentSession(options){
+      observed.push(options);return {session:{sessionId:'role-'+observed.length,subscribe(){return ()=>{};},
+        async prompt(){await options.customTools.find(t=>t.name==='case_result').execute('result',{result:{blocked:{reason:'external input unavailable'}}});},
+        getLastAssistantText:()=>'',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};
+    }};
+    const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+    await run({role:'planner',prompt:'Triage missing input',onStart(){}});
+    const options=observed[0];
+    assert.ok(!options.tools.includes('case_write'));
+    for(const guidance of [options.resourceLoader.options.appendSystemPrompt.join('\n'),options.customTools.find(t=>t.name==='case_result').description]){
+      assert.doesNotMatch(guidance,/repair (the )?actual (files|artifacts)/i,'planner must not receive worker repair instructions');
+      assert.match(guidance,/reviewDispute/,'planning instructions must explain its own decision interface');
+      assert.match(guidance,/criterionIds/,'disputes need a complete decision, not just a reason');
+    }
+});
+test('small-context sessions reserve room for compaction and do not retry truncated output as JSON syntax',async t=>{
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-context-budget-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    let listener,settings,prompts=0;
+    const sdk={SettingsManager:{inMemory:v=>(settings=v)},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+      async createAgentSession(){return {session:{sessionId:'context-budget',subscribe(fn){listener=fn;return ()=>{};},
+        async prompt(){prompts++;listener({type:'message_end',message:{role:'assistant',stopReason:'length',content:[{type:'text',text:'unfinished'}]}});},
+        getLastAssistantText:()=> 'unfinished',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+    const run=await adapter.createPiSessionRunner({project,agentDir:project,model:{id:'local',provider:'local',contextWindow:32768,maxTokens:4096},modelRuntime:{},sdk});
+    await assert.rejects(run({role:'worker',prompt:'work',writeScope:['out'],onStart(){}}),e=>{
+      assert.equal(e.code,'MODEL_OUTPUT_TRUNCATED');
+      assert.deepEqual(e.sessionEvidence.replyCorrections,[]);return true;
+    });
+    assert.equal(prompts,1);
+    assert.equal(settings.compaction.enabled,true);
+    assert.equal(settings.compaction.keepRecentTokens,8192);
+    assert.equal(settings.compaction.reserveTokens,16384);
+});
+
+for(const mode of ['recovered','accepted','cancelled','turn-limit'])test(`truncation classification preserves SDK recovery and terminal precedence: ${mode}`,async t=>{
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-context-terminal-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    const controller=new AbortController();let listener,prompts=0;
+    const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+      async createAgentSession(options){return {session:{sessionId:'terminal',subscribe(fn){listener=fn;return ()=>{};},
+        async prompt(){prompts++;listener({type:'turn_start'});
+          listener({type:'message_end',message:{role:'assistant',stopReason:'length'}});
+          if(mode==='recovered')listener({type:'message_end',message:{role:'assistant',stopReason:'stop'}});
+          if(mode==='accepted')await options.customTools.find(t=>t.name==='case_result').execute('done',{result:{summary:'done'}});
+          if(mode==='cancelled')controller.abort();
+          if(mode==='turn-limit')listener({type:'turn_start'});
+        },getLastAssistantText:()=>'{"summary":"done"}',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+    const run=await adapter.createPiSessionRunner({project,agentDir:project,model:{id:'local',provider:'local',contextWindow:32768},modelRuntime:{},sdk,maxTurns:1});
+    const request={role:'worker',prompt:'work',onStart(){},signal:controller.signal};
+    if(mode==='cancelled'||mode==='turn-limit')await assert.rejects(run(request),e=>e.code===(mode==='cancelled'?'CANCELLED':'BUDGET_EXCEEDED'));
+    else assert.equal(JSON.parse((await run(request)).text).summary,'done');
+    assert.equal(prompts,1);
+});
+
 test('SDK failure and cancellation retain observations and available costs before disposal', async (t) => {
     const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-sdk-failure-')));
     t.after(() => fs.rmSync(project, { recursive: true, force: true }));
@@ -136,7 +197,7 @@ test('SDK adapter produces fresh bounded sessions and captures tool evidence', a
     assert.equal(inputs[0].resourceLoader.options.noExtensions, true);
     assert.equal(inputs[0].resourceLoader.options.noSkills, true);
     assert.equal(inputs[0].resourceLoader.options.noContextFiles, false);
-    assert.deepEqual(inputs[1].tools.sort(), ['case_list', 'case_read', 'case_result']);
+    assert.deepEqual(inputs[1].tools.sort(), ['case_list', 'case_read', 'case_result', 'case_search']);
 });
 
 for (const mode of ['result','repair-prose','correct-invalid','conflict','repeat','late-read','late-write','late-check']) test(`structured result transport: ${mode}`,async t=>{
