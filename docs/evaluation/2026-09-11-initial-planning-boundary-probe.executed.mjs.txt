@@ -1,0 +1,47 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {createPiSessionRunner} from '../workflow-kit/integrations/pi/sdk-session.mjs';
+import {runCase} from '../workflow-kit/integrations/pi/runner.mjs';
+import {createStore} from '../workflow-kit/skills/case-workflow/scripts/core/index.mjs';
+const output=path.resolve('.npm-cache/initial-planning-boundary-probe-2026-09-11.json');
+if(fs.existsSync(output))throw Error('New evidence required; no repeat generation');
+const previous=JSON.parse(fs.readFileSync('.npm-cache/terminal-stop-journey-2026-09-11-manifest.json'));
+const prior=JSON.parse(fs.readFileSync('.npm-cache/terminal-stop-journey-2026-09-11-evidence.json'));
+const hash=f=>createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+const codeHashes=Object.fromEntries([...Object.keys(previous.codeHashes),fileURLToPath(import.meta.url)].map(f=>[f,hash(f)]));
+const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-initial-plan-')));
+const project=path.join(root,'project'),agentDir=path.join(root,'config');fs.mkdirSync(project);fs.mkdirSync(agentDir);
+const spec=previous.specs.main;
+for(const [name,body] of Object.entries({...spec.sources,'requirements.md':spec.goal}))fs.writeFileSync(path.join(project,name),body,{flag:'wx'});
+const store=createStore(project);store.init();const state=store.create(prior.result.finalState.contract);
+const report={kind:'case-initial-planning-probe/1',status:'running',project,agentDir,caseId:state.id,codeHashes,configuration:previous.configuration,spec,sessions:[],
+  limitations:['Additional standalone planning diagnostic; not original budget continuation or whole-task success.','Same task, model ID and explicit SDK settings; server sampling defaults not revalidated, no seed/cache reset or causal comparison.','Stops before any worker session or generation. No oracle is supplied.','GGUF and complete SDK dependency tree not byte-frozen.']};
+const save=()=>fs.writeFileSync(output,JSON.stringify(report,null,2));save();
+const start=performance.now();
+try{
+  const inventory=await (await fetch('http://127.0.0.1:8080/v1/models',{signal:AbortSignal.timeout(5000)})).json();
+  const id=inventory.data[0].id;if(id!==previous.server.modelId)throw Error('Model differs from frozen task');report.modelId=id;
+  const sdk=await import(pathToFileURL(previous.sdkPath).href);
+  const runtime=await sdk.ModelRuntime.create({authPath:path.join(agentDir,'auth.json'),modelsPath:null,modelsStorePath:path.join(agentDir,'models.json'),allowModelNetwork:false});
+  runtime.registerProvider('planning-probe',{baseUrl:'http://127.0.0.1:8080/v1',api:'openai-completions',apiKey:'local',models:[{
+    id,name:id,reasoning:true,input:['text'],contextWindow:32768,maxTokens:4096,
+    compat:{supportsDeveloperRole:false,supportsReasoningEffort:false,thinkingFormat:'qwen-chat-template',maxTokensField:'max_tokens'},cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});
+  const run=await createPiSessionRunner({project,agentDir,sdk,model:runtime.getModel('planning-probe',id),modelRuntime:runtime,thinkingLevel:'off',maxTurns:16});
+  await runCase({store,caseId:state.id,runSession:async request=>{
+    if(request.role!=='planner')throw Object.assign(Error('Planning diagnostic ends before execution'),{code:'PLANNING_PROBE_COMPLETE'});
+    if(report.sessions.length)throw Error('Only one initial planner is permitted');
+    const entry={role:request.role,planningPhase:request.planningPhase,prompt:request.prompt};report.sessions.push(entry);save();
+    try{const result=await run(request);Object.assign(entry,result);return result;}
+    catch(error){Object.assign(entry,error.sessionEvidence??{});throw error;}finally{save();}
+  }});
+}catch(error){report.error={code:error.code??error.name,message:error.message};}
+report.elapsedMs=performance.now()-start;report.finalState=store.get(state.id);report.runs=store.listRuns(state.id);
+report.codeUnchanged=Object.entries(codeHashes).every(([f,h])=>hash(f)===h);
+report.sourcesPreserved=Object.entries({...spec.sources,'requirements.md':spec.goal}).every(([name,body])=>fs.readFileSync(path.join(project,name),'utf8')===body);
+report.artifactExists=fs.existsSync(path.join(project,spec.output));
+report.status=report.error?.code==='PLANNING_PROBE_COMPLETE'&&report.finalState.packets.length>0&&report.sessions.length===1&&report.codeUnchanged&&report.sourcesPreserved&&!report.artifactExists?'planned':'failed';
+save();console.log(JSON.stringify({status:report.status,elapsedMs:report.elapsedMs,error:report.error,packets:report.finalState.packets.length}));
+

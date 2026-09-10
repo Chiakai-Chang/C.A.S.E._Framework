@@ -35,7 +35,10 @@ test('pi worker receives default source indexes while explicit inline materials 
     let observed=false;
     await assert.rejects(runner.runCase({store,caseId:state.id,runSession:async request=>{
       await request.onStart('index-'+request.role);
-      if(request.role==='planner')return {sessionId:'index-planner',text:JSON.stringify({packets:[{id:'p',purpose:'write output',constraintIds:[],inputs:[{path:'data.txt',required:true},{path:'rule.txt',required:true,delivery:'inline'}],dependsOn:[],writeScope:['out'],deliverables:[{path:'out'}],checks:[{id:'k',text:'correct',criterionIds:['a']}],unknowns:[]}]})};
+      if(request.role==='planner'){
+        assert.equal(request.planningPhase,'initial');
+        return {sessionId:'index-planner',text:JSON.stringify({packets:[{id:'p',purpose:'write output',constraintIds:[],inputs:[{path:'data.txt',required:true},{path:'rule.txt',required:true,delivery:'inline'}],dependsOn:[],writeScope:['out'],deliverables:[{path:'out'}],checks:[{id:'k',text:'correct',criterionIds:['a']}],unknowns:[]}]})};
+      }
       assert.equal(request.role,'worker');
       const ctx=JSON.parse(request.prompt.slice(0,request.prompt.indexOf('\nPrior review findings:')));
       assert.deepEqual(ctx.requiredMaterials.map(m=>m.path),['rule.txt']);

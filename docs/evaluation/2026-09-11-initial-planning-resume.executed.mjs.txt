@@ -1,0 +1,41 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {createPiSessionRunner} from '../workflow-kit/integrations/pi/sdk-session.mjs';
+import {runCase} from '../workflow-kit/integrations/pi/runner.mjs';
+import {createStore} from '../workflow-kit/skills/case-workflow/scripts/core/index.mjs';
+import {grade} from '../workflow-kit/evaluation/read-receipt-spec.mjs';
+const output=path.resolve('.npm-cache/initial-planning-resume-2026-09-11.json');
+if(fs.existsSync(output))throw Error('New evidence required');
+const previous=JSON.parse(fs.readFileSync('.npm-cache/initial-planning-boundary-probe-2026-09-11.json'));
+const manifest=JSON.parse(fs.readFileSync('.npm-cache/terminal-stop-journey-2026-09-11-manifest.json'));
+const hash=f=>createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+for(const [f,h] of Object.entries(previous.codeHashes))if(hash(f)!==h)throw Error('Code changed since planning: '+f);
+const {project,agentDir,caseId,spec}=previous;
+const store=createStore(project),before=store.get(caseId);
+if(JSON.stringify(before)!==JSON.stringify(previous.finalState))throw Error('Case changed before continuation');
+const report={kind:'case-planning-native-continuation/1',status:'running',project,agentDir,caseId,spec,configuration:previous.configuration,
+  prior:'initial-planning-boundary-probe-2026-09-11.json',priorElapsedMs:previous.elapsedMs,priorUsage:previous.sessions[0].usage,
+  initialState:before,previousRuns:store.listRuns(caseId),codeHashes:{...previous.codeHashes,[fileURLToPath(import.meta.url)]:hash(fileURLToPath(import.meta.url))},sessions:[],
+  limitations:['Native continuation after a deliberate diagnostic stop before worker; not an uninterrupted normal run.','Original case budget is retained by runCase; no new 600-second budget is assigned.','Known plan check excludes reading output while purpose/contract allow it; original plan is not manually repaired.','No oracle or artifacts are supplied to model sessions; grading runs only afterwards.','Model ID and explicit SDK settings checked; server sampling defaults, seed/cache and GGUF bytes are not frozen.']};
+const save=()=>fs.writeFileSync(output,JSON.stringify(report,null,2));save();const start=performance.now();
+try{
+  const inventory=await (await fetch('http://127.0.0.1:8080/v1/models',{signal:AbortSignal.timeout(5000)})).json();
+  const id=inventory.data[0].id;if(id!==previous.modelId)throw Error('Model changed');report.modelId=id;
+  const sdk=await import(pathToFileURL(manifest.sdkPath).href);
+  const runtime=await sdk.ModelRuntime.create({authPath:path.join(agentDir,'auth.json'),modelsPath:null,modelsStorePath:path.join(agentDir,'models.json'),allowModelNetwork:false});
+  runtime.registerProvider('planning-probe',{baseUrl:'http://127.0.0.1:8080/v1',api:'openai-completions',apiKey:'local',models:[{
+    id,name:id,reasoning:true,input:['text'],contextWindow:32768,maxTokens:4096,
+    compat:{supportsDeveloperRole:false,supportsReasoningEffort:false,thinkingFormat:'qwen-chat-template',maxTokensField:'max_tokens'},cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});
+  const run=await createPiSessionRunner({project,agentDir,sdk,model:runtime.getModel('planning-probe',id),modelRuntime:runtime,thinkingLevel:'off',maxTurns:16});
+  await runCase({store,caseId,runSession:async request=>{
+    const entry={role:request.role,prompt:request.prompt,startedAt:new Date().toISOString()};report.sessions.push(entry);save();console.log('Started '+request.role);
+    try{const result=await run(request);Object.assign(entry,result);return result;}
+    catch(error){Object.assign(entry,error.sessionEvidence??{});entry.error={code:error.code??error.name,message:error.message};throw error;}finally{save();}
+  }});report.status='completed';
+}catch(error){report.status='failed';report.error={code:error.code??error.name,message:error.message};}
+report.elapsedMs=performance.now()-start;report.finalState=store.get(caseId);report.runs=store.listRuns(caseId);
+report.codeUnchanged=Object.entries(report.codeHashes).every(([f,h])=>hash(f)===h);report.grade=grade(project,spec);
+save();console.log(JSON.stringify({status:report.status,elapsedMs:report.elapsedMs,roles:report.sessions.map(s=>s.role),grade:report.grade.artifactPassed,error:report.error}));
+

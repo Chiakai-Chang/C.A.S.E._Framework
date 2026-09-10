@@ -315,7 +315,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     if(run.pendingReviewDispute?.status==='issued') throw error('REVIEW_DISPUTE_INTERRUPTED','The prior recheck started but has no confirmed outcome; inspect saved evidence before explicit recovery');
     if(run.pendingFeedback) await replan(run.pendingFeedback);
     if (!state.packets.length) {
-      const plan = await invoke('planner', `${plannerInstruction}\nContract:\n${JSON.stringify(state.contract)}`, {validateResult:validatePlanReply('plan')});
+      const plan = await invoke('planner', `${plannerInstruction}\nContract:\n${JSON.stringify(state.contract)}`, {planningPhase:'initial',validateResult:validatePlanReply('plan')});
       const decision = parseReply(plan.text);
       if (Object.hasOwn(decision, 'blocked')) {
         const reason = decision.blocked?.reason;

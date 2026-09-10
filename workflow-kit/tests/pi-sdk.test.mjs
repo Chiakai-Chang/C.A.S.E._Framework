@@ -111,6 +111,26 @@ for (const transport of ['final-text','tool']) test(`reviewer corrects a wrapped
     assert.equal(result.replyCorrections.length,transport==='tool'?0:1);
 });
 
+for(const planningPhase of ['initial',undefined])test(`planning phase selects system and result guidance: ${planningPhase}`,async t=>{
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-planning-phase-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    let observed;
+    const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{
+      constructor(options){this.options=options;}async reload(){}
+    },async createAgentSession(options){observed=options;return {session:{sessionId:'phase',subscribe:()=>()=>{},
+      prompt:async()=>{},getLastAssistantText:()=>'{"blocked":{"reason":"missing required source"}}',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+    const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+    await run({role:'planner',planningPhase,prompt:'Plan authorized work',onStart(){}});
+    for(const guidance of [observed.resourceLoader.options.appendSystemPrompt.join('\n'),observed.customTools.find(t=>t.name==='case_result').description]){
+      if(planningPhase==='initial'){
+        assert.doesNotMatch(guidance,/reviewDispute/,'initial planning must not inherit dispute instructions');
+        assert.match(guidance,/initial planning/i);
+      }else assert.match(guidance,/reviewDispute/,'legacy/feedback planning retains dispute guidance');
+    }
+    assert.ok(observed.tools.includes('case_read'));assert.ok(observed.tools.includes('case_list'));
+    assert.ok(!observed.tools.includes('case_write'));
+});
+
 test('read-only planning receives planning guidance at both system and result-tool boundaries',async t=>{
     const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-role-guidance-')));
     t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
