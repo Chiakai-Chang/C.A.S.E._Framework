@@ -1,0 +1,382 @@
+{
+  "kind": "case-offline-worker-audit/1",
+  "input": "docs/evaluation/2026-09-11-initial-planning-resume-evidence.json",
+  "inputSha256": "606bb7c85ad1b71276a36252fe79aee5e60114bdea82721985c20d5512bd8dab",
+  "sourceObservationCount": 26,
+  "verified": [
+    {
+      "observationIndex": 1,
+      "atMs": 21551,
+      "tool": "case_read",
+      "path": "install.mjs",
+      "wholeFile": true,
+      "range": {
+        "startLine": 1,
+        "endLine": 155
+      }
+    },
+    {
+      "observationIndex": 2,
+      "atMs": 32071,
+      "tool": "case_read",
+      "path": "package.json",
+      "wholeFile": true,
+      "range": {
+        "startLine": 1,
+        "endLine": 15
+      }
+    },
+    {
+      "observationIndex": 3,
+      "atMs": 32071,
+      "tool": "case_read",
+      "path": "HOSTS.md",
+      "wholeFile": true,
+      "range": {
+        "startLine": 1,
+        "endLine": 80
+      }
+    },
+    {
+      "observationIndex": 4,
+      "atMs": 43030,
+      "tool": "case_read",
+      "path": "MAINTENANCE.md",
+      "wholeFile": true,
+      "range": {
+        "startLine": 1,
+        "endLine": 66
+      }
+    },
+    {
+      "observationIndex": 5,
+      "atMs": 54810,
+      "tool": "case_read",
+      "path": "install.mjs",
+      "wholeFile": false,
+      "range": {
+        "startLine": 100,
+        "endLine": 155
+      }
+    },
+    {
+      "observationIndex": 6,
+      "atMs": 66414,
+      "tool": "case_search",
+      "path": "install.mjs",
+      "matchLines": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        152
+      ]
+    },
+    {
+      "observationIndex": 7,
+      "atMs": 66414,
+      "tool": "case_read",
+      "path": "install.mjs",
+      "wholeFile": false,
+      "range": {
+        "startLine": 95,
+        "endLine": 155
+      }
+    },
+    {
+      "observationIndex": 8,
+      "atMs": 74095,
+      "tool": "case_read",
+      "path": "install.mjs",
+      "wholeFile": false,
+      "range": {
+        "startLine": 80,
+        "endLine": 155
+      }
+    },
+    {
+      "observationIndex": 9,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        5,
+        11
+      ]
+    },
+    {
+      "observationIndex": 10,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        11,
+        19
+      ]
+    },
+    {
+      "observationIndex": 11,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        8
+      ]
+    },
+    {
+      "observationIndex": 12,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        13
+      ]
+    },
+    {
+      "observationIndex": 13,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        13
+      ]
+    },
+    {
+      "observationIndex": 14,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        39,
+        54,
+        63,
+        64
+      ]
+    },
+    {
+      "observationIndex": 15,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "MAINTENANCE.md",
+      "matchLines": [
+        32
+      ]
+    },
+    {
+      "observationIndex": 16,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "MAINTENANCE.md",
+      "matchLines": [
+        15,
+        17,
+        27,
+        31,
+        32,
+        35,
+        36,
+        37,
+        38
+      ]
+    },
+    {
+      "observationIndex": 17,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "package.json",
+      "matchLines": [
+        2
+      ]
+    },
+    {
+      "observationIndex": 18,
+      "atMs": 92182,
+      "tool": "case_search",
+      "path": "package.json",
+      "matchLines": [
+        12
+      ]
+    },
+    {
+      "observationIndex": 19,
+      "atMs": 115207,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        29
+      ]
+    },
+    {
+      "observationIndex": 20,
+      "atMs": 115207,
+      "tool": "case_search",
+      "path": "MAINTENANCE.md",
+      "matchLines": [
+        45
+      ]
+    },
+    {
+      "observationIndex": 21,
+      "atMs": 115207,
+      "tool": "case_search",
+      "path": "MAINTENANCE.md",
+      "matchLines": [
+        19,
+        45
+      ]
+    },
+    {
+      "observationIndex": 22,
+      "atMs": 115207,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        54
+      ]
+    },
+    {
+      "observationIndex": 23,
+      "atMs": 115207,
+      "tool": "case_search",
+      "path": "HOSTS.md",
+      "matchLines": [
+        52,
+        54,
+        56
+      ]
+    },
+    {
+      "observationIndex": 24,
+      "atMs": 115207,
+      "tool": "case_read",
+      "path": "package.json",
+      "wholeFile": false,
+      "range": {
+        "startLine": 9,
+        "endLine": 15
+      }
+    },
+    {
+      "observationIndex": 25,
+      "atMs": 115207,
+      "tool": "case_read",
+      "path": "HOSTS.md",
+      "wholeFile": false,
+      "range": {
+        "startLine": 7,
+        "endLine": 80
+      }
+    },
+    {
+      "observationIndex": 26,
+      "atMs": 115207,
+      "tool": "case_read",
+      "path": "HOSTS.md",
+      "wholeFile": false,
+      "range": {
+        "startLine": 11,
+        "endLine": 80
+      }
+    }
+  ],
+  "fullSourceDelivery": [
+    {
+      "path": "install.mjs",
+      "atMs": 21551
+    },
+    {
+      "path": "package.json",
+      "atMs": 32071
+    },
+    {
+      "path": "HOSTS.md",
+      "atMs": 32071
+    },
+    {
+      "path": "MAINTENANCE.md",
+      "atMs": 43030
+    }
+  ],
+  "firstWrongRole": {
+    "seq": 81,
+    "atMs": 189266,
+    "kind": "tool_start",
+    "requestId": "request-9",
+    "providerRequestId": "unknown",
+    "toolCallId": "f16zDjLIldrTHuRMeuvl50sFMG22Jjit",
+    "toolName": "case_result",
+    "resultKind": "packets"
+  },
+  "compaction": {
+    "seq": 87,
+    "atMs": 197433,
+    "kind": "compaction_start",
+    "requestId": "request-10",
+    "providerRequestId": "unknown",
+    "reason": "overflow",
+    "aborted": "unknown",
+    "compressedRange": "unknown",
+    "retainedContent": "unknown"
+  },
+  "sourceObservationsAfterCompaction": 0,
+  "loadedContextFiles": {
+    "policyComplete": true,
+    "count": 0,
+    "hashMatchesEmptyList": true
+  },
+  "diffs": [
+    {
+      "field": "install.defaultHost",
+      "expected": "all",
+      "actual": "pi"
+    },
+    {
+      "field": "install.uninstallAbsentAction",
+      "expected": "absent",
+      "actual": "not-installed"
+    },
+    {
+      "field": "maintenance.kitTestCommand",
+      "expected": "npm test --prefix workflow-kit",
+      "actual": "npm test"
+    },
+    {
+      "field": "maintenance.fullM0RequiredForKitOnly",
+      "expected": false,
+      "actual": true
+    },
+    {
+      "field": "maintenance.installerPrimary",
+      "expected": "install.mjs",
+      "actual": "workflow-kit/install.mjs"
+    },
+    {
+      "field": "maintenance.piPrimary",
+      "expected": "integrations/pi/",
+      "actual": "workflow-kit/integrations/pi/"
+    },
+    {
+      "field": "maintenance.installerRelated",
+      "expected": [
+        "ARCHITECTURE",
+        "GUIDE.en",
+        "HOSTS",
+        "README",
+        "help",
+        "封裝設定"
+      ],
+      "actual": [
+        "ARCHITECTURE",
+        "GUIDE.en",
+        "HOSTS",
+        "README",
+        "package.json"
+      ]
+    }
+  ],
+  "limitations": [
+    "Trace records tool results and policy metadata, not complete per-request model payloads or compaction summary. Delivery is not proof of retention or comprehension.",
+    "Read/search bodies and hashes checked against frozen sources; search completeness and internal model causes are not inferred. No model generation in this audit."
+  ]
+}

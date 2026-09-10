@@ -4,6 +4,7 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
+| 執行者讀過卻寫錯 | [來源使用診斷](docs/evaluation/2026-09-11-worker-grounding-report.md) | 26 次來源回傳核實、角色混淆時序、直接交辦診斷與正式呈現接線；不以單獨成功代替整案驗收 |
 | 初始交辦與規劃品質 | [初始規劃實測](docs/evaluation/2026-09-11-initial-planning-report.md) | 初始／回饋角色分流；兩次計畫的格式修復、冗餘核對包與文字矛盾，及原預算接續 |
 | 核對、停止修復與交辦瓶頸 | [核對格式與證據缺口](docs/evaluation/2026-09-11-review-boundary-report.md) | 匯入成果診斷完成核對／整合；正常流程仍止於規劃查讀，未交辦。新舊成本與限制分列 |
 | 返修為何破壞原本正確內容 | [局部返修與完整脈絡](docs/evaluation/2026-09-10-localized-repair-report.md) | 正常流程返修引入缺漏；新增受限 case_edit，局部模型修復成功，整案仍未通過 |

@@ -1,0 +1,47 @@
+// Offline provenance audit; never calls a model or changes the frozen case.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+const input='docs/evaluation/2026-09-11-initial-planning-resume-evidence.json';
+const e=JSON.parse(fs.readFileSync(input)),s=e.sessions[0];
+const sha=v=>createHash('sha256').update(v).digest('hex');
+const ends=s.trace.events.filter(x=>x.kind==='tool_end');
+assert.equal(ends.length,s.observations.length);
+const compaction=s.trace.events.find(x=>x.kind==='compaction_start');
+const verified=[];
+for(const [i,o] of s.observations.entries()){
+  const d=o.result.details;
+  assert.equal(ends[i].toolName,o.toolName);
+  if(o.isError||!Object.hasOwn(e.spec.sources,d?.path))continue;
+  const source=e.spec.sources[d.path],lines=source.split(/\r?\n/);
+  assert.equal(d.sourceSha256,sha(source));
+  if(o.toolName==='case_read'){
+    const text=o.result.content[0].text,split=text.indexOf('\n'),receipt=JSON.parse(text.slice(10,split)),body=text.slice(split+1);
+    assert.deepEqual(receipt,d);
+    assert.equal(body,lines.slice(d.range.startLine-1,d.range.endLine).join('\n'));
+    assert.equal(sha(body),d.resultSha256);
+    verified.push({observationIndex:i,atMs:ends[i].atMs,tool:o.toolName,path:d.path,wholeFile:d.wholeFile,range:d.range});
+  }else if(o.toolName==='case_search'){
+    assert.deepEqual(JSON.parse(o.result.content[0].text),d);
+    for(const match of d.matches)assert.equal(match.text,lines[match.line-1]);
+    verified.push({observationIndex:i,atMs:ends[i].atMs,tool:o.toolName,path:d.path,matchLines:d.matches.map(m=>m.line)});
+  }
+}
+const diffs=[];
+function compare(expected,actual,key=''){
+  if(expected&&typeof expected==='object'&&!Array.isArray(expected)){
+    for(const k of new Set([...Object.keys(expected),...Object.keys(actual??{})]))compare(expected[k],actual?.[k],key?key+'.'+k:k);
+  }else if(JSON.stringify(expected)!==JSON.stringify(actual))diffs.push({field:key,expected,actual});
+}
+compare(e.spec.expected,e.grade.actual);assert.equal(diffs.length,7);
+const policyEvents=s.trace.events.filter(x=>x.kind==='policy');
+assert.equal(s.trace.policyComplete,true);assert.equal(s.trace.loadedPolicySha256,sha('[]'));assert.equal(policyEvents.length,0);
+const report={kind:'case-offline-worker-audit/1',input,inputSha256:sha(fs.readFileSync(input)),sourceObservationCount:verified.length,verified,
+  fullSourceDelivery:Object.keys(e.spec.sources).map(path=>({path,atMs:verified.find(v=>v.path===path&&v.wholeFile)?.atMs})),
+  firstWrongRole:s.trace.events.find(x=>x.kind==='tool_start'&&x.resultKind==='packets'),compaction,
+  sourceObservationsAfterCompaction:verified.filter(v=>v.atMs>compaction.atMs).length,
+  loadedContextFiles:{policyComplete:true,count:0,hashMatchesEmptyList:true},diffs,
+  limitations:['Trace records tool results and policy metadata, not complete per-request model payloads or compaction summary. Delivery is not proof of retention or comprehension.',
+    'Read/search bodies and hashes checked against frozen sources; search completeness and internal model causes are not inferred. No model generation in this audit.']};
+fs.writeFileSync('.npm-cache/worker-evidence-audit-2026-09-11.json',JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify({verifiedSourceObservations:verified.length,fullSourceDelivery:report.fullSourceDelivery,wrongFields:diffs.length,sourceObservationsAfterCompaction:report.sourceObservationsAfterCompaction,loadedContextFiles:0}));

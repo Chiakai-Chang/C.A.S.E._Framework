@@ -1,0 +1,60 @@
+// Diagnostic only: no product behavior change, no semantic oracle feedback.
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {createPiSessionRunner} from '../workflow-kit/integrations/pi/sdk-session.mjs';
+import {grade} from '../workflow-kit/evaluation/read-receipt-spec.mjs';
+const output=path.resolve('.npm-cache/worker-direct-diagnostic-2026-09-11-attempt2.json');
+if(fs.existsSync(output))throw Error('Do not repeat or overwrite this diagnostic');
+const previous=JSON.parse(fs.readFileSync('docs/evaluation/2026-09-11-initial-planning-resume-evidence.json'));
+const manifest=JSON.parse(fs.readFileSync('.npm-cache/terminal-stop-journey-2026-09-11-manifest.json'));
+const hash=f=>createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-worker-direct-')));
+const project=path.join(root,'project'),agentDir=path.join(root,'config');fs.mkdirSync(project);fs.mkdirSync(agentDir);
+const spec=previous.spec;
+for(const [name,body] of Object.entries({...spec.sources,'requirements.md':spec.goal}))fs.writeFileSync(path.join(project,name),body,{flag:'wx'});
+const original=previous.sessions[0].prompt;
+const end=original.indexOf('\nPrior review findings:');
+if(end<0)throw Error('Expected frozen worker prompt shape');
+const ctx=JSON.parse(original.slice(0,end));
+if(ctx.project!==null||ctx.discoveries.length||ctx.requiredMaterials.length)throw Error('This diagnostic only supports this exact empty-policy indexed case');
+// Keep all assigned acceptance text (including its known contradiction), source
+// versions and the production worker footer. Only remove plan-shaped nesting.
+const prompt=[
+  'Current assignment: execute the work below and create its deliverables. This is not a request to propose a plan.',
+  'Goal:\n'+ctx.goal,
+  'Constraints:\n'+JSON.stringify(ctx.constraints),
+  'Acceptance:\n'+JSON.stringify(ctx.acceptance),
+  'Assignment purpose:\n'+ctx.packet.purpose,
+  'Deliverables and permitted writes:\n'+JSON.stringify({deliverables:ctx.packet.deliverables,writeScope:ctx.packet.writeScope}),
+  'Assignment checks:\n'+JSON.stringify(ctx.packet.checks),
+  'Assignment metadata:\n'+JSON.stringify({id:ctx.packet.id,contractRevision:ctx.contractRevision,constraintIds:ctx.packet.constraintIds,dependsOn:ctx.packet.dependsOn,unknowns:ctx.packet.unknowns}),
+  'Material index (not source bodies):\n'+JSON.stringify(ctx.materialIndex),ctx.materialNotice,
+  ctx.discoveryReadNotice,original.slice(end),
+].join('\n\n');
+const codeHashes=Object.fromEntries([...Object.keys(previous.codeHashes),fileURLToPath(import.meta.url)].map(f=>[f,hash(f)]));
+const report={kind:'case-worker-presentation-diagnostic/1',status:'running',project,agentDir,spec,prompt,originalPromptChars:original.length,promptChars:prompt.length,codeHashes,
+  configuration:{...previous.configuration,maxDurationMs:360000},sessions:[],discoveries:[],
+  limitations:['Standalone worker diagnostic, not a continued case or whole-workflow success. New cost, not an extension of the exhausted old case.',
+    'Original goal, assignment checks (including contradiction), material versions and footer retained; plan-shaped nesting replaced by labeled sections. Empty project/discovery/inline arrays omitted. Additional explicit execution heading is part of the presentation change.',
+    'Same native SDK role/tools with diagnostic discovery callbacks, but no production runCase/store. Completion preflight checks file existence and preserved sources, not semantic values.',
+    '360 seconds approximates the previous worker duration, not its whole-case remaining budget. No paired sampling, seed/cache control or causal performance conclusion.',
+    'Model ID and explicit settings checked; server defaults and GGUF bytes not frozen.']};
+const save=()=>fs.writeFileSync(output,JSON.stringify(report,null,2));save();const start=performance.now();
+try{
+  const inventory=await(await fetch('http://127.0.0.1:8080/v1/models',{signal:AbortSignal.timeout(5000)})).json();
+  const id=inventory.data[0].id;if(id!==previous.modelId)throw Error('Model changed');report.modelId=id;
+  const sdk=await import(pathToFileURL(manifest.sdkPath).href);
+  const runtime=await sdk.ModelRuntime.create({authPath:path.join(agentDir,'auth.json'),modelsPath:null,modelsStorePath:path.join(agentDir,'models.json'),allowModelNetwork:false});
+  runtime.registerProvider('planning-probe',{baseUrl:'http://127.0.0.1:8080/v1',api:'openai-completions',apiKey:'local',models:[{id,name:id,reasoning:true,input:['text'],contextWindow:32768,maxTokens:4096,compat:{supportsDeveloperRole:false,supportsReasoningEffort:false,thinkingFormat:'qwen-chat-template',maxTokensField:'max_tokens'},cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});
+  const run=await createPiSessionRunner({project,agentDir,sdk,model:runtime.getModel('planning-probe',id),modelRuntime:runtime,thinkingLevel:'off',maxTurns:16});
+  const request={role:'worker',prompt,writeScope:ctx.packet.writeScope,criterionIds:ctx.packet.checks.map(c=>c.id),runId:'worker-direct-diagnostic',signal:AbortSignal.timeout(360000),onStart:async sessionId=>{report.startedSessionId=sessionId;save();},
+    readDiscovery:async()=>{throw Error('No discoveries in this diagnostic');},
+    onDiscovery:async args=>{const receipt={id:'diagnostic-'+(report.discoveries.length+1),...args};report.discoveries.push(receipt);save();return receipt;},
+    validateResult:async reply=>{if(!reply.summary)return;for(const [name,body]of Object.entries({...spec.sources,'requirements.md':spec.goal}))if(fs.readFileSync(path.join(project,name),'utf8')!==body)throw Error('Source changed: '+name);if(!fs.existsSync(path.join(project,spec.output)))throw Error('Missing '+spec.output);}};
+  try{report.sessions.push(await run(request));report.status='returned';}catch(error){if(error.sessionEvidence)report.sessions.push(error.sessionEvidence);throw error;}
+}catch(error){report.status='failed';report.error={code:error.code??error.name,message:error.message};}
+report.elapsedMs=performance.now()-start;report.codeUnchanged=Object.entries(codeHashes).every(([f,h])=>hash(f)===h);report.grade=grade(project,spec,false);save();
+console.log(JSON.stringify({status:report.status,elapsedMs:report.elapsedMs,artifactPassed:report.grade.artifactPassed,sourcesPreserved:report.grade.sourcesPreserved,usage:report.sessions[0]?.usage,error:report.error}));

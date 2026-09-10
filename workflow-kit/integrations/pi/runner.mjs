@@ -6,6 +6,33 @@ import { jsonValue, evidence } from '../../skills/case-workflow/scripts/core/io.
 
 function error(code, message) { return Object.assign(new Error(message), { code }); }
 
+/** Presentation only: the core JSON context and persisted plan stay unchanged. */
+export function formatWorkerAssignment(contextText, maxChars = 100000) {
+  const {project, discoveries, discoveryReadNotice, goal, constraints, acceptance,
+    contractRevision, packet, requiredMaterials, materialIndex, materialNotice, ...extra} = JSON.parse(contextText);
+  const {purpose, deliverables, writeScope, checks, ...metadata} = packet;
+  const sections = ['Current assignment: execute the work below and create its deliverables. This is not a request to propose a plan.'];
+  const add = (label, value) => sections.push(`${label}\n${typeof value === 'string' ? value : JSON.stringify(value)}`);
+  if (project != null) add('Project consensus:', project);
+  add('Goal:', goal);
+  add('Constraints:', constraints);
+  add('Acceptance:', acceptance);
+  add('Assignment purpose:', purpose);
+  add('Deliverables and permitted writes:', {deliverables, writeScope});
+  add('Assignment checks:', checks);
+  add('Assignment metadata:', {...metadata, contractRevision});
+  if (requiredMaterials.length) add('Materials already supplied (full text):', requiredMaterials);
+  add('Material index (not source bodies):', materialIndex);
+  sections.push(materialNotice);
+  if (discoveries.length) add('Discoveries (indexes, not complete evidence):', discoveries);
+  sections.push(discoveryReadNotice);
+  if (Object.keys(extra).length) add('Additional context:', extra);
+  const result = sections.join('\n\n');
+  if (!Number.isSafeInteger(maxChars) || maxChars < 1) throw error('INVALID_ARGUMENT','Positive maxChars required');
+  if (result.length > maxChars) throw error('CONTEXT_TOO_LARGE',`Worker assignment is ${result.length} characters; budget is ${maxChars}`);
+  return result;
+}
+
 export function parseReply(text) {
   if (typeof text !== 'string') throw error('INVALID_REPLY', 'Expected a JSON object reply');
   const trimmed = text.trim();
@@ -336,7 +363,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
         await replan({reason:'No runnable packet; inspect findings and dependencies'}); continue;
       }
       if (packet.status !== 'submitted') {
-        const prompt = store.context(caseId, packet.id, { maxChars: maxContextChars, defaultDelivery:'indexed' });
+        const prompt = formatWorkerAssignment(store.context(caseId, packet.id, { maxChars: maxContextChars, defaultDelivery:'indexed' }), maxContextChars);
         const findings = packet.attempts.at(-1)?.review?.findings ?? [];
         let blockingReport;
         const worker = await invoke('worker', `${prompt}\nPrior review findings: ${JSON.stringify(findings)}\nPerform this packet only. Preserve source constraints. After completing the declared deliverables, submit {"summary":"what changed"} through case_result. case_result preflights actual files and sources and runs this packet's approved checks; fix reported failures in this session within the existing budget. Without approved checks only file/source preflight is available, not semantic verification. This worker has case_discover for reporting newly discovered work with key, summary, evidence and impact. During work, use it for missing external material, missing prerequisites, cross-packet changes, or additional work required by the original goal. Choose impact:"blocking" when this packet cannot safely continue; the report is saved and this session stops for planner triage. Choose impact:"nonblocking" when this packet can finish while the reported follow-up is still needed. For defects inside your current scope, repair them yourself in this session. Do not invent missing materials or claim independent verification.`, {
