@@ -24,6 +24,7 @@
 
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
+| 材料交辦：`core/context.mjs` 的 `defaultDelivery`、pi runner 呼叫與 SDK 欄位說明 | context-policy／pi-runner 測試、V2、ARCHITECTURE、技能契約參照、README、英文指南 | pi 預設索引、顯式 inline、可攜核心預設全文、來源過期拒絕及不改寫持久狀態；單獨 worker 與整案結果分開 |
 | 有限 context：`integrations/pi/sdk-session.mjs` 的壓縮配置與截斷分類 | pi-sdk 測試、V2、ARCHITECTURE、英文指南、READINESS；離線診斷 `evaluation/compaction-budget-probe.mjs` | SDK 恢復／取消／結果優先、真實 payload 額度、壓縮成功與任務成功分開，未測成本標未知 |
 | 精確定位：`integrations/pi/material-search.mjs`、`scoped-tools.mjs` | SDK 可用工具、session-trace、V2、ARCHITECTURE、技能契約參照、英文指南、evaluation 的工具路徑檢查 | 字面／分頁／容量／來源版本、原有路徑權限、trace 不記查詢正文、新增測試納入 package |
 | 異議受控診斷：`evaluation/review-repair-replay.mjs`、`review-dispute-replay.mjs` | `tests/review-dispute-evaluation.test.mjs`、package 測試清單、根 `docs/evaluation/` 證據與報告、READINESS／STATUS／README／英文指南 | 歷史否決只重播一次且標 synthetic；真實模型結果、成本、失敗與評分分開，測試期間凍結程式 |

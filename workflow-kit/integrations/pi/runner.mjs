@@ -98,7 +98,7 @@ id, purpose, constraintIds (applicable constraint IDs), inputs:[{path,required}]
 writeScope:[relative file or directory paths], deliverables:[{path}],
 checks:[{id,text,criterionIds:[global acceptance IDs]}], unknowns:[] .
 Use existing relative input paths, no invented files. Every global acceptance criterion must be covered.
-For long source material, use inputs with delivery:"indexed" and read it in bounded parts with read tools. For inline material omit delivery or set delivery:"inline". Only "inline" and "indexed" are valid delivery values.
+Source files are indexed by default in pi worker handoffs; use bounded read/search tools as needed. Set delivery:"inline" explicitly only when the full material should be attached at startup. delivery:"indexed" explicitly requests a versioned reference. Only "inline" and "indexed" are valid delivery values.
 If necessary source material is missing and a valid plan cannot be made, return instead {"blocked":{"reason":"the specific missing material and why it is necessary"}}. Do not invent inputs or submit empty deliverables to represent a blocker.
 Use the fewest useful packets. No cycles, no absolute paths, no executable plans. Do not do the work yet.
 Plan from the goal, constraints, acceptance and material index first. Use case_list for names and sizes when locations or delivery choices are unclear; it does not prove source facts. Read source bodies only to resolve a concrete planning uncertainty (such as dependencies, feasibility or missing input), not to fill the final answer before handing off.
@@ -325,7 +325,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
         await replan({reason:'No runnable packet; inspect findings and dependencies'}); continue;
       }
       if (packet.status !== 'submitted') {
-        const prompt = store.context(caseId, packet.id, { maxChars: maxContextChars });
+        const prompt = store.context(caseId, packet.id, { maxChars: maxContextChars, defaultDelivery:'indexed' });
         const findings = packet.attempts.at(-1)?.review?.findings ?? [];
         let blockingReport;
         const worker = await invoke('worker', `${prompt}\nPrior review findings: ${JSON.stringify(findings)}\nPerform this packet only. Preserve source constraints. After completing the declared deliverables, submit {"summary":"what changed"} through case_result. case_result preflights actual files and sources and runs this packet's approved checks; fix reported failures in this session within the existing budget. Without approved checks only file/source preflight is available, not semantic verification. This worker has case_discover for reporting newly discovered work with key, summary, evidence and impact. During work, use it for missing external material, missing prerequisites, cross-packet changes, or additional work required by the original goal. Choose impact:"blocking" when this packet cannot safely continue; the report is saved and this session stops for planner triage. Choose impact:"nonblocking" when this packet can finish while the reported follow-up is still needed. For defects inside your current scope, repair them yourself in this session. Do not invent missing materials or claim independent verification.`, {

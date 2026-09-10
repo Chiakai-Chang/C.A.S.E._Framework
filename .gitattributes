@@ -19,3 +19,5 @@ docs/evaluation/2026-09-10-controlled-dispute-evidence.json -text
 docs/evaluation/2026-09-10-role-guidance-evidence.json -text
 docs/evaluation/2026-09-10-normal-search-*.json -text
 docs/evaluation/2026-09-10-normal-compaction-*.json -text
+docs/evaluation/2026-09-10-worker-focus*-evidence.json -text
+docs/evaluation/2026-09-10-indexed-default-*.json -text

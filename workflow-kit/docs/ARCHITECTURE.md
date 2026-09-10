@@ -18,6 +18,8 @@ pi 的審查異議由既有 planner／integrator 處理，不另加角色。核�
 
 session 隔離指不承接另一角色的對話 history；現有 pi loader 仍載入 agentDir 與工作目錄祖先的適用指引，不等於只含工作包或完全空白的 context。run 紀錄可包含工具正文、檢查輸出及模型回覆，不保證自動去敏；分享前需檢查完整紀錄。
 
+pi runner 呼叫核心 context 時指定 `defaultDelivery:"indexed"`，只影響未明確指定 delivery 的材料呈現。核心／可攜 CLI 原預設 inline 不變；明確 inline/indexed、來源 freshness、必讀義務及契約內容均保留。materialIndex 的有效 delivery 由新物件呈現，不改存檔的計畫或版本。
+
 `sdk-session.mjs` 依 model.contextWindow 配置 SDK 壓縮：近期保留 1/4（最多 20,000）、預留 1/2（最多 16,384），設定隨 sessionEvidence 保存；未知大小維持 SDK 預設。整合不在工具執行中呼叫會中止 session 的手動 compact。SDK 自身恢復完成後仍有 length 且無已接受結果時，回報 MODEL_OUTPUT_TRUNCATED；取消／原預算耗盡的分類仍優先。不新增隱藏重試或增大模型視窗。
 
 pi 的 `scoped-tools.mjs` 產生模型可見讀取回條，`session-trace.mjs` 只收必要診斷欄位，SDK 將 trace 隨 session 回傳，runner 隨 run 保存。traceVersion 1 每事件最多 4 KiB、每 session 最多 128 事件與 256 KiB；溢位、缺少成對工具／請求／壓縮事件均明示不完整。trace 記錄指引作用域及版本，不複製正文、不整份送回模型，也不推定壓縮後仍保有先前文字。舊 run 沒有 trace 仍可讀，表示當時沒有這份證據。

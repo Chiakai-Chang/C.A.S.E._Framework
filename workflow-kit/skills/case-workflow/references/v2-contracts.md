@@ -107,7 +107,7 @@ worker 提交前，runner 先用核心提交規則核對 summary、必要來源�
 ## 接續、修訂與容量
 
 - 先 `get` 查目前契約、包與 attempt，再以 `context --case <id> --packet <packetId> --project <project>` 組裝當包材料。全部全域限制保留；`--max-chars` 是字元預算，超限報 `CONTEXT_TOO_LARGE`，應縮小包／材料，不截掉必需條件。
-- 大型必要來源可設 `{path,required:true,delivery:"indexed",purpose:"讀取用途"}`，保留版本與必讀義務、按 `case_read` 的 startLine/maxLines 取用，不整份內嵌。預設 inline；限制仍直接進 context。讀取工具單檔上限 1 MiB、每次 200 行與 24000 字元，超過需已授權的前處理或其他工具，不能默默略過。
+- 必要來源可設 `{path,required:true,delivery:"indexed",purpose:"讀取用途"}`，保留版本與必讀義務、按 `case_read` 的 startLine/maxLines 取用，不整份內嵌。pi 執行者對未指定 delivery 的來源預設 indexed；需要啟動時附全文，明確設 `delivery:"inline"`。可攜 CLI／核心 context 的原預設仍為 inline。限制仍直接進 context，索引不是免讀授權。讀取工具單檔上限 1 MiB、每次 200 行與 24000 字元，超過需已授權的前處理或其他工具，不能默默略過。
 - 來源或產物雜湊變更要核對並重驗。`retry` action 帶 `packetId,reason`；重跑已驗證包會使下游失效。pi 工具也有 retry 操作。
 - `revise` action 帶新 `contract,reason`；契約修訂保守使全部包與整合失效，須 `plan` 重新對齊，不能用 retry 偷渡舊契約。舊包留在 packetHistory，累計預算不重置。
 - 發現 running attempt 時，先確認原程序已停止及部分產物／外部副作用。需要時透過核心 `block`（packetId、reason）保存障礙，再明確 retry；不直接重跑外部副作用。失敗 run 的原始回報保留於 artifacts。

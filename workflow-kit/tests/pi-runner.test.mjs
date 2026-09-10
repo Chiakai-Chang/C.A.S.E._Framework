@@ -9,6 +9,25 @@ const runner = await import('../integrations/pi/runner.mjs').catch(error => {
     throw error;
 });
 
+test('pi worker receives default source indexes while explicit inline materials remain attached',async t=>{
+    const {createStore}=await import('../skills/case-workflow/scripts/core/index.mjs');
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-worker-index-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    fs.writeFileSync(path.join(project,'data.txt'),'SOURCE');fs.writeFileSync(path.join(project,'rule.txt'),'RULE');
+    const store=createStore(project);store.init();const state=store.create({goal:'write output',constraints:[],acceptance:[{id:'a',text:'correct'}],budget:{maxAttempts:3,maxDurationMs:60000}});
+    let observed=false;
+    await assert.rejects(runner.runCase({store,caseId:state.id,runSession:async request=>{
+      await request.onStart('index-'+request.role);
+      if(request.role==='planner')return {sessionId:'index-planner',text:JSON.stringify({packets:[{id:'p',purpose:'write output',constraintIds:[],inputs:[{path:'data.txt',required:true},{path:'rule.txt',required:true,delivery:'inline'}],dependsOn:[],writeScope:['out'],deliverables:[{path:'out'}],checks:[{id:'k',text:'correct',criterionIds:['a']}],unknowns:[]}]})};
+      assert.equal(request.role,'worker');
+      const ctx=JSON.parse(request.prompt.slice(0,request.prompt.indexOf('\nPrior review findings:')));
+      assert.deepEqual(ctx.requiredMaterials.map(m=>m.path),['rule.txt']);
+      assert.deepEqual(ctx.materialIndex.map(m=>m.path),['data.txt']);
+      observed=true;throw Object.assign(new Error('inspection complete'),{code:'PROBE_STOP'});
+    }}),{code:'PROBE_STOP'});
+    assert.equal(observed,true);
+});
+
 for (const reply of [
     {blocked:{reason:'no-write-scope'},packets:[],decisions:[],results:[],summary:'not done'},
     {blocked:{reason:'missing source',summary:'nested extra'}},
@@ -237,7 +256,7 @@ test('fresh planner, worker, reviewer and integrator complete a real stored case
             let reply;
             if (request.role === 'planner')
                 reply = { packets: [{ id: 'p1', purpose: 'Produce output', constraintIds: ['c1'],
-                            inputs: [{ path: 'input.txt', required: true }], dependsOn: [], writeScope: ['output.txt'],
+                            inputs: [{ path: 'input.txt', required: true, delivery:'inline' }], dependsOn: [], writeScope: ['output.txt'],
                             deliverables: [{ path: 'output.txt' }], checks: [{ id: 'k1', text: 'Output is correct', criterionIds: ['a1'] }], unknowns: [] }] };
             if (request.role === 'worker') {
                 assert.match(request.prompt, /source material/);

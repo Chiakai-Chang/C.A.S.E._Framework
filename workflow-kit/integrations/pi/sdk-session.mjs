@@ -59,7 +59,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
         blocked:{type:'object',additionalProperties:false,properties:{reason:{type:'string',minLength:1}},required:['reason']},
         packets:{type:'array',minItems:1,items:{type:'object',additionalProperties:true,properties:{
           inputs:{type:'array',items:{type:'object',properties:{path:{type:'string'},required:{type:'boolean'},
-            delivery:{type:'string',enum:['inline','indexed'],description:'Omit for inline; default is not a valid value.'}},required:['path','required'],additionalProperties:true}}
+            delivery:{type:'string',enum:['inline','indexed'],description:'Omit for indexed pi worker delivery; set inline explicitly to attach the full source. The string default is not a valid value.'}},required:['path','required'],additionalProperties:true}}
         }}},
         reason:{type:'string'},rerunPacketIds:{type:'array',items:{type:'string'}}
         ,decisions:{type:'array',items:{type:'object',additionalProperties:true}}

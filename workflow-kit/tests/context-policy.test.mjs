@@ -33,6 +33,29 @@ test('required indexed material retains its version without filling context and 
   assert.throws(() => store.context(state.id, 'report'), /data.txt/);
 });
 
+test('indexed presentation default preserves explicit inline and portable behavior without rewriting state', t=>{
+  const {project,store}=setup(t);
+  for(const name of ['data.txt','rule.txt'])fs.writeFileSync(path.join(project,name),'EXACT '+name);
+  let state=store.create(contract());
+  state=dispatch(store,state,{type:'plan',packets:[packet([{path:'data.txt',required:true},{path:'rule.txt',required:true,delivery:'inline'}])]});
+  const before=store.get(state.id);
+  const portable=JSON.parse(store.context(state.id,'report'));
+  assert.equal(portable.requiredMaterials.length,2);
+  const indexed=JSON.parse(store.context(state.id,'report',{defaultDelivery:'indexed'}));
+  assert.deepEqual(indexed.requiredMaterials.map(m=>m.path),['rule.txt']);
+  assert.equal(indexed.requiredMaterials[0].content,'EXACT rule.txt');
+  assert.equal(indexed.materialIndex[0].path,'data.txt');
+  assert.equal(indexed.materialIndex[0].delivery,'indexed');
+  assert.equal(indexed.materialIndex[0].required,true);
+  assert.equal(indexed.materialIndex[0].sha256.length,64);
+  assert.equal(indexed.goal,portable.goal);
+  assert.deepEqual(indexed.acceptance,portable.acceptance);
+  assert.deepEqual(store.get(state.id),before);
+  assert.throws(()=>store.context(state.id,'report',{defaultDelivery:'silent'}),{code:'INVALID_ARGUMENT'});
+  fs.writeFileSync(path.join(project,'data.txt'),'changed');
+  assert.throws(()=>store.context(state.id,'report',{defaultDelivery:'indexed'}),{code:'STALE_INPUT'});
+});
+
 test('project consensus is inherited across cases and stale source requires explicit realignment', t => {
   const { project, store } = setup(t);
   const configured = store.setProject(policy(), { expectedRevision: 0, reason: '使用者確認' });
