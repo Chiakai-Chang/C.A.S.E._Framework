@@ -16,6 +16,28 @@ test('reviewer format preserves negative verdicts and structured evidence withou
       assert.throws(()=>runner.validateReviewerReply(bad),{code:'INVALID_REPLY'});
 });
 
+test('normal workflow requests receipt evidence for both review stages and durably preserves submitted replies',async t=>{
+  const {createStore}=await import('../skills/case-workflow/scripts/core/index.mjs');
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-run-citations-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  const store=createStore(project);store.init();
+  const state=store.create({goal:'write out',constraints:[],acceptance:[{id:'a',text:'correct'}],budget:{maxAttempts:2,maxDurationMs:60000}});
+  await runner.runCase({store,caseId:state.id,runSession:async request=>{
+    const {role}=request;await request.onStart(role);
+    let reply;
+    if(role==='planner')reply={packets:[{id:'p',purpose:'write out',constraintIds:[],inputs:[],dependsOn:[],writeScope:['out'],deliverables:[{path:'out'}],checks:[{id:'k',text:'correct',criterionIds:['a']}],unknowns:[]}]};
+    else if(role==='worker'){fs.writeFileSync(path.join(project,'out'),'correct');reply={summary:'written'};}
+    else {
+      assert.equal(request.evidenceMode,'read-receipts');
+      const evidence={assessment:'checked',citations:[{receiptId:'transport-owned'}]};
+      reply=role==='reviewer'?{passed:true,findings:[],evidence}:{results:[{criterionId:'a',passed:true,evidence}],summary:'done'};
+    }
+    return {sessionId:role,text:JSON.stringify(reply),rawResultText:'raw-'+role};
+  }});
+  assert.equal(store.get(state.id).status,'completed');
+  assert.deepEqual(store.listRuns(state.id)[0].sessions.map(s=>s.rawResultText),['raw-planner','raw-worker','raw-reviewer','raw-integrator']);
+});
+
 test('custom reviewer transport rejects wrapped replies before state dispatch and retains evidence',async()=>{
     const raw=JSON.stringify({result:{passed:true,findings:[],evidence:'observed'}});
     await assert.rejects(runner.callSession(async ({onStart})=>{

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { isProtectedMaterialPart } from '../../skills/case-workflow/scripts/core/io.mjs';
 import { searchMaterial } from './material-search.mjs';
 
@@ -50,6 +50,7 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
       if (bytes.length > 1024 * 1024) fail('Expected a regular file of at most 1 MiB; pre-process larger data');
       const lines = bytes.toString('utf8').split(/\r?\n/);
       const sourceSha256 = sha256(bytes);
+      const receiptId = `read-${randomUUID()}`;
       const relative = path.relative(root, fs.realpathSync(file)).split(path.sep).join('/');
       const makePage = (pageStart, pageCount) => {
         const empty = bytes.length === 0;
@@ -58,7 +59,7 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
         const body = lines.slice(pageStart - 1, end).join('\n');
         const more = pageStart - 1 + pageCount < lines.length;
         const details = { lines: lines.length, startLine: pageStart, truncated: more,
-          receiptVersion: 1, path: relative, sourceSha256, resultSha256: sha256(body),
+          receiptVersion: 1, receiptId, path: relative, sourceSha256, resultSha256: sha256(body),
           range: empty || outOfRange ? null : { startLine: pageStart, endLine: end },
           eof: !more, wholeFile: pageStart === 1 && !more && !outOfRange,
           empty, outOfRange, nextStartLine: more ? end + 1 : null };

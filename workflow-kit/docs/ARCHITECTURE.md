@@ -1,5 +1,7 @@
 # 架構與用語
 
+pi `review-evidence.mjs` 保存 session-local 讀取回條並解析核對引用；`scoped-tools` 在原 24,000 字元限制內產生 `receiptId`，SDK 在工具提交及最後文字均檢查 ID／目前來源版本，runner 保存解析後 evidence 與接受的原始提交 `rawResultText`。此責任留在原生整合層，核心不假設外部 transport 的引用已被驗證。解析的行段是讀取範圍，不是語意支持保證；`assessment` 等文字仍屬模型主張。
+
 pi `scoped-tools.mjs` 沿既有安全路徑解析提供 `case_search`；`material-search.mjs` 只負責有界單檔字面比對、來源雜湊及可接續的完整行結果，不決定權限或語意真偽。SDK 各角色的系統／結果工具指引共用同一段角色說明，避免讓唯讀規劃者收到執行者修檔指令。trace 保留搜尋來源與匹配數，不複製查詢／匹配文字。
 
 同一工具層提供 worker 專用 `case_edit`：以來源雜湊及唯一字面匹配修改既有 UTF-8 成果，不重新生成未修改部分。沿用 writeScope 與受保護路徑，拒絕過期版本、歧義或無效 Unicode；SDK 視為寫入觀察，trace 記前後雜湊而非替換正文，評估器套用與 case_write 相同的成果路徑限制。仍是一般檔案寫入，不提供跨程序交易或語意正確性保證。

@@ -9,6 +9,110 @@ const adapter = await import('../integrations/pi/sdk-session.mjs').catch(e => {
     throw e;
 });
 
+// Exercise real scoped reads and result validation; only the external model loop is replaced.
+for (const role of ['reviewer','integrator']) for (const transport of ['tool','final'])
+test(`receipt evidence resolves actual sources without rewriting model input: ${role}/${transport}`, async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-cited-review-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  fs.writeFileSync(path.join(project,'source'),'one\r\ntwo\r\n');
+  let raw,receipt,validated;
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(options){return {session:{sessionId:'cited',subscribe(){return ()=>{};},async prompt(){
+      const read=options.customTools.find(t=>t.name==='case_read');
+      const result=await read.execute('read',{path:'source',startLine:2,maxLines:1});
+      receipt=result.details;
+      assert.equal(typeof receipt.receiptId,'string');
+      assert.equal(JSON.parse(result.content[0].text.split('\n')[0].slice(10)).receiptId,receipt.receiptId);
+      const evidence={assessment:'Second line supports the claim; semantic relevance remains a judgment.',receiptIds:[receipt.receiptId]};
+      raw=role==='reviewer'?{passed:true,findings:[],evidence}:{results:[{criterionId:'a',passed:true,evidence}],summary:'done'};
+      if(transport==='tool')await options.customTools.find(t=>t.name==='case_result').execute('done',{result:raw});
+    },getLastAssistantText:()=>JSON.stringify(raw),getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  const result=await run({role,prompt:'verify',evidenceMode:'read-receipts',verificationPaths:['source'],onStart(){},validateResult(reply){validated=reply;}});
+  const parsed=JSON.parse(result.text),e=role==='reviewer'?parsed.evidence:parsed.results[0].evidence;
+  assert.deepEqual(e.citations,[receipt]);
+  assert.deepEqual(e.citations[0].range,{startLine:2,endLine:2});
+  assert.equal(e.citations[0].path,'source');
+  assert.equal(e.assessment,role==='reviewer'?raw.evidence.assessment:raw.results[0].evidence.assessment);
+  assert.deepEqual(validated,parsed,'consumer validation sees resolved evidence');
+  assert.equal(result.rawResultText,JSON.stringify(raw),'original model submission survives normalization');
+  assert.equal(Object.hasOwn(role==='reviewer'?raw.evidence:raw.results[0].evidence,'citations'),false);
+});
+
+test('receipt evidence rejects fabricated, stale, out-of-range and malformed citations without stopping repair',async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-invalid-citation-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));fs.writeFileSync(path.join(project,'source'),'original');
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(options){return {session:{sessionId:'invalid-cited',subscribe(){return ()=>{};},async prompt(){
+      const read=options.customTools.find(t=>t.name==='case_read'),result=options.customTools.find(t=>t.name==='case_result');
+      const submit=evidence=>result.execute('result',{result:{passed:true,findings:[],evidence}});
+      await assert.rejects(submit('free prose'),{code:'INVALID_CITATION'});
+      await assert.rejects(submit({assessment:'checked',receiptIds:['invented']}),{code:'INVALID_CITATION'});
+      await assert.rejects(submit({assessment:'checked',receiptIds:[]}),{code:'INVALID_CITATION'});
+      const outside=(await read.execute('outside',{path:'source',startLine:99})).details;
+      await assert.rejects(submit({assessment:'checked',receiptIds:[outside.receiptId]}),{code:'INVALID_CITATION'});
+      const first=(await read.execute('first',{path:'source'})).details;
+      await assert.rejects(submit({assessment:'checked',receiptIds:[first.receiptId],sha256:'invented'}),{code:'INVALID_CITATION'});
+      await assert.rejects(submit({assessment:'checked',receiptIds:[first.receiptId,first.receiptId]}),{code:'INVALID_CITATION'});
+      fs.writeFileSync(path.join(project,'source'),'changed');
+      await assert.rejects(submit({assessment:'checked',receiptIds:[first.receiptId]}),{code:'STALE_CITATION'});
+      const fresh=(await read.execute('fresh',{path:'source'})).details;
+      await submit({assessment:'checked current content',receiptIds:[fresh.receiptId]});
+    },getLastAssistantText:()=>'',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  assert.equal(JSON.parse((await run({role:'reviewer',prompt:'verify',evidenceMode:'read-receipts',onStart(){}})).text).passed,true);
+});
+
+test('negative receipt review can report missing evidence without inventing a citation',async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-negative-citation-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  const raw={passed:false,findings:['source unavailable'],evidence:{assessment:'Cannot verify the source.',receiptIds:[]}};
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(){return {session:{sessionId:'negative',subscribe(){return ()=>{};},async prompt(){},getLastAssistantText:()=>JSON.stringify(raw),getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  const result=await run({role:'reviewer',prompt:'verify',evidenceMode:'read-receipts',verificationPaths:['missing'],onStart(){}});
+  assert.deepEqual(JSON.parse(result.text).evidence,{assessment:'Cannot verify the source.',citations:[]});
+});
+
+test('receipt review format errors expose the active evidence contract, not the legacy string example',async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-citation-format-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));let prompts=0;
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(){return {session:{sessionId:'format-citation',subscribe(){return ()=>{};},async prompt(message){
+      if(++prompts===2){
+        assert.match(message,/receiptIds/,'repair feedback must identify the required evidence contract');
+        assert.doesNotMatch(message,/"evidence":"actual observations/,'must not instruct a rejected string shape');
+      }
+    },getLastAssistantText:()=>prompts===1?'{"result":{"passed":false}}':'{"passed":false,"findings":["missing"],"evidence":{"assessment":"unavailable","receiptIds":[]}}',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  assert.equal(JSON.parse((await run({role:'reviewer',prompt:'verify',evidenceMode:'read-receipts',onStart(){}})).text).passed,false);
+  assert.equal(prompts,2);
+});
+
+test('legacy final-text transport preserves original JSON whitespace',async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-legacy-text-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));const raw='{\n  "summary": "unchanged transport"\n}';
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(){return {session:{sessionId:'legacy',subscribe(){return ()=>{};},async prompt(){},getLastAssistantText:()=>raw,getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  assert.equal((await run({role:'worker',prompt:'work',onStart(){}})).text,raw);
+});
+
+test('empty-file receipts remain usable, but IDs do not carry into a fresh evidence registry',async t=>{
+  const {createReviewEvidence}=await import('../integrations/pi/review-evidence.mjs');
+  const {createScopedTools}=await import('../integrations/pi/scoped-tools.mjs');
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-empty-citation-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));fs.writeFileSync(path.join(project,'empty'),'');
+  const read=createScopedTools({project,role:'reviewer'}).find(t=>t.name==='case_read');
+  const receipt=(await read.execute('read',{path:'empty'})).details;
+  const registry=createReviewEvidence(project);registry.record(receipt);
+  const reply={passed:true,findings:[],evidence:{assessment:'File is empty.',receiptIds:[receipt.receiptId]}};
+  assert.equal(registry.resolve(reply,'reviewer').evidence.citations[0].empty,true);
+  assert.throws(()=>createReviewEvidence(project).resolve(reply,'reviewer'),{code:'INVALID_CITATION'});
+  fs.unlinkSync(path.join(project,'empty'));
+  assert.throws(()=>registry.resolve(reply,'reviewer'),{code:'STALE_CITATION'});
+});
+
 for(const mode of ['accepted','limit','cancelled'])test(`terminal ${mode} prevents post-stop compaction work`,async t=>{
   const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-stop-compaction-')));
   t.after(()=>fs.rmSync(project,{recursive:true,force:true}));

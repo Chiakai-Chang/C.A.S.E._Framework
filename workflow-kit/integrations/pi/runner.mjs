@@ -3,6 +3,7 @@ import { packetDefinition, attemptCount } from '../../skills/case-workflow/scrip
 import { packetDiscoveryBlocked, unresolvedDiscoveries, discoveryIndex, discoveryReadNotice } from '../../skills/case-workflow/scripts/core/discoveries.mjs';
 import { validateDisputeShape } from '../../skills/case-workflow/scripts/core/review-dispute.mjs';
 import { jsonValue, evidence } from '../../skills/case-workflow/scripts/core/io.mjs';
+import { receiptEvidenceGuidance } from './review-evidence.mjs';
 
 function error(code, message) { return Object.assign(new Error(message), { code }); }
 
@@ -64,7 +65,7 @@ export function validatePlannerReply(reply) {
 }
 
 export function validateReviewerReply(reply) {
-  const invalid = () => { throw error('INVALID_REPLY', 'Reviewer reply must be exactly {"passed":true|false,"findings":["specific issues"],"evidence":"actual observations and limits"}. Do not wrap the reply in result; only case_result tool arguments use {"result": reply}. Correct the report in this session, not the artifact.'); };
+  const invalid = () => { throw error('INVALID_REPLY', 'Reviewer reply must contain exactly passed (boolean), findings (array) and evidence (the evidence format requested for this session). Do not wrap the reply in result; only case_result tool arguments use {"result": reply}. Correct the report in this session, not the artifact.'); };
   try { jsonValue(reply); } catch { invalid(); }
   if (!reply || Array.isArray(reply) || typeof reply !== 'object' || Object.keys(reply).length !== 3 ||
       Object.keys(reply).some(k=>!['passed','findings','evidence'].includes(k)) ||
@@ -196,6 +197,10 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     return state;
   };
   const invoke = async (role, prompt, extra = {}) => {
+    if(['reviewer','integrator'].includes(role)){
+      extra={...extra,evidenceMode:'read-receipts'};
+      prompt+=`\n${receiptEvidenceGuidance}`;
+    }
     if(extra.verificationPaths?.length)prompt += `\nBefore claiming any pass, inspect these files with case_read in this session: ${JSON.stringify(extra.verificationPaths)}. Relevant ranges suffice for this acquisition gate, but you remain responsible for all acceptance criteria. A read receipt does not prove understanding.`;
     if (prompt.length > maxContextChars) throw error('CONTEXT_TOO_LARGE', 'Required context exceeds configured character budget');
     if (previousSessions + run.sessions.length >= 3 * state.contract.budget.maxAttempts + 2) throw error('BUDGET_EXCEEDED', 'Total model session budget exhausted');
@@ -223,7 +228,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
         },
       });
       Object.assign(record, { status: 'returned', text: reply.text, usage: reply.usage ?? 'unknown',
-        rawFinalText: reply.rawFinalText ?? null, resultTransport: reply.resultTransport ?? 'unknown', replyCorrections:reply.replyCorrections??[],
+        rawFinalText: reply.rawFinalText ?? null, rawResultText:reply.rawResultText??null, resultTransport: reply.resultTransport ?? 'unknown', replyCorrections:reply.replyCorrections??[],
         observations: reply.observations ?? [], model: reply.model ?? null, toolCalls: reply.toolCalls ?? 'unknown', cost: reply.cost ?? 'unknown' });
       if (reply.trace) record.trace = reply.trace;
       save();
@@ -240,7 +245,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
         usage: evidence.usage ?? 'unknown', observations: evidence.observations ?? [],
         model: evidence.model ?? null, toolCalls: evidence.toolCalls ?? 'unknown',
         cost: evidence.cost ?? 'unknown', text: evidence.text ?? '',
-        rawFinalText: evidence.rawFinalText ?? null, resultTransport: evidence.resultTransport ?? 'unknown', replyCorrections:evidence.replyCorrections??[],
+        rawFinalText: evidence.rawFinalText ?? null, rawResultText:evidence.rawResultText??null, resultTransport: evidence.resultTransport ?? 'unknown', replyCorrections:evidence.replyCorrections??[],
         statsError: evidence.statsError ?? null,
         ...(evidence.trace ? {trace:evidence.trace} : {}),
       });
@@ -420,7 +425,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
       // Deliberately exclude worker narration; verification must examine actual files.
       const reviewPrompt = `Independently verify actual deliverables using read/check tools. Do not edit files.\nContract: ${JSON.stringify(state.contract)}\nPacket: ${JSON.stringify({
         id: current.id, purpose: current.purpose, inputs: current.inputs, deliverables: current.deliverables, checks: current.checks,
-      })}\nReturn JSON {"passed":true|false,"findings":["specific issues"],"evidence":"actual observations and checks, including untested limits"}.`;
+      })}\nReturn JSON {"passed":true|false,"findings":["specific issues"],"evidence":{"assessment":"actual observations and untested limits","receiptIds":["current-session read receipt ID"]}}.`;
       const review = await invoke('reviewer', reviewPrompt + `\nConfigured checks: ${JSON.stringify(checked.results)}`, {discoveryPacketId:packet.id,criterionIds:[...new Set(packet.checks.flatMap(c=>c.criterionIds))],verificationPaths:[...new Set([...current.deliverables.map(d=>d.path),...current.inputs.filter(i=>i.required).map(i=>i.path)])]});
       const decision = parseReply(review.text);
       if (checked.failed) {
@@ -443,7 +448,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     if (state.packets.some(p=>p.status!=='verified')) continue;
     if (unresolvedDiscoveries(state).length || run.waitingReason) waitForInput(unresolvedDiscoveries(state).map(d=>d.decision?.reason??d.summary).join('; ') || run.waitingReason);
     const acceptanceIds = state.contract.acceptance.map(c => c.id);
-    const shape = { results: acceptanceIds.map(criterionId => ({ criterionId, passed: true, evidence: 'actual check; set passed false if unmet' })), summary: 'overall result and limits' };
+    const shape = { results: acceptanceIds.map(criterionId => ({ criterionId, passed: true, evidence:{assessment:'actual check; set passed false if unmet',receiptIds:['current-session read receipt ID']} })), summary: 'overall result and limits' };
     const integrationPrompt = `Verify the whole goal and actual outputs, not just packet pass statuses. Do not edit files.\nContract: ${JSON.stringify(state.contract)}\nDiscovery disposition index: ${JSON.stringify(discoveryIndex(state))}\n${discoveryReadNotice}\nDeliverables: ${JSON.stringify(state.packets.map(p => ({ id: p.id, deliverables: p.deliverables, checks: p.checks })))}\nAcceptance IDs (exactly one result each): ${JSON.stringify(acceptanceIds)}. Do not add constraint IDs to results. Constraints must still be checked. Return only this JSON shape with your actual findings: ${JSON.stringify(shape)}.`;
     let correction = '';
     for (let attempt = 0; attempt < 2; attempt++) {

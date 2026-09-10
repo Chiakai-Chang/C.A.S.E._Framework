@@ -24,6 +24,7 @@
 
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
+| 核對引用：pi review-evidence、scoped-tools receiptId、SDK evidenceMode | runner／SDK／讀取測試、V2、ARCHITECTURE、GUIDE.en、READINESS／STATUS、首頁 | 本 session／版本／範圍、工具與最後文字、原始提交持久化、負面及 legacy 相容；來源不代替語意判斷 |
 | pi 執行交辦呈現：runner formatWorkerAssignment | pi-runner 測試、V2、GUIDE.en、READINESS／STATUS | 初次及返修、共識／發現／全文／索引／未知欄位保留、呈現後字數上限；核心 JSON 與持久狀態不變 |
 | 初始規劃角色：runner planningPhase、SDK roleGuidance | pi-runner／pi-sdk 測試、V2、英文指南、READINESS／STATUS | 初始交辦與後續回饋分流、未指定階段相容、讀取與權限保留；模型提交有效計畫另測，不以提示字串斷言代替效果 |
 | 終止收尾：SDK session abort；讀檔缺失回饋：scoped-tools | pi-sdk／pi-tools、V2、英文指南、READINESS／STATUS | 接受／取消／超額停用及取消壓縮、晚建立 controller 的競態，正常壓縮保留；缺檔不自動改路徑，真實模型效果另列，不保證零額外計費 |
