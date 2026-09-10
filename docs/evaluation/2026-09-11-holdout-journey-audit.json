@@ -1,0 +1,89 @@
+{
+  "status": "failed",
+  "elapsedMs": 343108,
+  "workflowCompleted": true,
+  "artifactPassed": false,
+  "sourceIntegrity": true,
+  "extraPaths": [],
+  "finalState": "completed",
+  "traceComplete": true,
+  "constraints": {
+    "sourceIntegrity": "verified",
+    "finalScope": "verified",
+    "toolPaths": "violated",
+    "evidence": "verified",
+    "policy": "verified"
+  },
+  "citationsVerified": 7,
+  "codeUnchanged": true,
+  "sessions": [
+    {
+      "role": "planner",
+      "sessionId": "01a08dad-bb6c-78f3-80df-4d056b4794cb",
+      "usage": {
+        "input": 4513,
+        "output": 686,
+        "cacheRead": 4439,
+        "cacheWrite": 0,
+        "total": 9638
+      },
+      "tools": 2,
+      "toolErrors": 0,
+      "replyCorrections": 0,
+      "compactions": 0
+    },
+    {
+      "role": "worker",
+      "sessionId": "01a08dae-5f68-7537-9269-21a7c22adcda",
+      "usage": {
+        "input": 11316,
+        "output": 612,
+        "cacheRead": 38753,
+        "cacheWrite": 0,
+        "total": 50681
+      },
+      "tools": 8,
+      "toolErrors": 0,
+      "replyCorrections": 0,
+      "compactions": 0
+    },
+    {
+      "role": "reviewer",
+      "sessionId": "01a08daf-545f-77ae-9877-590c783126fb",
+      "usage": {
+        "input": 10934,
+        "output": 1152,
+        "cacheRead": 23910,
+        "cacheWrite": 0,
+        "total": 35996
+      },
+      "tools": 9,
+      "toolErrors": 2,
+      "replyCorrections": 0,
+      "compactions": 0
+    },
+    {
+      "role": "integrator",
+      "sessionId": "01a08db0-8c01-7da9-9c6b-0cbc98e07518",
+      "usage": {
+        "input": 12303,
+        "output": 3381,
+        "cacheRead": 108287,
+        "cacheWrite": 0,
+        "total": 123971
+      },
+      "tools": 13,
+      "toolErrors": 4,
+      "replyCorrections": 0,
+      "compactions": 0
+    }
+  ],
+  "sdkTotalTokens": 220286,
+  "diagnostics": {
+    "bytes": 149152,
+    "dropped": 0,
+    "complete": true,
+    "limit": 2097152
+  },
+  "humanInterventions": 0
+}

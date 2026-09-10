@@ -1,0 +1,25 @@
+// One existing holdout task through unchanged production orchestration.
+import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {freeze,verifyFrozen,executeArm} from '../workflow-kit/evaluation/read-receipt-comparison.mjs';
+import {digest} from '../workflow-kit/evaluation/read-receipt-spec.mjs';
+const manifestPath=path.resolve('.npm-cache/holdout-journey-2026-09-11-manifest.json');
+const output=path.resolve('.npm-cache/holdout-journey-2026-09-11-evidence.json');
+if(fs.existsSync(output)||fs.existsSync(manifestPath))throw Error('New output paths required; do not repeat this run');
+const sdkPath='D:/MyProject/C.A.S.E._Framework/.npm-cache/pi-host-validation/node_modules/@earendil-works/pi-coding-agent/dist/index.js';
+const report={format:'case-single-holdout/1',status:'preparing',createdAt:new Date().toISOString(),result:null,
+  scriptSha256:digest(fs.readFileSync(fileURLToPath(import.meta.url))),
+  limitations:['One existing alternate extraction task, not an unseen statistical holdout or cost comparison.','No standard answers or synthetic verdicts passed to model sessions.','Original 600-second budget; no main/probe/control arm executed.','Same model service; no seed/cache/GGUF freeze or measured peak context.']};
+const save=()=>fs.writeFileSync(output,JSON.stringify(report,null,2));save();
+try{
+  const manifest=await freeze({sdkPath,output:manifestPath,thinkingLevel:'off'});
+  verifyFrozen(manifest);report.manifestId=manifest.id;report.configuration=manifest.configuration;
+  fs.writeFileSync(path.join(manifest.batchRoot,'generation.claim'),JSON.stringify({mode:'single-holdout',manifestSha256:digest(fs.readFileSync(manifestPath)),at:new Date().toISOString()}),{flag:'wx'});
+  report.status='running';save();
+  const sdk=await import(pathToFileURL(sdkPath).href);
+  report.result=await executeArm({manifest,id:'holdout',sdk,onUpdate:result=>{report.result=result;save();}});
+  report.status=report.result.status;
+}catch(error){report.status='interrupted';report.error={code:error.code??error.name,message:error.message};}
+report.finishedAt=new Date().toISOString();save();
+console.log(JSON.stringify({status:report.status,elapsedMs:report.result?.elapsedMs,roles:report.result?.sessions.map(s=>s.role),artifactPassed:report.result?.artifactPassed,sdkTotalTokens:report.result?.sdkTotalTokens,error:report.error??report.result?.error}));

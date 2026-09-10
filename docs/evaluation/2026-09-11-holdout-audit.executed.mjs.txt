@@ -1,0 +1,37 @@
+// Offline verification only; never sends grading back to model sessions.
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {grade} from '../workflow-kit/evaluation/read-receipt-spec.mjs';
+import {verifyFrozen} from '../workflow-kit/evaluation/read-receipt-comparison.mjs';
+const raw=JSON.parse(fs.readFileSync('.npm-cache/holdout-journey-2026-09-11-evidence.json'));
+if(['running','preparing'].includes(raw.status))throw Error('Wait for the run to finish');
+const m=JSON.parse(fs.readFileSync('.npm-cache/holdout-journey-2026-09-11-manifest.json'));
+verifyFrozen(m);const r=raw.result,spec=m.specs.holdout;
+const g=grade(r.project,spec),sha=x=>createHash('sha256').update(x).digest('hex');
+assert.deepEqual(g,r.grade);
+let citations=0;
+for(const s of r.sessions.filter(s=>['reviewer','integrator'].includes(s.role)&&s.text)){
+  const reply=JSON.parse(s.text),submitted=JSON.parse(s.rawResultText);
+  const reads=new Map(s.observations.filter(o=>o.toolName==='case_read'&&!o.isError).map(o=>[o.result.details.receiptId,o.result.details]));
+  const claims=s.role==='reviewer'?[reply]:reply.results,original=s.role==='reviewer'?[submitted]:submitted.results;
+  for(let i=0;i<claims.length;i++){
+    const e=claims[i].evidence,source=original[i].evidence;
+    assert.equal(e.assessment,source.assessment);
+    assert.deepEqual(e.citations.map(c=>c.receiptId),source.receiptIds);
+    for(const c of e.citations){
+      assert.deepEqual(c,reads.get(c.receiptId));
+      const body=Object.hasOwn(spec.sources,c.path)?spec.sources[c.path]:c.path==='requirements.md'?spec.goal:fs.readFileSync(path.join(r.project,c.path),'utf8');
+      assert.equal(c.sourceSha256,sha(body));
+      const returned=c.empty?'':body.split(/\r?\n/).slice(c.range.startLine-1,c.range.endLine).join('\n');
+      assert.equal(c.resultSha256,sha(returned));citations++;
+    }
+  }
+}
+const summary={status:raw.status,elapsedMs:r.elapsedMs,workflowCompleted:r.workflowCompleted,artifactPassed:g.artifactPassed,sourceIntegrity:g.sourcesPreserved,extraPaths:g.extraPaths,
+  finalState:r.finalState?.status,traceComplete:r.traceComplete,constraints:r.constraints,citationsVerified:citations,codeUnchanged:true,
+  sessions:r.sessions.map(s=>({role:s.role,sessionId:s.sessionId,usage:s.usage,tools:s.observations?.length,toolErrors:s.observations?.filter(o=>o.isError).length,replyCorrections:s.replyCorrections?.length,compactions:s.trace?.events.filter(e=>e.kind==='compaction_start').length})),
+  sdkTotalTokens:r.sdkTotalTokens,diagnostics:r.diagnostics,humanInterventions:r.humanInterventions};
+const output='.npm-cache/holdout-journey-2026-09-11-audit.json';
+fs.writeFileSync(output,JSON.stringify(summary,null,2),{flag:'wx'});console.log(JSON.stringify(summary));
