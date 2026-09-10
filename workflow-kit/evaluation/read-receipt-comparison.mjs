@@ -122,9 +122,9 @@ export function audit(record,spec){
   let paths=record.toolPolicyViolation?'violated':'verified';
   for(const event of record.toolAudit??[]){
     if(event.kind!=='start')continue;
-    if(['case_read','case_search','case_write','case_list'].includes(event.toolName)){
+    if(['case_read','case_search','case_write','case_edit','case_list'].includes(event.toolName)){
       if(typeof event.path!=='string'&&paths!=='violated')paths='unknown';
-      else if(['case_read','case_search'].includes(event.toolName)&&!allowedRead.has(event.path)||event.toolName==='case_write'&&event.path!==spec.output||event.toolName==='case_list'&&event.path!=='.')paths='violated';
+      else if(['case_read','case_search'].includes(event.toolName)&&!allowedRead.has(event.path)||['case_write','case_edit'].includes(event.toolName)&&event.path!==spec.output||event.toolName==='case_list'&&event.path!=='.')paths='violated';
     }else if(!['case_result','case_discover','case_discovery_read'].includes(event.toolName))paths='violated';
   }
   const g=record.grade;
@@ -174,7 +174,7 @@ export async function executeArm({manifest,id,sdk,onUpdate=()=>{}}){
       }
       options={...options,customTools:options.customTools.map(tool=>({...tool,async execute(callId,args,...rest){
         const p=typeof args?.path==='string'?args.path.replaceAll('\\','/').replace(/^(\.\/)+/,''):null;
-        const permitted=['case_read','case_search'].includes(tool.name)?[...Object.keys(spec.sources),'requirements.md',spec.output].includes(p):tool.name==='case_write'?p===spec.output:tool.name==='case_list'?p==='.':['case_result','case_discover','case_discovery_read'].includes(tool.name);
+        const permitted=['case_read','case_search'].includes(tool.name)?[...Object.keys(spec.sources),'requirements.md',spec.output].includes(p):['case_write','case_edit'].includes(tool.name)?p===spec.output:tool.name==='case_list'?p==='.':['case_result','case_discover','case_discovery_read'].includes(tool.name);
         if(!permitted)record.toolPolicyViolation=true;
         retain(record,'toolAudit',{kind:'start',toolCallId:callId,toolName:tool.name,path:p});save();
         try{const result=await tool.execute(callId,args,...rest);retain(record,'toolAudit',{kind:'end',toolCallId:callId,toolName:tool.name,isError:result.isError===true});

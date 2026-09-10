@@ -8,6 +8,17 @@ const traceModule = await import('../integrations/pi/session-trace.mjs').catch(e
   throw e;
 });
 const sha = text => createHash('sha256').update(text).digest('hex');
+
+test('edit trace records versions without replacement text',()=>{
+  const trace=create();
+  trace.observe({type:'tool_execution_start',toolName:'case_edit',toolCallId:'edit',args:{oldText:'SECRET old',newText:'SECRET new'}});
+  trace.observe({type:'tool_execution_end',toolName:'case_edit',toolCallId:'edit',isError:false,result:{details:{path:'out.json',bytes:20,sourceSha256:sha('new'),previousSha256:sha('old')}}});
+  const record=trace.finish('completed'),end=record.events.find(e=>e.kind==='tool_end');
+  assert.equal(end.toolName,'case_edit');
+  assert.equal(end.metadata.previousSha256,sha('old'));
+  assert.equal(end.metadata.sourceSha256,sha('new'));
+  assert.ok(!JSON.stringify(record).includes('SECRET'));
+});
 const create = options => {
   assert.equal(typeof traceModule.createSessionTrace, 'function', 'bounded trace must be implemented');
   return traceModule.createSessionTrace({runId:'run',sessionId:'session',role:'worker',project:process.cwd(),agentDir:path.join(process.cwd(),'private-config'),approvedCheckIds:['approved'],...options});

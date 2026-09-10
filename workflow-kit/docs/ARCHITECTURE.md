@@ -2,6 +2,8 @@
 
 pi `scoped-tools.mjs` 沿既有安全路徑解析提供 `case_search`；`material-search.mjs` 只負責有界單檔字面比對、來源雜湊及可接續的完整行結果，不決定權限或語意真偽。SDK 各角色的系統／結果工具指引共用同一段角色說明，避免讓唯讀規劃者收到執行者修檔指令。trace 保留搜尋來源與匹配數，不複製查詢／匹配文字。
 
+同一工具層提供 worker 專用 `case_edit`：以來源雜湊及唯一字面匹配修改既有 UTF-8 成果，不重新生成未修改部分。沿用 writeScope 與受保護路徑，拒絕過期版本、歧義或無效 Unicode；SDK 視為寫入觀察，trace 記前後雜湊而非替換正文，評估器套用與 case_write 相同的成果路徑限制。仍是一般檔案寫入，不提供跨程序交易或語意正確性保證。
+
 pi 的審查異議由既有 planner／integrator 處理，不另加角色。核心 `review-dispute.mjs` 提供唯讀版本快照與逐字引用驗證，store 封裝專案政策檢查；runner 在 run 紀錄保存原否決、反證、待核對狀態及已用額度。它不是新的完成狀態：最後仍須核心 `integrate` 檢查全部條件與來源新鮮度。[操作及中斷處理](V2.md)。
 
 本頁只描述 Workflow Kit；根目錄 M0 的 revision、submission、accept 等規則不適用。先使用 [完整例子](WORKFLOW.md)，需要理解責任或接手開發時再讀本頁。

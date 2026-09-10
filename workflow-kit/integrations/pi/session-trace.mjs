@@ -8,7 +8,7 @@ const identity = value => typeof value === 'string' && value.length > 0 && Buffe
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) ? value : 'unknown';
 const integer = value => Number.isSafeInteger(value) && value >= 0 ? value : 'unknown';
 const boolean = value => typeof value === 'boolean' ? value : 'unknown';
-const toolNames = new Set(['case_read','case_search','case_list','case_write','case_check','case_result','case_discover','case_discovery_read']);
+const toolNames = new Set(['case_read','case_search','case_list','case_write','case_edit','case_check','case_result','case_discover','case_discovery_read']);
 const errorCodes = new Set(['CANCELLED','UNSAFE_TOOL_PATH','LINE_TOO_LONG','READ_OUTPUT_TOO_LARGE','READ_RECEIPT_TOO_LARGE','INVALID_ARGUMENT','INVALID_RESULT','INVALID_REPLY','RESULT_BUSY','RESULT_ALREADY_RECORDED','DISCOVERY_BLOCKED','CHECK_NOT_APPROVED','CHECK_FAILED','INVALID_CHECK_CONFIG','ENOENT','EACCES','EPERM','EISDIR','ENOSPC','REVISION_CONFLICT','MISSING_INPUT','STALE_INPUT','MISSING_DELIVERABLE']);
 const within = (directory, file) => {
   const relative=path.relative(directory,file);
@@ -50,6 +50,7 @@ export function createSessionTrace({runId,sessionId,role,project,agentDir,approv
       nextStartLine:details?.nextStartLine===null?null:integer(details?.nextStartLine),receiptVersion:details?.receiptVersion===1?1:'unknown',
     };
     if(name==='case_write')return {path:approvedPath(details?.path),bytes:integer(details?.bytes),sourceSha256:digest(details?.sourceSha256)};
+    if(name==='case_edit')return {path:approvedPath(details?.path),bytes:integer(details?.bytes),sourceSha256:digest(details?.sourceSha256),previousSha256:digest(details?.previousSha256)};
     if(name==='case_check')return {id:approvedCheckIds.includes(details?.id)?identity(details.id):'unknown',exitCode:Number.isSafeInteger(details?.exitCode)?details.exitCode:'unknown'};
     if(name==='case_discover')return {id:identity(details?.id),status:['pending','accepted','duplicate','dismissed','deferred','needs_input'].includes(details?.status)?details.status:'unknown'};
     if(name==='case_result')return {recorded:boolean(details?.recorded),replayed:details?.replayed===true,kind:call?.resultKind??'unknown'};

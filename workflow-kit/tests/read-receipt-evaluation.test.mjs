@@ -81,6 +81,8 @@ test('trace audit does not let correct final JSON hide forbidden writes or missi
   assert.equal(audit(base,spec).traceComplete,true);
   assert.equal(audit({...base,sessions:[{}]},spec).constraints.evidence,'unknown');
   assert.equal(audit({...base,toolAudit:[{kind:'start',toolName:'case_write',path:'requirements.md'}]},spec).constraints.toolPaths,'violated');
+  assert.equal(audit({...base,toolAudit:[{kind:'start',toolName:'case_edit',path:spec.output}]},spec).constraints.toolPaths,'verified');
+  assert.equal(audit({...base,toolAudit:[{kind:'start',toolName:'case_edit',path:'requirements.md'}]},spec).constraints.toolPaths,'violated');
   assert.equal(audit({...base,toolAudit:[{kind:'start',toolName:'case_read',path:'../outside'}]},spec).constraints.toolPaths,'violated');
   assert.equal(audit({...base,toolAudit:[{kind:'start',toolName:'case_write',path:'requirements.md'},{kind:'start',toolName:'case_read',path:null}]},spec).constraints.toolPaths,'violated');
 });

@@ -117,6 +117,29 @@ export function createScopedTools({ project, role, writeScope = [], checks = {} 
         bytes: bytes.length, sourceSha256: sha256(bytes) });
     },
   });
+  if (role === 'worker') tools.push({
+    name:'case_edit', label:'Repair one exact passage',
+    description:'For a localized correction, replace one exact, unique passage in an existing UTF-8 deliverable without regenerating unrelated content. Read the file first and supply its sourceSha256. Matching is literal (including whitespace and line endings), not regex. A stale version, missing or repeated match makes no change. Same writeScope as case_write; not a semantic correctness check.',
+    parameters:schema({path:string('Declared relative deliverable path'),sourceSha256:string('Current SHA256 from case_read or last write/edit receipt'),oldText:string('Exact nonempty passage occurring once'),newText:string('Replacement passage; empty deletes that passage')}),
+    async execute(_id,args){
+      const file=resolve(args.path,true);
+      if(typeof args.sourceSha256!=='string'||!/^[a-f0-9]{64}$/.test(args.sourceSha256)||typeof args.oldText!=='string'||!args.oldText||typeof args.newText!=='string')readError('INVALID_ARGUMENT','Supply current sourceSha256, nonempty oldText and string newText');
+      if(Buffer.byteLength(args.oldText)>1024*1024||Buffer.byteLength(args.newText)>1024*1024)fail('Edit passages must be at most 1 MiB');
+      if(!fs.statSync(file).isFile()||fs.statSync(file).size>1024*1024)fail('Expected an existing regular file of at most 1 MiB');
+      const before=fs.readFileSync(file),previousSha256=sha256(before);
+      if(before.length>1024*1024)fail('File exceeds 1 MiB');
+      if(previousSha256!==args.sourceSha256)readError('STALE_INPUT','File changed since the supplied receipt. Read the current file before editing; no changes made.');
+      const text=before.toString('utf8');
+      if(!Buffer.from(text).equals(before)||[args.oldText,args.newText].some(value=>Buffer.from(value).toString('utf8')!==value))readError('INVALID_ARGUMENT','Exact edits require valid UTF-8 source, match and replacement text');
+      const at=text.indexOf(args.oldText);
+      if(at<0||text.indexOf(args.oldText,at+1)>=0)readError('INVALID_ARGUMENT','oldText must match exactly once, including whitespace and line endings. Read a precise passage; no changes made.');
+      const after=Buffer.from(text.slice(0,at)+args.newText+text.slice(at+args.oldText.length));
+      if(after.length>1024*1024)fail('Edited file exceeds 1 MiB');
+      resolve(args.path,true);
+      fs.writeFileSync(file,after,{flag:'w'});
+      return content(`Edited one passage in ${args.path}`,{path:path.relative(root,file).split(path.sep).join('/'),bytes:after.length,previousSha256,sourceSha256:sha256(after)});
+    }
+  });
   if (Object.keys(checks).length) tools.push({
     name: 'case_check', label: 'Run approved check', description: `Run an operator-configured check by ID; no shell commands or arguments may be supplied. IDs: ${Object.keys(checks).join(', ')}`,
     parameters: schema({ id: string('Approved check ID') }),

@@ -98,7 +98,7 @@ id, purpose, constraintIds (applicable constraint IDs), inputs:[{path,required}]
 writeScope:[relative file or directory paths], deliverables:[{path}],
 checks:[{id,text,criterionIds:[global acceptance IDs]}], unknowns:[] .
 Use existing relative input paths, no invented files. Every global acceptance criterion must be covered.
-Source files are indexed by default in pi worker handoffs; use bounded read/search tools as needed. Set delivery:"inline" explicitly only when the full material should be attached at startup. delivery:"indexed" explicitly requests a versioned reference. Only "inline" and "indexed" are valid delivery values.
+Source files are indexed by default in pi worker handoffs; omit delivery for ordinary sources. The optional delivery field belongs only inside each inputs item: {"path":"source.txt","required":true,"delivery":"inline"} attaches the full material at startup; "indexed" explicitly requests a versioned reference. Do not put delivery on the result or packet. Only "inline" and "indexed" are valid delivery values.
 If necessary source material is missing and a valid plan cannot be made, return instead {"blocked":{"reason":"the specific missing material and why it is necessary"}}. Do not invent inputs or submit empty deliverables to represent a blocker.
 Use the fewest useful packets. No cycles, no absolute paths, no executable plans. Do not do the work yet.
 Plan from the goal, constraints, acceptance and material index first. Use case_list for names and sizes when locations or delivery choices are unclear; it does not prove source facts. Read source bodies only to resolve a concrete planning uncertainty (such as dependencies, feasibility or missing input), not to fill the final answer before handing off.

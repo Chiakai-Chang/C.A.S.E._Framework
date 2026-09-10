@@ -24,6 +24,8 @@
 
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
+| 局部返修：`integrations/pi/scoped-tools.mjs` 的 case_edit | SDK 寫入觀察、session-trace、pi-tools／trace 測試、read-receipt evaluator 路徑稽核、V2、英文與技能參照 | 唯一文字／來源版本／UTF-8／範圍、拒絕不改檔；實際模型修復另記且不延長舊案預算 |
+| 計畫引用錯誤：`core/contracts.mjs`、pi runner 交辦說明 | core-v2 測試、V2、英文指南、技能契約參照 | 回覆可定位欄位與合法 ID，拒絕規則與狀態不變；模型自修效果另測 |
 | 材料交辦：`core/context.mjs` 的 `defaultDelivery`、pi runner 呼叫與 SDK 欄位說明 | context-policy／pi-runner 測試、V2、ARCHITECTURE、技能契約參照、README、英文指南 | pi 預設索引、顯式 inline、可攜核心預設全文、來源過期拒絕及不改寫持久狀態；單獨 worker 與整案結果分開 |
 | 有限 context：`integrations/pi/sdk-session.mjs` 的壓縮配置與截斷分類 | pi-sdk 測試、V2、ARCHITECTURE、英文指南、READINESS；離線診斷 `evaluation/compaction-budget-probe.mjs` | SDK 恢復／取消／結果優先、真實 payload 額度、壓縮成功與任務成功分開，未測成本標未知 |
 | 精確定位：`integrations/pi/material-search.mjs`、`scoped-tools.mjs` | SDK 可用工具、session-trace、V2、ARCHITECTURE、技能契約參照、英文指南、evaluation 的工具路徑檢查 | 字面／分頁／容量／來源版本、原有路徑權限、trace 不記查詢正文、新增測試納入 package |

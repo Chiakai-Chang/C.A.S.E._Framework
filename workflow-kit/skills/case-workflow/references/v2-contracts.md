@@ -4,6 +4,10 @@
 
 ## 建立與執行
 
+局部返修可用 worker 專用 `case_edit`：`{path,sourceSha256,oldText,newText}`。先讀目前版本，選唯一且完全匹配的文字（含原換行）；不存在、多次匹配或雜湊過期會拒絕，不猜測替換位置。它只修改既有 UTF-8 成果、沿用 writeScope、至多 1 MiB，回傳前後雜湊。保留其他內容不能代替修正後自查與獨立驗收。
+
+計畫的 `constraintIds` 只能引用契約限制，`checks[].criterionIds` 則引用整體驗收。拒收訊息會指出工作包、欄位／檢查與合法編號；依原意修正適用引用，不刪除驗收以求通過。`delivery` 僅放在 `inputs[]` 個別材料內，不放在回覆或工作包頂層。
+
 ### 單檔精確定位
 
 pi 工作 session 提供 `case_search`：`{"path":"source.txt","query":"要核對的名稱","startLine":1,"maxMatches":20}`。查詢為大小寫敏感的單行字面文字，不是正規表示式；至多 256 UTF-16 單位，檔案至多 1 MiB，每頁 1–20 個匹配，完整回傳至多 24,000 UTF-16 單位。沿用 case_read 的受保護路徑與連結限制。

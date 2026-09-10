@@ -176,7 +176,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
       trace.observe(event);
       if (event.type === 'message_end' && event.message?.role === 'assistant') lastStopReason = event.message.stopReason;
       if (event.type === 'turn_start' && ++turns > maxTurns) { budgetExceeded = true; abort(); }
-      if (event.type === 'tool_execution_start' && event.toolName === 'case_write') {
+      if (event.type === 'tool_execution_start' && ['case_write','case_edit'].includes(event.toolName)) {
         writeRequests.set(event.toolCallId, {path:typeof event.args?.path === 'string' ? event.args.path : null,writeScope:[...writeScope]});
       }
       if (event.type === 'tool_execution_end') {

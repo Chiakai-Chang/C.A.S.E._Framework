@@ -27,7 +27,7 @@ export function plan(project, state, packets) {
         need(text(p.purpose), 'Purpose required');
         for (const key of ['constraintIds', 'inputs', 'dependsOn', 'writeScope', 'deliverables', 'checks', 'unknowns'])
             need(Array.isArray(p[key]), `${key} required`);
-        need(p.constraintIds.every(id => state.contract.constraints.some(c => c.id === id)), 'Unknown constraint');
+        need(p.constraintIds.every(id => state.contract.constraints.some(c => c.id === id)), `Packet ${JSON.stringify(p.id)} constraintIds contains unknown IDs. Allowed constraintIds: ${JSON.stringify(state.contract.constraints.map(c => c.id))}. Use only applicable constraints from the contract; do not invent IDs.`);
         need(unique(p.dependsOn) && p.dependsOn.every(id => allIds.includes(id) && id !== p.id), 'Invalid dependency');
         p.writeScope.forEach(name => resolveMaterial(project, name));
         if (state.contract.writeScope) {
@@ -42,7 +42,7 @@ export function plan(project, state, packets) {
         }
         ids(p.checks);
         for (const c of p.checks) {
-            need(Array.isArray(c.criterionIds) && c.criterionIds.length > 0 && c.criterionIds.every(id => state.contract.acceptance.some(a => a.id === id)), 'Invalid criterion references');
+            need(Array.isArray(c.criterionIds) && c.criterionIds.length > 0 && c.criterionIds.every(id => state.contract.acceptance.some(a => a.id === id)), `Packet ${JSON.stringify(p.id)} check ${JSON.stringify(c.id)} has invalid criterionIds. Use a nonempty array drawn from acceptance IDs: ${JSON.stringify(state.contract.acceptance.map(a => a.id))}. Constraint IDs belong in constraintIds, not criterionIds. Preserve the check and select its applicable acceptance IDs; do not weaken acceptance.`);
             c.criterionIds.forEach(id => covered.add(id));
         }
         const inputs = p.inputs.map(i => {

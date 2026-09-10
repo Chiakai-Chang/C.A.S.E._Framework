@@ -89,6 +89,25 @@ test('plan validation returns actionable errors without committing or weakening 
     assert.deepEqual(f.store.validatePlan(f.state.id, {type:'amend_plan',packets:[{...packet(),purpose:'revised approach'}],reason:'new legal plan'}, {expectedRevision:f.state.revision}), {valid:true});
     assert.equal(JSON.stringify(f.store.get(f.state.id)), planned);
 });
+test('plan reference errors identify the field and legal IDs without changing state', t => {
+    const f = setup(t);
+    const before = JSON.stringify(f.store.get(f.state.id));
+    for (const [change, field, allowed] of [
+        [{ constraintIds: ['missing'] }, 'constraintIds', 'c'],
+        [{ checks: [{ id: 'wrong-check', text: 'verify', criterionIds: ['missing'] }] }, 'wrong-check', 'a'],
+        [{ checks: [{ id: 'empty-check', text: 'verify', criterionIds: [] }] }, 'empty-check', 'a']
+    ]) {
+        assert.throws(() => f.store.validatePlan(f.state.id, {type:'plan',packets:[{...packet(),...change}]}, {expectedRevision:f.state.revision}), failure => {
+            assert.equal(failure.code, 'INVALID_ARGUMENT');
+            assert.ok(failure.message.includes(field));
+            assert.ok(failure.message.includes(JSON.stringify([allowed])));
+            return true;
+        });
+        assert.equal(JSON.stringify(f.store.get(f.state.id)), before);
+    }
+    assert.deepEqual(f.store.validatePlan(f.state.id, {type:'plan',packets:[packet()]}, {expectedRevision:f.state.revision}), {valid:true});
+});
+
 test('畸形操作始終提供結構化錯誤碼', t => {
     const f = setup(t);
     assert.throws(() => f.send({ type: 'plan', packets: [{ ...packet(), deliverables: [null] }] }), { code: 'INVALID_ARGUMENT' });

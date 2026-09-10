@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import {createScopedTools as scopedSearchTools} from '../integrations/pi/scoped-tools.mjs';
 
 test('literal search uses existing read boundaries without giving a planner writes',async t=>{
@@ -18,6 +19,32 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+
+test('localized edits preserve unrelated bytes and refuse stale or ambiguous changes', async t => {
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-edit-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    const file=path.join(project,'out.json');
+    const original='\uFEFF{\r\n  "allowed": true,\r\n  "tags": ["help", "封裝設定"]\r\n}\r\n';
+    fs.writeFileSync(file,original);
+    const hash=s=>createHash('sha256').update(s).digest('hex');
+    const edit=scopedSearchTools({project,role:'worker',writeScope:['out.json']}).find(t=>t.name==='case_edit');
+    assert.ok(edit,'workers need a localized repair capability');
+    const args={path:'out.json',sourceSha256:hash(original),oldText:'"allowed": true',newText:'"allowed": false'};
+    for(const change of [{sourceSha256:'0'.repeat(64)},{oldText:'absent'},{oldText:'"'},{oldText:''},{path:'source.json'},{path:'../out.json'},{path:'.git/config'},{path:'AGENTS.md'}]) {
+        await assert.rejects(edit.execute('invalid',{...args,...change}));
+        assert.equal(fs.readFileSync(file,'utf8'),original);
+    }
+    const result=await edit.execute('fix',args);
+    const expected='\uFEFF{\r\n  "allowed": false,\r\n  "tags": ["help", "封裝設定"]\r\n}\r\n';
+    assert.deepEqual(fs.readFileSync(file),Buffer.from(expected));
+    assert.equal(result.details.sourceSha256,hash(expected));
+    assert.equal(result.details.previousSha256,hash(original));
+    await assert.rejects(edit.execute('stale-replay',args));
+    fs.writeFileSync(file,'a😀b');
+    await assert.rejects(edit.execute('split-surrogate',{...args,sourceSha256:hash('a😀b'),oldText:'\ud83d',newText:'X'}));
+    assert.equal(fs.readFileSync(file,'utf8'),'a😀b');
+    for(const role of ['planner','reviewer','integrator'])assert.ok(!scopedSearchTools({project,role,writeScope:['out.json']}).some(t=>t.name==='case_edit'));
+});
 const toolsModule = await import('../integrations/pi/scoped-tools.mjs').catch(e => {
     if (e.code === 'ERR_MODULE_NOT_FOUND')
         return {};
