@@ -18,6 +18,8 @@ pi 的審查異議由既有 planner／integrator 處理，不另加角色。核�
 
 卷宗契約保存目標、限制、驗收與預算，工作包保存材料版本、相依、寫入範圍、產物及 checks。核心處理 revision／requestId、SHA256 與狀態轉移；pi SDK 整合負責新 session、限定工具、取消、用量及依序執行。核對 session 與 worker 分開，全域 integrate 不只相信包的 pass。詳情按需讀[契約參照](../skills/case-workflow/references/v2-contracts.md)。
 
+pi runner 從工作包產生 `verificationPaths`，核對提示連同清單先經原字元上限檢查。SDK 只從真正成功的 case_read 結果建立 session 內的路徑／版本紀錄，回報通過前比對目前檔案；模型不能用自己填的 evidence 取代這份紀錄。工具與最後文字共用拒收邊界。這只保證最低材料取得，不驗證敘述真實、全文覆蓋或理解；不是共用核心的新狀態條件，自訂 runSession 必須自行實作相應保障。
+
 session 隔離指不承接另一角色的對話 history；現有 pi loader 仍載入 agentDir 與工作目錄祖先的適用指引，不等於只含工作包或完全空白的 context。run 紀錄可包含工具正文、檢查輸出及模型回覆，不保證自動去敏；分享前需檢查完整紀錄。
 
 pi runner 呼叫核心 context 時指定 `defaultDelivery:"indexed"`，只影響未明確指定 delivery 的材料呈現。核心／可攜 CLI 原預設 inline 不變；明確 inline/indexed、來源 freshness、必讀義務及契約內容均保留。materialIndex 的有效 delivery 由新物件呈現，不改存檔的計畫或版本。

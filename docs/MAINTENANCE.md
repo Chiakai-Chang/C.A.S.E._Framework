@@ -25,6 +25,7 @@
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
 | 核對回覆格式：pi runner 的 validateReviewerReply、sdk-session | pi-runner／pi-sdk／pi-trace 測試、V2、英文指南、READINESS／STATUS | 工具與最後文字同 session 修正、自訂 transport 拒收、原始回覆保存；格式不代替事實查核 |
+| 核對材料取得：pi runner verificationPaths、SDK session 讀取紀錄 | pi-sdk／pi-runner 測試、V2、ARCHITECTURE、英文指南、READINESS／STATUS | 零讀取、範圍外、來源過期拒收，空檔與路徑別名、最後文字修正、原提示預算；不宣稱語意正確 |
 | 局部返修：`integrations/pi/scoped-tools.mjs` 的 case_edit | SDK 寫入觀察、session-trace、pi-tools／trace 測試、read-receipt evaluator 路徑稽核、V2、英文與技能參照 | 唯一文字／來源版本／UTF-8／範圍、拒絕不改檔；實際模型修復另記且不延長舊案預算 |
 | 計畫引用錯誤：`core/contracts.mjs`、pi runner 交辦說明 | core-v2 測試、V2、英文指南、技能契約參照 | 回覆可定位欄位與合法 ID，拒絕規則與狀態不變；模型自修效果另測 |
 | 材料交辦：`core/context.mjs` 的 `defaultDelivery`、pi runner 呼叫與 SDK 欄位說明 | context-policy／pi-runner 測試、V2、ARCHITECTURE、技能契約參照、README、英文指南 | pi 預設索引、顯式 inline、可攜核心預設全文、來源過期拒絕及不改寫持久狀態；單獨 worker 與整案結果分開 |

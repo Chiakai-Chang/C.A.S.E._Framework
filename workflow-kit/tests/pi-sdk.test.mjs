@@ -9,6 +9,43 @@ const adapter = await import('../integrations/pi/sdk-session.mjs').catch(e => {
     throw e;
 });
 
+test('final-text pass triggers same-session acquisition repair while a negative review remains reportable',async t=>{
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-review-final-read-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));fs.writeFileSync(path.join(project,'out'),'');
+    for(const passed of [true,false]){
+      let prompts=0;const reply={passed,findings:passed?[]:['cannot verify'],evidence:'observed limits'};
+      const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+        async createAgentSession(options){return {session:{sessionId:'final-read',subscribe(){return ()=>{};},async prompt(){
+          if(++prompts===2)await options.customTools.find(t=>t.name==='case_read').execute('empty-file',{path:'out'});
+        },getLastAssistantText:()=>JSON.stringify(reply),getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+      const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+      const result=await run({role:'reviewer',prompt:'verify',verificationPaths:['out'],onStart(){}});
+      assert.equal(JSON.parse(result.text).passed,passed);assert.equal(prompts,passed?2:1);
+    }
+});
+
+for(const role of ['reviewer','integrator'])test(`${role} cannot pass without current-session material reads`,async t=>{
+    const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-verification-reads-')));
+    t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+    fs.writeFileSync(path.join(project,'out'),'correct');
+    const good=role==='reviewer'?{passed:true,findings:[],evidence:'checked'}:{results:[{criterionId:'a',passed:true,evidence:'checked'}],summary:'checked'};
+    const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+      async createAgentSession(options){return {session:{sessionId:'evidence-'+role,subscribe(){return ()=>{};},async prompt(){
+        const result=options.customTools.find(t=>t.name==='case_result'),read=options.customTools.find(t=>t.name==='case_read');
+        await assert.rejects(result.execute('unread',{result:good}),{code:'VERIFICATION_MATERIAL_UNREAD'});
+        await read.execute('empty-range',{path:'out',startLine:99});
+        await assert.rejects(result.execute('still-unread',{result:good}),{code:'VERIFICATION_MATERIAL_UNREAD'});
+        await read.execute('read',{path:'out'});
+        fs.writeFileSync(path.join(project,'out'),'changed');
+        await assert.rejects(result.execute('stale',{result:good}),{code:'VERIFICATION_MATERIAL_UNREAD'});
+        await read.execute('fresh',{path:'out'});
+        await result.execute('done',{result:good});
+      },getLastAssistantText:()=>'',getSessionStats:()=>({}),abort:async()=>{},dispose(){}}};}};
+    const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+    const result=await run({role,prompt:'verify',verificationPaths:['./out'],onStart(){}});
+    assert.deepEqual(JSON.parse(result.text),good);
+});
+
 for (const transport of ['final-text','tool']) test(`reviewer corrects a wrapped reply in the same session: ${transport}`,async t=>{
     const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-review-shape-')));
     t.after(()=>fs.rmSync(project,{recursive:true,force:true}));

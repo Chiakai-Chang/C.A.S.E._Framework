@@ -282,11 +282,13 @@ test('fresh planner, worker, reviewer and integrator complete a real stored case
             }
             if (request.role === 'reviewer') {
                 assert.doesNotMatch(request.prompt, /PRIVATE_WORKER_NARRATIVE/);
+                assert.deepEqual(request.verificationPaths,['output.txt','input.txt']);
                 assert.equal(fs.readFileSync(path.join(project, 'output.txt'), 'utf8'), 'result');
                 reply = { passed: true, findings: [], evidence: 'Read output.txt: result' };
             }
             if (request.role === 'integrator')
                 reply = { results: [{ criterionId: 'a1', passed: true, evidence: 'Read result; source unchanged' }], summary: 'Complete' };
+            if(request.role==='integrator')assert.deepEqual(request.verificationPaths,['output.txt','input.txt']);
             return { sessionId, text: JSON.stringify(reply), usage: { input: 10, output: 5 } };
         } });
     assert.equal(result.state.status, 'completed');

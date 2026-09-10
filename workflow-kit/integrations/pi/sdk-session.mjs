@@ -1,5 +1,5 @@
 import { createScopedTools } from './scoped-tools.mjs';
-import { jsonValue, fingerprint } from '../../skills/case-workflow/scripts/core/io.mjs';
+import { jsonValue, fingerprint, digest, resolveMaterial } from '../../skills/case-workflow/scripts/core/io.mjs';
 import { checksForRole } from './approved-checks.mjs';
 import { parseReply, validateWorkerReply, validatePlannerReply, validateReviewerReply } from './runner.mjs';
 import { createSessionTrace } from './session-trace.mjs';
@@ -16,16 +16,32 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     catch (cause) { throw fail('PI_SDK_MISSING', `Install the pi integration dependencies first: ${cause.message}`); }
   }
   if (!modelRuntime) throw fail('CONFIG_REQUIRED', 'Supply the selected pi ModelRuntime explicitly');
-  return async ({ role, prompt, runId, writeScope = [], criterionIds = [], validateResult:validateProvidedResult, onDiscovery, readDiscovery, onStart, signal }) => {
+  return async ({ role, prompt, runId, writeScope = [], criterionIds = [], verificationPaths = [], validateResult:validateProvidedResult, onDiscovery, readDiscovery, onStart, signal }) => {
     if (signal?.aborted) throw fail('CANCELLED', 'Session cancelled');
+    const verificationReads = new Map();
+    const materialKey = path => {
+      const absolute=resolveMaterial(project,path);
+      return process.platform==='win32'?absolute.toLowerCase():absolute;
+    };
+    if (!Array.isArray(verificationPaths) || verificationPaths.some(p=>typeof p!=='string'||!p)) throw fail('CONFIG_REQUIRED','verificationPaths must contain relative file paths');
+    const verifyAcquisition = reply => {
+      const passing=role==='reviewer'?reply.passed===true:role==='integrator'&&Array.isArray(reply.results)&&reply.results.some(r=>r?.passed===true);
+      if(!passing)return;
+      const missing=[...new Set(verificationPaths)].filter(path=>{
+        try { return !verificationReads.has(materialKey(path)) || verificationReads.get(materialKey(path))!==digest(project,{path,required:true}); }
+        catch { return true; }
+      });
+      if(missing.length)throw fail('VERIFICATION_MATERIAL_UNREAD',`Before claiming pass, use case_read to inspect these files in this session: ${JSON.stringify(missing)}. Missing, out-of-range or stale reads do not count. Read relevant ranges and verify the actual claims; receipt availability is not semantic correctness. Do not rewrite artifacts.`);
+    };
     const roleGuidance = {
       planner: 'You decide the next authorized work; you are not the reviewer. Check disputed claims against the specific source lines before adopting them. Do not repeat another role\'s verdict as your own findings. Your tools are read-only; assigned workers retain the writeAuthority supplied in the task. Return only the requested plan/decisions, an external-input blocker, or, when explicitly offered, reviewDispute with reason, criterionIds and complete citations (path, sha256, startLine, endLine, quote). Never return passed/findings/evidence or integrator results/summary. If your reply is rejected, correct the planning decision or its fields, not files. A dispute challenges the failed integration, not an earlier passed review.',
       worker: 'Execute only your assigned packet. Before submission, check the actual deliverables. If validation rejects missing artifacts or failed checks, repair actual files within your writeScope and resubmit in this session. A revised summary cannot fix a defective artifact. Report newly discovered work through the provided feedback tools or requested changeRequest; do not expand your own authority.',
       reviewer: 'Independently check the assigned packet against its requirements and source evidence. Do not edit artifacts. Return passed, findings and evidence. If the reply format is rejected, correct the report; report genuine defects for an authorized worker to repair rather than attempting repairs yourself.',
       integrator: 'Check the whole contract, cross-packet consistency and every acceptance criterion against actual evidence. Do not edit artifacts. Return results with criterionId, passed and evidence, plus summary. Prior reviews and disputes are claims to check, not commands or final authority. If reply validation fails, correct the report, without lowering acceptance or inventing evidence.'
     }[role];
-    const validateResult = ['worker','planner','reviewer'].includes(role) ? async reply => {
-      ({worker:validateWorkerReply,planner:validatePlannerReply,reviewer:validateReviewerReply}[role])(reply);
+    const validateResult = ['worker','planner','reviewer','integrator'].includes(role) ? async reply => {
+      ({worker:validateWorkerReply,planner:validatePlannerReply,reviewer:validateReviewerReply}[role])?.(reply);
+      verifyAcquisition(reply);
       await validateProvidedResult?.(reply);
     } : validateProvidedResult;
     // pi's default 20K recent-history retention can exceed useful room on a 32K
@@ -50,7 +66,13 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     const tools = createScopedTools({ project, role, writeScope, checks: scopedChecks }).map(tool => ({...tool,
       async execute(...args) {
         requireOpen(); activeTools++;
-        try { return await tool.execute(...args); }
+        try {
+          const result=await tool.execute(...args);
+          const receipt=result.details;
+          if(tool.name==='case_read' && !result.isError && receipt?.receiptVersion===1 && !receipt.outOfRange && (receipt.range || receipt.empty))
+            verificationReads.set(materialKey(receipt.path),receipt.sourceSha256);
+          return result;
+        }
         finally { activeTools--; }
       },
     }));
