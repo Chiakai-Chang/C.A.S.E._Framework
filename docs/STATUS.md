@@ -34,7 +34,7 @@
 
 ## Git 交付與發布
 
-本批已於 2026-09-12 fast-forward 合併並推送至 GitHub main，交付提交為 `d562344`，產品凍結版為 `94935d6`。本次本機測試通過不代表遠端跨平台 CI 已通過；CI 結果需獨立核對。
+本批已於 2026-09-12 fast-forward 合併並推送至 GitHub main，交付提交為 `d562344`，產品凍結版為 `94935d6`。該交付提交的 Windows／macOS／Ubuntu × Node 20／24 六組 [CI 全數通過](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34620379300)。後續只有交付狀態文件更新，不把工程 CI 當成跨模型效果證明。
 
 **先前預覽版**交付提交為 `b14ded1`，測試路徑修正為 `8c6d6c0`。GitHub Skills 入口已實際下載並成功初始化 v2，包含當時的 discovery 與材料保護。修正後 Windows／macOS／Ubuntu × Node 20／24 六組 [歷史 CI 全數通過](https://github.com/Chiakai-Chang/C.A.S.E._Framework/actions/runs/34011479357)；首次失敗與修正依據保留於[採用核對](evaluation/2026-09-06-preview-release-checks.md)。
 
