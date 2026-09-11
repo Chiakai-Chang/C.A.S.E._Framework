@@ -346,6 +346,35 @@ test('fresh planner, worker, reviewer and integrator complete a real stored case
         } });
     assert.equal(resumed.state.status, 'completed');
 });
+for (const expiry of ['before-run', 'during-check']) test(`expired case deadline (${expiry}) prevents spending on a resumed reviewer`, async t => {
+    const { createStore } = await import('../skills/case-workflow/scripts/core/index.mjs');
+    const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-expired-resume-')));
+    t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+    const store = createStore(project); store.init();
+    let state = store.create({ goal: 'write output', constraints: [], acceptance: [{ id: 'a', text: 'correct' }], budget: { maxAttempts: 3, maxDurationMs: 60000 } });
+    const send = action => state = store.dispatch(state.id, action, { expectedRevision: state.revision, requestId: crypto.randomUUID() });
+    send({ type: 'plan', packets: [{ id: 'p', purpose: 'output', constraintIds: [], inputs: [], dependsOn: [], writeScope: ['out'], deliverables: [{ path: 'out' }], checks: [{ id: 'k', text: 'correct', criterionIds: ['a'] }], unknowns: [] }] });
+    send({ type: 'start', packetId: 'p', sessionId: 'old-worker' });
+    fs.writeFileSync(path.join(project, 'out'), 'preserved');
+    send({ type: 'submit', packetId: 'p', attemptId: state.packets[0].attempts[0].id, summary: 'written' });
+    const before = store.get(state.id);
+    const realNow = Date.now;
+    if (expiry === 'before-run') Date.now = () => Date.parse(before.startedAt) + 60001;
+    let calls = 0;
+    try {
+        await assert.rejects(runner.runCase({ store, caseId: state.id, executeChecks: async () => {
+            Date.now = () => Date.parse(before.startedAt) + 60001;
+            return [];
+        }, runSession: async () => {
+            calls++; throw Object.assign(new Error('must not call model'), { code: 'UNEXPECTED_MODEL_CALL' });
+        } }), { code: 'BUDGET_EXCEEDED' });
+    } finally { Date.now = realNow; }
+    assert.equal(calls, 0);
+    assert.deepEqual(store.get(state.id), before);
+    assert.equal(store.listRuns(state.id).length, expiry === 'before-run' ? 0 : 1);
+    assert.equal(fs.readFileSync(path.join(project, 'out'), 'utf8'), 'preserved');
+});
+
 test('failed review produces a bounded repair with fresh context, not a false completion', async (t) => {
     const { createStore } = await import('../skills/case-workflow/scripts/core/index.mjs');
     const project = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'case-repair-')));

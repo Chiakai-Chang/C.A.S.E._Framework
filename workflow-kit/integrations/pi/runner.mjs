@@ -155,7 +155,12 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
   const started = Date.now();
   const previousMs = previous.reduce((sum, r) => sum + (r.elapsedMs ?? 0), 0);
   const previousSessions = previous.reduce((sum, r) => sum + r.sessions.length, 0);
-  const duration = state.contract.budget.maxDurationMs - previousMs;
+  // The core also enforces a wall-clock deadline from the first worker start.
+  // A resumed runner must not spend on a session the core can no longer accept.
+  const deadlineRemaining = () => state.startedAt
+    ? state.contract.budget.maxDurationMs - (Date.now() - Date.parse(state.startedAt))
+    : Infinity;
+  const duration = Math.min(state.contract.budget.maxDurationMs - previousMs, deadlineRemaining());
   if (duration <= 0) throw error('BUDGET_EXCEEDED', 'Total workflow time budget exhausted');
   const run = { id: randomUUID(), createdAt: new Date().toISOString(), status: 'running', sessions: [], elapsedMs: 0, pendingFeedback:lastRun?.pendingFeedback??null,
     pendingReviewDispute:lastRun?.pendingReviewDispute??null };
@@ -197,6 +202,8 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     return state;
   };
   const invoke = async (role, prompt, extra = {}) => {
+    if (deadlineRemaining() <= 0 || Date.now() - started >= duration)
+      throw error('BUDGET_EXCEEDED', 'Workflow budget exhausted before model session');
     if(['reviewer','integrator'].includes(role)){
       extra={...extra,evidenceMode:'read-receipts'};
       prompt+=`\n${receiptEvidenceGuidance}`;
