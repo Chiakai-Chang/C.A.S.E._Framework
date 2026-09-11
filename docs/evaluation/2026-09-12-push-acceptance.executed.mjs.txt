@@ -1,0 +1,39 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import * as sdk from './pi-host-validation/node_modules/@earendil-works/pi-coding-agent/dist/index.js';
+import {evaluateArm} from '../workflow-kit/evaluation/value-comparison.mjs';
+import {fixture} from '../workflow-kit/evaluation/value-fixtures.mjs';
+import {createPiSessionRunner} from '../workflow-kit/integrations/pi/sdk-session.mjs';
+const output=new URL('./push-acceptance-2026-09-11.json',import.meta.url);
+const hash=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+const root=path.resolve('workflow-kit');
+const codeHashes={};
+for(const dir of ['integrations/pi','skills/case-workflow/scripts/core','evaluation'])
+  for(const name of fs.readdirSync(path.join(root,dir)).filter(x=>x.endsWith('.mjs'))){const file=path.join(root,dir,name);codeHashes[file]=hash(file);}
+const evidence={format:'case-push-acceptance/1',createdAt:new Date().toISOString(),productCommit:'94935d6',codeHashes,status:'starting',
+  configuration:{endpoint:'http://127.0.0.1:8080/v1',thinkingLevel:'off',contextWindow:32768,maxTokens:4096,maxTurns:16,maxAttempts:5,maxDurationMs:600000},
+  limitations:['One existing synthetic business-data task, not a new blind benchmark or success-rate estimate.','No oracle or verdict injection, no baseline, no extra approved executable checks.','Hardware cost, GGUF digest and peak context unknown; server unchanged.'],result:null};
+fs.writeFileSync(output,JSON.stringify(evidence,null,2),{flag:'wx'});
+const save=()=>fs.writeFileSync(output,JSON.stringify(evidence,null,2));
+try{
+  const inventory=await(await fetch(evidence.configuration.endpoint+'/models',{signal:AbortSignal.timeout(5000)})).json();
+  evidence.modelId=inventory.data[0].id;
+  const props=await(await fetch('http://127.0.0.1:8080/props',{signal:AbortSignal.timeout(5000)})).json();
+  evidence.serverBuild=props.build_info;save();
+  const createRunner=async project=>{
+    const agentDir=fs.mkdtempSync(path.join(os.tmpdir(),'case-push-config-'));
+    const runtime=await sdk.ModelRuntime.create({authPath:path.join(agentDir,'auth.json'),modelsPath:null,modelsStorePath:path.join(agentDir,'models.json'),allowModelNetwork:false});
+    runtime.registerProvider('case-push-local',{baseUrl:evidence.configuration.endpoint,api:'openai-completions',apiKey:'local',models:[{
+      id:evidence.modelId,name:evidence.modelId,reasoning:true,input:['text'],contextWindow:32768,maxTokens:4096,
+      compat:{supportsDeveloperRole:false,supportsReasoningEffort:false,thinkingFormat:'qwen-chat-template',maxTokensField:'max_tokens'},cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});
+    return createPiSessionRunner({project,agentDir,sdk,model:runtime.getModel('case-push-local',evidence.modelId),modelRuntime:runtime,maxTurns:16,thinkingLevel:'off'});
+  };
+  evidence.result=await evaluateArm({spec:fixture('multi-source'),mode:'case',project:fs.mkdtempSync(path.join(os.tmpdir(),'case-push-multisource-')),createRunner,maxDurationMs:600000,
+    onUpdate:r=>{evidence.result=r;evidence.status='running';save();}});
+  evidence.status=evidence.result.status;
+}catch(error){evidence.status='interrupted';evidence.error={code:error.code??error.name,message:error.message};}
+evidence.codeUnchanged=Object.entries(codeHashes).every(([file,sha])=>hash(file)===sha);
+evidence.finishedAt=new Date().toISOString();save();
+console.log(JSON.stringify({status:evidence.status,elapsedMs:evidence.result?.elapsedMs,tokens:evidence.result?.sdkTotalTokens,artifactPassed:evidence.result?.artifactPassed,codeUnchanged:evidence.codeUnchanged}));

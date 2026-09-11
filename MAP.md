@@ -4,6 +4,7 @@
 
 | 目的 | 入口 | 內容與權威範圍 |
 |---|---|---|
+| 本批預覽交付 | [驗收與完整本機任務](docs/evaluation/2026-09-12-push-acceptance-report.md) | 2026-09-12 工程驗證、兩包成果通過、原始成本與限制；Git 狀態見 STATUS |
 | 目標閉環與接續 | [覆蓋復盤及實作次序](docs/design/2026-09-11-goal-loop-convergence.md)、[官方實務](docs/research/2026-09-11-goal-loop-practices.md) | 已有機制與缺口分開；期限檢查及真實命令修復／接續驗證，不代替模型效果 |
 | 最新不同任務的假完成反例 | [整案結果與根因追查](docs/evaluation/2026-09-11-holdout-journey-report.md) | 完成標記與錯誤成果分開；有效引用仍漏驗，舊雜湊重現待查；完整成本及證據保留 |
 | 核對引用的可信邊界與成本 | [引用解析及復盤](docs/evaluation/2026-09-11-receipt-review-report.md) | 模型選回條 ID、程式解析來源；單獨模型正反判斷及重讀成本，不代替普遍可靠度 |
