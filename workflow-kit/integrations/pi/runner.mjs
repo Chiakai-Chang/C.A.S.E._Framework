@@ -201,7 +201,7 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
     state = store.dispatch(caseId, action, { expectedRevision: state.revision, requestId: randomUUID() });
     return state;
   };
-  const invoke = async (role, prompt, extra = {}) => {
+  const invokeOnce = async (role, prompt, extra = {}) => {
     if (deadlineRemaining() <= 0 || Date.now() - started >= duration)
       throw error('BUDGET_EXCEEDED', 'Workflow budget exhausted before model session');
     if(['reviewer','integrator'].includes(role)){
@@ -254,11 +254,28 @@ export async function runCase({ store, caseId, runSession, signal, maxContextCha
         cost: evidence.cost ?? 'unknown', text: evidence.text ?? '',
         rawFinalText: evidence.rawFinalText ?? null, rawResultText:evidence.rawResultText??null, resultTransport: evidence.resultTransport ?? 'unknown', replyCorrections:evidence.replyCorrections??[],
         statsError: evidence.statsError ?? null,
+        ...(evidence.recovery ? {recovery:evidence.recovery} : {}),
         ...(evidence.trace ? {trace:evidence.trace} : {}),
       });
       record.error = { code: failure.code ?? 'SESSION_FAILED', message: failure.message };
       retainFailure(failure);
       throw failure;
+    }
+  };
+  const invoke = async (role, prompt, extra = {}) => {
+    try { return await invokeOnce(role, prompt, extra); }
+    catch (failure) {
+      const recovery = failure.sessionEvidence?.recovery;
+      const used = previous.reduce((n,r)=>n+(r.transportRecoveries?.length??0),0)+(run.transportRecoveries?.length??0);
+      if (persistenceFailure || controller.signal.aborted || run.pendingReviewDispute || used >= 1 ||
+          !['reviewer','integrator'].includes(role) || recovery?.version !== 1 || recovery.safeToRetry !== true ||
+          !['ECONNRESET','ETIMEDOUT','ECONNREFUSED','EAI_AGAIN'].includes(failure.code)) throw failure;
+      // Persist the allowance before dispatch: restart cannot replenish it.
+      run.transportRecoveries ??= [];
+      run.transportRecoveries.push({role,sessionId:run.sessions.at(-1)?.sessionId??null,code:failure.code,at:new Date().toISOString()});
+      savePreserving(failure);
+      onProgress({role,status:'recovering',reason:failure.code});
+      return invokeOnce(role, prompt, extra);
     }
   };
   const blockedReason = decision => {

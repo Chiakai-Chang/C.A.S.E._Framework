@@ -9,6 +9,99 @@ const adapter = await import('../integrations/pi/sdk-session.mjs').catch(e => {
     throw e;
 });
 
+for (const mode of ['read-only','checks','worker','abort-failed','dispose-failed'])
+test(`failed SDK session reports conservative recovery eligibility: ${mode}`, async t => {
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-recovery-sdk-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  let aborted=false, disposed=false;
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(){return {session:{sessionId:'failed-read',subscribe(){return ()=>{};},
+      async prompt(){throw Object.assign(new Error('connection reset'),{code:'ECONNRESET'});},
+      getLastAssistantText:()=>'',getSessionStats:()=>({tokens:{input:7,output:0}}),
+      setAutoCompactionEnabled(){},abortCompaction(){},
+      async abort(){aborted=true;if(mode==='abort-failed')throw new Error('abort failed');},
+      dispose(){disposed=true;if(mode==='dispose-failed')throw new Error('dispose failed');}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{},
+    checks:mode==='checks'?{check:{command:process.execPath,args:['--version']}}:{}});
+  await assert.rejects(run({role:mode==='worker'?'worker':'integrator',prompt:'verify',onStart(){}}),failure=>{
+    assert.equal(failure.code,'ECONNRESET');
+    assert.equal(failure.sessionEvidence.recovery?.safeToRetry,mode==='read-only');
+    assert.equal(failure.sessionEvidence.usage.input,7);
+    return true;
+  });
+  assert.equal(aborted,true);assert.equal(disposed,true);
+});
+
+for(const kind of ['connection','http-error']) test(`native stream keeps transport evidence separate from HTTP error text: ${kind}`,async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-fetch-evidence-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));let notify;
+  const model={id:'local',provider:'local',api:'openai-completions'};
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(){
+      const agent={streamFunction:async (_model,_context,options)=>{
+        // Provider consumes fetch errors and emits normal error messages, as pi does.
+        try {await options.fetch('http://unused.invalid');}catch{}
+        notify({type:'message_end',message:{role:'assistant',stopReason:'error',errorMessage:'ECONNRESET'}});
+      }};
+      return {session:{agent,sessionId:'fetch-evidence',subscribe(fn){notify=fn;return ()=>{};},
+        async prompt(){await agent.streamFunction(model,{}, {fetch:async()=>{
+          if(kind==='connection')throw new TypeError('fetch failed',{cause:Object.assign(new Error('reset'),{code:'ECONNRESET'})});
+          return {status:401};
+        }});},getLastAssistantText:()=>'',getSessionStats:()=>({}),setAutoCompactionEnabled(){},abortCompaction(){},async abort(){},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model,modelRuntime:{}});
+  await assert.rejects(run({role:'integrator',prompt:'verify',onStart(){}}),{code:kind==='connection'?'ECONNRESET':'MODEL_PROVIDER_ERROR'});
+});
+
+for(const message of ['read ECONNRESET','401 invalid API key','429 quota exceeded'])
+test(`native provider error is not a JSON repair: ${message}`,async t=>{
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-provider-error-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));let prompts=0,notify;
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(){return {session:{sessionId:'provider-error',subscribe(fn){notify=fn;return ()=>{};},
+      async prompt(){prompts++;notify({type:'message_end',message:{role:'assistant',stopReason:'error',errorMessage:message}});},
+      getLastAssistantText:()=>'',getSessionStats:()=>({}),setAutoCompactionEnabled(){},abortCompaction(){},async abort(){},dispose(){}}};}};
+  const run=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  await assert.rejects(run({role:'integrator',prompt:'verify',onStart(){}}),failure=>{
+    assert.equal(failure.code,'MODEL_PROVIDER_ERROR');assert.equal(failure.message,message);return true;
+  });
+  assert.equal(prompts,1);
+});
+
+test('SDK stop evidence drives runner recovery through to actual file acceptance',async t=>{
+  const {createStore}=await import('../skills/case-workflow/scripts/core/index.mjs');
+  const {runCase}=await import('../integrations/pi/runner.mjs');
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-sdk-run-resume-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  let sessions=0,writes=0;const stopped=new Set();
+  const sdk={SettingsManager:{inMemory:v=>v},SessionManager:{inMemory:()=>({})},DefaultResourceLoader:class{async reload(){}},
+    async createAgentSession(options){const n=++sessions;return {session:{sessionId:`native-${n}`,subscribe(){return ()=>{};},
+      async prompt(){
+        const tool=name=>options.customTools.find(t=>t.name===name);
+        let result;
+        if(n===1)result={packets:[{id:'p',purpose:'write result',constraintIds:[],inputs:[],dependsOn:[],writeScope:['out'],deliverables:[{path:'out'}],checks:[{id:'k',text:'out contains result',criterionIds:['a']}],unknowns:[]}]};
+        else if(n===2){await tool('case_write').execute('write',{path:'out',content:'result'});writes++;result={summary:'written'};}
+        else if(n===4)throw Object.assign(new Error('connection reset'),{code:'ECONNRESET'});
+        else {
+          if(n===5)assert.ok(stopped.has(4),'failed session is disposed before replacement');
+          const receipt=(await tool('case_read').execute('read',{path:'out'})).details;
+          const evidence={assessment:'actual file contains result',receiptIds:[receipt.receiptId]};
+          result=n===3?{passed:true,findings:[],evidence}:{results:[{criterionId:'a',passed:true,evidence}],summary:'complete'};
+        }
+        await tool('case_result').execute('result',{result});
+      },getLastAssistantText:()=>'',getSessionStats:()=>({tokens:{input:5,output:1}}),
+      setAutoCompactionEnabled(){},abortCompaction(){},async abort(){},dispose(){stopped.add(n);}}};}};
+  const runSession=await adapter.createPiSessionRunner({project,agentDir:project,sdk,model:{id:'local',provider:'local'},modelRuntime:{}});
+  const store=createStore(project);store.init();
+  const state=store.create({goal:'write result',constraints:[],acceptance:[{id:'a',text:'out contains result'}],budget:{maxAttempts:3,maxDurationMs:60000}});
+  const completed=await runCase({store,caseId:state.id,runSession});
+  assert.equal(completed.state.status,'completed');
+  assert.equal(fs.readFileSync(path.join(project,'out'),'utf8'),'result');
+  assert.equal(writes,1);assert.equal(sessions,5);
+  assert.deepEqual(completed.run.sessions.map(s=>s.status),['returned','returned','returned','failed','returned']);
+  assert.equal(completed.run.transportRecoveries.length,1);
+  assert.equal(completed.run.sessions[3].usage.input,5);
+});
+
 // Exercise real scoped reads and result validation; only the external model loop is replaced.
 for (const role of ['reviewer','integrator']) for (const transport of ['tool','final'])
 test(`receipt evidence resolves actual sources without rewriting model input: ${role}/${transport}`, async t=>{

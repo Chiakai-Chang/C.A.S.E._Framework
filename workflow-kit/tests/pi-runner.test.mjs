@@ -38,6 +38,40 @@ test('normal workflow requests receipt evidence for both review stages and durab
   assert.deepEqual(store.listRuns(state.id)[0].sessions.map(s=>s.rawResultText),['raw-planner','raw-worker','raw-reviewer','raw-integrator']);
 });
 
+for (const mode of ['recover','repeated','unsafe','cancelled']) test(`read-only integration transport recovery: ${mode}`,async t=>{
+  const {createStore}=await import('../skills/case-workflow/scripts/core/index.mjs');
+  const project=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'case-safe-retry-')));
+  t.after(()=>fs.rmSync(project,{recursive:true,force:true}));
+  const store=createStore(project);store.init();
+  const state=store.create({goal:'write out',constraints:[],acceptance:[{id:'a',text:'correct'}],budget:{maxAttempts:3,maxDurationMs:60000}});
+  let workers=0,integrations=0;const roles=[];
+  const execute=()=>runner.runCase({store,caseId:state.id,runSession:async request=>{
+    const sessionId=`session-${roles.length}`;roles.push(request.role);await request.onStart(sessionId);
+    let reply;
+    if(request.role==='planner')reply={packets:[{id:'p',purpose:'output',constraintIds:[],inputs:[],dependsOn:[],writeScope:['out'],deliverables:[{path:'out'}],checks:[{id:'k',text:'correct',criterionIds:['a']}],unknowns:[]}]};
+    if(request.role==='worker'){workers++;fs.writeFileSync(path.join(project,'out'),'correct');reply={summary:'written'};}
+    if(request.role==='reviewer')reply={passed:true,findings:[],evidence:'read output'};
+    if(request.role==='integrator'){
+      integrations++;
+      if(mode!=='recover'||integrations===1)throw Object.assign(new Error('transport interrupted'),{code:mode==='cancelled'?'CANCELLED':'ECONNRESET',
+        sessionEvidence:{text:'partial',usage:{input:7,output:0},recovery:{version:1,safeToRetry:mode!=='unsafe'}}});
+      reply={results:[{criterionId:'a',passed:true,evidence:'read actual output'}],summary:'done'};
+    }
+    return {sessionId,text:JSON.stringify(reply)};
+  }});
+  if(mode==='recover')assert.equal((await execute()).state.status,'completed');
+  else await assert.rejects(execute(),{code:mode==='cancelled'?'CANCELLED':'ECONNRESET'});
+  assert.equal(integrations,['recover','repeated'].includes(mode)?2:1);
+  assert.equal(workers,1);assert.equal(fs.readFileSync(path.join(project,'out'),'utf8'),'correct');
+  const saved=store.listRuns(state.id)[0];
+  assert.equal(saved.sessions.find(s=>s.status==='failed').usage.input,7);
+  if(mode==='repeated'){
+    await assert.rejects(execute(),{code:'ECONNRESET'});
+    assert.equal(integrations,3,'restart must not replenish the automatic retry allowance');
+    assert.equal(workers,1);
+  }
+});
+
 test('custom reviewer transport rejects wrapped replies before state dispatch and retains evidence',async()=>{
     const raw=JSON.stringify({result:{passed:true,findings:[],evidence:'observed'}});
     await assert.rejects(runner.callSession(async ({onStart})=>{

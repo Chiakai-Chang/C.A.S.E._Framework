@@ -24,6 +24,7 @@
 
 | 修改內容／主要位置 | 必須檢視的連動位置 | 相稱驗證 |
 |---|---|---|
+| 安全連線恢復：SDK recovery 證據、runner transportRecoveries | SDK／runner 測試、V2、GUIDE.en、READINESS／STATUS、首頁 | 原額度跨 run、失敗成本保留、停止／清理、無檢查命令／寫入／異議、不重播 worker；自訂 transport 未提供安全證據不重試 |
 | pi 接續期限：runner 的啟動與每次 invoke 前檢查 | core/state 的既有期限、pi-runner／approved-checks 測試、V2、GUIDE.en、READINESS／STATUS | 過期零模型呼叫、檢查中到期、成果與舊預算保留；不擅自改成排除暫停時間 |
 | 核對引用：pi review-evidence、scoped-tools receiptId、SDK evidenceMode | runner／SDK／讀取測試、V2、ARCHITECTURE、GUIDE.en、READINESS／STATUS、首頁 | 本 session／版本／範圍、工具與最後文字、原始提交持久化、負面及 legacy 相容；來源不代替語意判斷 |
 | pi 執行交辦呈現：runner formatWorkerAssignment | pi-runner 測試、V2、GUIDE.en、READINESS／STATUS | 初次及返修、共識／發現／全文／索引／未知欄位保留、呈現後字數上限；核心 JSON 與持久狀態不變 |

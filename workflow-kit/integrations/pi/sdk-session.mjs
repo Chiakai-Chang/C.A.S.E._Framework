@@ -198,6 +198,29 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
       tools: availableTools, customTools: tools,
     });
     const session = created.session;
+    // pi's provider error message discards error.code/cause. Preserve only a
+    // structured fetch rejection code before normalization, never parse prose.
+    let transportCode;
+    if (model.api === 'openai-completions' && typeof session.agent?.streamFunction === 'function') {
+      const stream = session.agent.streamFunction;
+      session.agent.streamFunction = (selected, context, options = {}) => {
+        transportCode = undefined;
+        const fetch = options.fetch ?? globalThis.fetch;
+        return stream.call(session.agent, selected, context, {...options, fetch: async (...args) => {
+          try { const response = await fetch(...args); transportCode = undefined; return response; }
+          catch (failure) {
+            transportCode = undefined;
+            let cause = failure;
+            for (let depth = 0; cause && depth < 4; depth++, cause = cause.cause) {
+              if (['ECONNRESET','ETIMEDOUT','ECONNREFUSED','EAI_AGAIN'].includes(cause.code)) {
+                transportCode = cause.code; break;
+              }
+            }
+            throw failure;
+          }
+        }});
+      };
+    }
     trace = createSessionTrace({runId,sessionId:session.sessionId,role,project,agentDir,approvedCheckIds:Object.keys(scopedChecks)});
     trace.recordPolicy(resourceLoader,session);
     let abortPromise, abortFailure;
@@ -216,6 +239,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     const writeRequests = new Map();
     let turns = 0;
     let lastStopReason;
+    let providerError;
     let budgetExceeded = false;
     const unsubscribe = session.subscribe(event => {
       trace.observe(event);
@@ -223,7 +247,10 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
       // Cancellation may have happened during its preceding auth await.
       // Defer once so abortCompaction can see that newly created controller.
       if (event.type === 'compaction_start' && terminal) queueMicrotask(abort);
-      if (event.type === 'message_end' && event.message?.role === 'assistant') lastStopReason = event.message.stopReason;
+      if (event.type === 'message_end' && event.message?.role === 'assistant') {
+        lastStopReason = event.message.stopReason;
+        providerError = lastStopReason === 'error' ? fail(transportCode ?? 'MODEL_PROVIDER_ERROR', event.message.errorMessage || 'Provider returned an error') : undefined;
+      }
       if (event.type === 'turn_start' && ++turns > maxTurns) { budgetExceeded = true; abort(); }
       if (event.type === 'tool_execution_start' && ['case_write','case_edit'].includes(event.toolName)) {
         writeRequests.set(event.toolCallId, {path:typeof event.args?.path === 'string' ? event.args.path : null,writeScope:[...writeScope]});
@@ -241,6 +268,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
       await onStart(session.sessionId);
       if (signal?.aborted) throw fail('CANCELLED', 'Session cancelled before model call');
       await session.prompt(prompt);
+      if (resultText === undefined && providerError) throw providerError;
       if (resultText === undefined && lastStopReason === 'length')
         throw fail('MODEL_OUTPUT_TRUNCATED','Model output remained truncated after SDK recovery. Inspect context and output budgets; this is not a JSON syntax error. No same-context format retry was issued.');
       if (!budgetExceeded && turns < maxTurns && !signal?.aborted && resultText === undefined) {
@@ -255,6 +283,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
         if (reason) {
           replyCorrections.push({reason,priorText});
           await session.prompt(`No structured result has been accepted: ${reason}. Return the requested result using case_result. This is a reply correction in the same session, not a new task. Do not repeat completed work or invent evidence. If the tool rejects your result, correct the reported errors within the remaining budget.`);
+          if (resultText === undefined && providerError) throw providerError;
           if (resultText === undefined && lastStopReason === 'length')
             throw fail('MODEL_OUTPUT_TRUNCATED','Model output remained truncated during reply correction after SDK recovery. Inspect context and output budgets; no further format retry was issued.');
         }
@@ -278,6 +307,7 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
         : signal?.aborted ? fail('CANCELLED', 'Session cancelled') : resultText !== undefined && caught.name === 'AbortError' ? undefined : caught;
     } finally {
       signal?.removeEventListener('abort', abort);
+      if (failure) abort();
       await abortPromise;
     }
     failure ??= completionFailure ?? abortFailure;
@@ -289,10 +319,16 @@ export async function createPiSessionRunner({ project, agentDir, model, modelRun
     const sessionEvidence = { sessionId: session.sessionId, text:resultText??validatedReplyText??text, rawFinalText:text, rawResultText:rawResultText??null, resultTransport:resultText===undefined?'final-text':'case_result', compaction, usage: stats.tokens ?? 'unknown',
       observations, replyCorrections, model: { id: model.id, provider: model.provider, thinkingLevel },
       toolCalls: stats.toolCalls ?? 'unknown', cost: stats.cost ?? 'unknown', statsError };
+    let cleanupFailed = false;
     try { unsubscribe(); }
-    catch (caught) { failure ??= caught; }
+    catch (caught) { cleanupFailed = true; failure ??= caught; }
     try { session.dispose(); }
-    catch (caught) { failure ??= caught; }
+    catch (caught) { cleanupFailed = true; failure ??= caught; }
+    if (failure) sessionEvidence.recovery = {version:1,safeToRetry:
+      ['reviewer','integrator'].includes(role) && Object.keys(scopedChecks).length === 0 &&
+      resultText === undefined && !signal?.aborted && terminal && !abortFailure && !cleanupFailed &&
+      !completionFailure && !activeTools && !validating &&
+      typeof session.setAutoCompactionEnabled === 'function' && typeof session.abortCompaction === 'function'};
     sessionEvidence.trace=trace.finish(signal?.aborted?'cancelled':budgetExceeded?'turn_limit':failure?'failed':'completed');
     if (failure) {
       failure.sessionEvidence = sessionEvidence;

@@ -33,6 +33,20 @@
 
 ## 接下來依序交付
 
+### 已接上：唯讀核對的暫時性連線恢復
+
+同卷宗最多自動恢復一次，記入 `run.transportRecoveries`，跨 run 累計、不增總 session／時間額度。SDK 在失敗時停止生成及壓縮、釋放 session，並提供程式產生的 `recovery:{version:1,safeToRetry}`。僅 reviewer／integrator、沒有可執行檢查、沒有已接受結果或進行中工具、停止及清理成功時才可為 true；不是模型自報安全。
+
+runner 只接受明確連線錯誤 `ECONNRESET`／`ETIMEDOUT`／`ECONNREFUSED`／`EAI_AGAIN`，保存失敗與成本後，原角色換新 session 繼續。取消、預算耗盡、異議重核、未知錯誤、驗收不合格、worker 中斷與檢查命令不自動重播。自訂 transport 沒有此證據時維持停止；若自行提供則負責該信任邊界。
+
+獨立審閱發現 pi 0.84.2 常將 provider 錯誤轉成 `stopReason:error` 正常返回，舊流程會誤走 JSON 格式修正。已修正為立即保留 `MODEL_PROVIDER_ERROR`，不再額外問一次。對現用 `openai-completions`，透過該 session 的公開 `agent.streamFunction` 與 `options.fetch` 保留 fetch rejection 的結構化 code／cause.code，避免被 provider 正規化丟失。收到 HTTP response 即清除此證據；不解析 errorMessage，不改全域 fetch、模型或服務設定。401／429 等 HTTP 錯誤字串不會觸發恢復。收到 headers 後才發生的串流中斷不在此捕捉範圍，仍誠實停止，不宣稱能恢復所有連線中斷。
+
+使用本機實際 pi SDK 0.84.2、獨立暫存目錄及替代 HTTP fetch 做接線探測，原生 prompt 正常返回的 provider error 正確還原為 `ECONNRESET`，`safeToRetry:true`，1 次替代傳輸、0 次格式補問、0 次模型呼叫。替代 fetch 只存在於該測試 Node 程序，不改使用者設定。這是傳輸機制驗證，不是模型完成任務的證據。
+
+新增測試覆蓋 SDK 安全判定、停止／清理失敗、重試失敗及重開不補額度；整段 SDK→runner 測試使用真實檔案工具與回條，確認失敗的整合 session 已釋放、新 session 接續完成且 worker 只寫入一次。模型生成使用受控替身，不是本機模型語意驗收證據。
+
+此後續批次完整回歸：353 項，351 通過、2 項平台權限跳過、0 失敗。獨立審閱原先提出的原生錯誤接線問題已修正，重查未發現阻擋問題；headers 後串流中斷仍列限制。
+
 1. **接續閉環**：區分唯讀失敗可重試、寫入中斷需確認、缺外部輸入需等待、預算耗盡需停。沿同卷宗保存成本；排除暫停時間若要採用，需調整契約與相容性，不能只刪核心檢查。
 2. **成果核對**：讓已授權檢查的失敗具體回到修復交辦；語意核對要求與實際成果、支持／矛盾來源。不要硬編碼最近案例答案；必要的新介面再具體設計。
 3. **完整旅程及入口**：先受控故障驗接線，再用有實際用途的本機任務驗新增工作、返修及接續後的最後成果。限定原總預算、保存失敗，不拼接局部成功；同步 README／V2／英文使用說明。
